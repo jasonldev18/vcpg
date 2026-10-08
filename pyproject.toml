@@ -11,7 +11,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "httpx>=0.27", "ruff>=0.8", "mypy>=1.13", "types-PyYAML"]
+dev = ["pytest>=8", "httpx2", "ruff>=0.8", "mypy>=1.13", "types-PyYAML"]
 
 [tool.setuptools]
 packages = ["backend"]
@@ -19,6 +19,7 @@ packages = ["backend"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+extend-exclude = ["docs", "design"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]

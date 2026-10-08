@@ -26,7 +26,9 @@ class AgentConfig(BaseModel):
     @model_validator(mode="after")
     def limit_matches_runtime(self) -> Self:
         if (self.runtime == "api") != (self.max_tokens is not None and self.max_turns is None):
-            raise ValueError("api agents need max_tokens only; agent_sdk agents need max_turns only")
+            raise ValueError(
+                "api agents need max_tokens only; agent_sdk agents need max_turns only"
+            )
         return self
 
 

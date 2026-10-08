@@ -34,7 +34,10 @@ class RedactFilter(logging.Filter):
 
 def install() -> None:
     """Attach the filter to every handler that exists now (root, uvicorn and our own)."""
-    loggers = [logging.getLogger(), *(logging.getLogger(n) for n in logging.root.manager.loggerDict)]
+    loggers = [
+        logging.getLogger(),
+        *(logging.getLogger(n) for n in logging.root.manager.loggerDict),
+    ]
     for handler in {h for lg in loggers for h in lg.handlers}:
         if not any(isinstance(f, RedactFilter) for f in handler.filters):
             handler.addFilter(RedactFilter())
