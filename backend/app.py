@@ -14,7 +14,17 @@ from backend.audit import runner as audit_runner
 from backend.errors import Conflict, NotFound
 from backend.llm.client import LLMError, MissingKey
 from backend.orchestrator.machine import InvalidTransition
-from backend.routes import archive, audit, core, deck, discovery, events, projects, steps
+from backend.routes import (
+    archive,
+    audit,
+    core,
+    deck,
+    discovery,
+    events,
+    projects,
+    squad,
+    steps,
+)
 
 HOST = "127.0.0.1"  # never 0.0.0.0 (SECURITY.md section 8)
 PORT = 8000
@@ -55,7 +65,7 @@ def create_app() -> FastAPI:
     # Blocks DNS rebinding: a foreign page resolved to 127.0.0.1 still sends its own Host.
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=[HOST, "localhost"])
 
-    routers = (projects, steps, deck, archive, discovery, audit, core, events)
+    routers = (projects, steps, deck, archive, discovery, audit, squad, core, events)
     for router in (r.router for r in routers):
         app.include_router(router)
     app.include_router(core.github_router)

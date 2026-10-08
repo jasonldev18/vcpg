@@ -52,3 +52,10 @@ def load(agent: str, conn: sqlite3.Connection) -> AgentConfig:
     ).fetchone()
     base = defaults()[agent]
     return merge(base, dict(row)) if row else base
+
+
+@cache
+def groups() -> dict[str, str]:
+    """Which crew each agent belongs to, as config/agents.yaml groups them."""
+    raw = yaml.safe_load((REPO_ROOT / "config" / "agents.yaml").read_text(encoding="utf-8"))
+    return {name: group for group, agents in raw.items() for name in agents}
