@@ -45,6 +45,8 @@ export function makeStep(overrides: Partial<Step> = {}): Step {
     current: true,
     lesson: null,
     build_note: null,
+    review_note: null,
+    build: { running: false, paused: false, error: null, isolation: 'venv' },
     chat: [],
     gate: [],
     progress: { covered: 0, total: 4 },

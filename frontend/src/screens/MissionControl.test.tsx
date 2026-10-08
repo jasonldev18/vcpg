@@ -35,7 +35,14 @@ describe('MissionControl', () => {
   })
 
   it('moves from the tour placeholder into the interview', async () => {
-    const reviewed = makeStep({ state: 'reviewed', build_note: 'Building arrives in phase 2.' })
+    const reviewed = makeStep({
+      state: 'reviewed',
+      build_note: {
+        files: [{ path: 'app.py', summary: 'adds main' }],
+        decisions: [],
+        not_done: [],
+      },
+    })
     const interviewing = makeStep({
       state: 'interviewing',
       gate: [{ id: 5, agent: 'interviewer', role: 'assistant', content: 'Why cosine?' }],
@@ -57,5 +64,40 @@ describe('MissionControl', () => {
     fakeApi({ 'GET /api/projects/current': null })
     renderIt()
     expect(await screen.findByRole('link', { name: 'Start a project' })).toBeInTheDocument()
+  })
+})
+
+describe('MissionControl builds', () => {
+  it('shows build controls while building and the weaker-isolation warning', async () => {
+    const building = makeStep({
+      state: 'taught',
+      build: { running: true, paused: false, error: null, isolation: 'venv' },
+    })
+    const calls = fakeApi({
+      'GET /api/projects/current': makeProject(),
+      'GET /api/steps/1': building,
+      'POST /api/steps/1/advance': makeStep({
+        state: 'taught',
+        build: { running: true, paused: true, error: null, isolation: 'venv' },
+      }),
+    })
+    renderIt()
+    expect(await screen.findByText(/isolation is weaker/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Pause' }))
+    expect(calls.at(-1)?.body).toEqual({ action: 'pause' })
+    expect(await screen.findByRole('button', { name: 'Resume' })).toBeInTheDocument()
+  })
+
+  it('offers a retry after a failed build', async () => {
+    fakeApi({
+      'GET /api/projects/current': makeProject(),
+      'GET /api/steps/1': makeStep({
+        state: 'taught',
+        build: { running: false, paused: false, error: 'max turns', isolation: 'docker' },
+      }),
+    })
+    renderIt()
+    expect(await screen.findByRole('button', { name: 'Retry build' })).toBeInTheDocument()
+    expect(screen.getByText('max turns')).toBeInTheDocument()
   })
 })

@@ -10,13 +10,14 @@ export interface ConsoleLine {
 export interface Events {
   lines: ConsoleLine[]
   live: Record<string, string> // text streamed so far by each agent that is running now
+  version: number // bumps when a step changes in the background, so screens refetch it
 }
 
 const KEEP = 200
 
 // One EventSource per open project; the browser resends Last-Event-ID when it reconnects.
 export function useEvents(projectId: number | null): Events {
-  const [events, setEvents] = useState<Events>({ lines: [], live: {} })
+  const [events, setEvents] = useState<Events>({ lines: [], live: {}, version: 0 })
 
   useEffect(() => {
     if (projectId === null) return
@@ -44,8 +45,27 @@ export function useEvents(projectId: number | null): Events {
       const summary = d.ok ? `finished (${done?.length ?? 0} chars)` : 'failed'
       return { ...e, live, lines: log(e, { id, agent: d.agent as string, text: summary }) }
     })
+    on('tool_use', (e, d, id) => ({
+      ...e,
+      lines: log(e, {
+        id,
+        agent: d.agent as string,
+        text: d.denied ? `denied: ${d.summary as string}` : (d.summary as string),
+      }),
+    }))
+    on('build_failed', (e, d, id) => ({
+      ...e,
+      version: e.version + 1,
+      lines: log(e, { id, agent: 'builder', text: `failed: ${d.error as string}` }),
+    }))
+    on('build_stopped', (e, _d, id) => ({
+      ...e,
+      version: e.version + 1,
+      lines: log(e, { id, agent: 'builder', text: 'stopped by you' }),
+    }))
     on('state_changed', (e, d, id) => ({
       ...e,
+      version: e.version + 1,
       lines: log(e, { id, agent: 'orchestrator', text: `step ${d.step_id} → ${d.state}` }),
     }))
     on('gate_update', (e, d, id) => ({

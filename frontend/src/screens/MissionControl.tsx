@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { api } from '../api/client'
 import type { Project, Step } from '../api/types'
-import { useEvents } from '../api/useEvents'
+import { type Events, useEvents } from '../api/useEvents'
+import { BuildNoteView, BuildPanel } from '../components/BuildPanel'
 import { Console } from '../components/Console'
 import { GatePanel } from '../components/GatePanel'
 import { PlanReview } from '../components/PlanReview'
@@ -44,7 +45,7 @@ function StepList({ steps, currentId }: { steps: Step[]; currentId: number | nul
   )
 }
 
-// Phase 1 stand-in for the code tour: build and review arrive in phases 2 and 3.
+// Stand-in for the code tour until phase 3: shows the build note.
 function TourPlaceholder({ step, onChange }: { step: Step; onChange: (s: Step) => void }) {
   const { busy, error, run } = useAction()
   const go = () =>
@@ -55,7 +56,8 @@ function TourPlaceholder({ step, onChange }: { step: Step; onChange: (s: Step) =
     <section className="panel stack">
       <p className="kicker">Step {step.position + 1} · code tour</p>
       <h1>{step.title}</h1>
-      <p className="mute">{step.build_note}</p>
+      {step.build_note && <BuildNoteView note={step.build_note} />}
+      <p className="mute">{step.review_note}</p>
       <button className="primary" disabled={busy} onClick={go}>
         {busy ? 'Opening the interview…' : "I'm ready for the interview"}
       </button>
@@ -66,15 +68,18 @@ function TourPlaceholder({ step, onChange }: { step: Step; onChange: (s: Step) =
 
 function CurrentPanel({
   step,
-  live,
+  events,
   onChange,
 }: {
   step: Step
-  live: Record<string, string>
+  events: Events
   onChange: (s: Step) => void
 }) {
+  const { live } = events
   if (step.state === 'planned')
     return <TeachPanel step={step} live={live.tutor} onChange={onChange} />
+  if (step.state === 'taught' || step.state === 'built')
+    return <BuildPanel step={step} lines={events.lines} onChange={onChange} />
   if (step.state === 'reviewed' || step.state === 'toured')
     return <TourPlaceholder step={step} onChange={onChange} />
   return <GatePanel step={step} live={live} onChange={onChange} />
@@ -100,7 +105,7 @@ export function MissionControl() {
   useEffect(() => {
     if (currentId === null) return
     void api.get<Step>(`/api/steps/${currentId}`).then(setStep)
-  }, [currentId])
+  }, [currentId, events.version]) // builds finish in the background
 
   const onStep = useCallback(
     (s: Step) => {
@@ -137,7 +142,7 @@ export function MissionControl() {
       <StepList steps={project.steps} currentId={currentId} />
       <div className="current">
         {shown ? (
-          <CurrentPanel key={shown.id} step={shown} live={events.live} onChange={onStep} />
+          <CurrentPanel key={shown.id} step={shown} events={events} onChange={onStep} />
         ) : (
           <section className="panel">
             <h1>{currentId === null ? 'Every step has passed its gate' : 'Loading…'}</h1>

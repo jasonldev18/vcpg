@@ -92,7 +92,7 @@ def test_pause_and_resume_are_reported(
     fake_builder.release.clear()
     api.post(f"/api/steps/{first}/advance", json={"action": "ready"})
     paused = api.post(f"/api/steps/{first}/advance", json={"action": "pause"}).json()
-    assert paused["build"] == {"running": True, "paused": True, "error": None}
+    assert (paused["build"]["running"], paused["build"]["paused"]) == (True, True)
     resumed = api.post(f"/api/steps/{first}/advance", json={"action": "resume"}).json()
     assert resumed["build"]["paused"] is False
     fake_builder.release.set()

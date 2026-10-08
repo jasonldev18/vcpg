@@ -18,7 +18,7 @@ from backend.orchestrator.context import tag
 from backend.orchestrator.machine import State
 from backend.redact import redact
 from backend.schemas import BuildNote
-from backend.workspace import git
+from backend.workspace import git, sandbox
 
 S = State
 REVIEW_STUB = "Review arrives in phase 3; this step was committed without one."
@@ -46,6 +46,7 @@ def status(step_id: int) -> dict[str, Any]:
         "running": running is not None,
         "paused": running is not None and not running.resume.is_set(),
         "error": build.error if build and not running else None,
+        "isolation": "docker" if sandbox.docker_available() else "venv",
     }
 
 

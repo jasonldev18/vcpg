@@ -272,3 +272,20 @@ input:focus {
   font: 400 10px var(--font-mono);
   margin-left: 4px;
 }
+
+.warning {
+  color: var(--acc3);
+  border-left: 2px solid var(--acc3);
+  padding-left: 10px;
+}
+
+.build-log {
+  font: 400 12px/1.6 var(--font-mono);
+  color: var(--mute);
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.build-note code {
+  color: var(--acc3);
+}

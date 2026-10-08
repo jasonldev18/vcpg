@@ -29,11 +29,26 @@ export interface Step {
   state: StepState
   current: boolean
   lesson: string | null
-  build_note: string | null
+  build_note: BuildNote | null
+  review_note: string | null
+  build?: BuildStatus
   chat: Message[]
   gate: Message[]
   progress: { covered: number; total: number }
   can_hint: boolean
+}
+
+export interface BuildNote {
+  files: { path: string; summary: string }[]
+  decisions: string[]
+  not_done: string[]
+}
+
+export interface BuildStatus {
+  running: boolean
+  paused: boolean
+  error: string | null
+  isolation: 'docker' | 'venv'
 }
 
 export interface PlanView {
