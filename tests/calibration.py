@@ -1,12 +1,7 @@
-from pathlib import Path
+"""Calibration loaders live in backend/audit/testsets.py; these names keep the tests short."""
 
-import yaml
-from pydantic import BaseModel
+from backend.audit.testsets import gate_sets, reviewer_cases, slide_bundles
 
-from backend.paths import REPO_ROOT
-from backend.schemas import Status
-
-GATE_SETS = REPO_ROOT / "calibration" / "gate"
 STYLES = {
     "strong",
     "shallow",
@@ -16,84 +11,4 @@ STYLES = {
     "copied_jargon",
 }
 
-
-class CalibrationStep(BaseModel):
-    title: str
-    component: str
-    goal: str
-    concepts: list[str]
-
-
-class GradedAnswer(BaseModel):
-    style: str
-    text: str
-    expected: list[Status]
-
-
-class GateSet(BaseModel):
-    step: CalibrationStep
-    build_summary: str
-    question: str
-    rubric: list[str]
-    answers: list[GradedAnswer]
-
-
-def gate_sets() -> dict[str, GateSet]:
-    return {
-        path.stem: GateSet.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
-        for path in sorted(Path(GATE_SETS).glob("*.yaml"))
-    }
-
-
-REVIEWER_SETS = REPO_ROOT / "calibration" / "reviewer"
-
-
-class ReviewerStep(BaseModel):
-    title: str
-    goal: str
-    files: list[str]
-    acceptance: list[str]
-
-
-class Marker(BaseModel):
-    file: str
-    marker: str
-
-
-class ReviewerCase(BaseModel):
-    step: ReviewerStep
-    build_note: str
-    unreachable: list[Marker]
-    boundary: list[Marker]
-    files: list[Path] = []
-
-
-def reviewer_cases() -> dict[str, ReviewerCase]:
-    cases = {}
-    for folder in sorted(p for p in REVIEWER_SETS.iterdir() if p.is_dir()):
-        case = ReviewerCase.model_validate(
-            yaml.safe_load((folder / "case.yaml").read_text(encoding="utf-8"))
-        )
-        case.files = sorted(folder.glob("*.py"))
-        cases[folder.name] = case
-    return cases
-
-
-SLIDE_SETS = REPO_ROOT / "calibration" / "slides"
-
-
-class SlideBundle(BaseModel):
-    step: str
-    build_summary: str
-    build_note: str
-    review_note: str
-    code_files: str
-    gate: str
-    forbidden: list[str]
-
-
-def slide_bundles() -> dict[str, SlideBundle]:
-    return {
-        path.stem: SlideBundle.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
-        for path in sorted(SLIDE_SETS.glob("*.yaml"))
-    }
+__all__ = ["STYLES", "gate_sets", "reviewer_cases", "slide_bundles"]

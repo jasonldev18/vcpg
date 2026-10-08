@@ -171,3 +171,10 @@ def test_mock_needs_a_finished_project(
         ).status_code
         == 409
     )
+
+
+def test_number_words_in_the_inputs_support_digits() -> None:
+    from backend.numbers import invented
+
+    assert invented("Recommends 5 films to 20 users.", "Recommend five films; k=20") == []
+    assert invented("Precision was 0.42.", "five films") == ["0.42"]

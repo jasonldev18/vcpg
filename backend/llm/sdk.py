@@ -76,12 +76,14 @@ async def run_agent[T: BaseModel](
     allow_install: bool,
     resume: asyncio.Event,
     read_only: tuple[Path, ...] | None = None,
+    box: int | None = None,
 ) -> T:
     """Run one session in `cwd`; return its final JSON, validated, retrying once on error.
 
     `resume` gates every tool call, so clearing it pauses the agent before its next action.
     `read_only` makes an audit session: Read, Glob and Grep over `cwd` and these extra folders,
     no edits, no shell and no sandbox (SECURITY.md section 4). Its events go to AUDIT_CHANNEL.
+    `box` is the sandbox to run commands in when it is not the project's (calibration repos).
     """
     channel = project_id if project_id is not None else AUDIT_CHANNEL
     tools = READ_ONLY if read_only is not None else BUILT_IN
@@ -96,7 +98,7 @@ async def run_agent[T: BaseModel](
     )
     async def run_in_sandbox(args: dict[str, Any]) -> dict[str, Any]:
         result = await sandbox.run(
-            channel,  # only builder and reviewer sessions have this tool, always with a project
+            box if box is not None else channel,
             args["command"],
             allow_install=allow_install,
             timeout=int(args.get("timeout_seconds") or sandbox.DEFAULT_TIMEOUT),

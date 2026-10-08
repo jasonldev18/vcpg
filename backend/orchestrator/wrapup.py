@@ -9,6 +9,7 @@ from backend import db
 from backend.errors import Conflict
 from backend.llm import client
 from backend.llm.client import LLMError
+from backend.numbers import invented
 from backend.orchestrator import project_end, runner
 from backend.orchestrator.context import tag, user_message
 from backend.schemas import ReadmeReview
@@ -16,7 +17,6 @@ from backend.workspace import git
 
 CODE_LIMIT = 50_000
 DOSSIER_WORDS = 1_650  # "about 1,500"
-NUMBER = re.compile(r"\d+(?:\.\d+)?")
 LIST_MARKER = re.compile(r"(?m)^\s*(?:#+\s*)?\d+\.\s")
 BLOCKING = {"does_not_match", "gap"}
 
@@ -138,11 +138,9 @@ def dossier_problems(text: str, sources: str) -> list[str]:
     problems = []
     if (words := len(text.split())) > DOSSIER_WORDS:
         problems.append(f"It is {words} words; keep it under about 1,500.")
-    known = set(NUMBER.findall(sources))
     prose = LIST_MARKER.sub("", text)  # "1." numbering a list or heading is not a claim
-    invented = sorted(set(NUMBER.findall(prose)) - known)
-    if invented:
-        problems.append(f"These numbers are not in the inputs: {', '.join(invented)}.")
+    if new := invented(prose, sources):
+        problems.append(f"These numbers are not in the inputs: {', '.join(new)}.")
     return problems
 
 
