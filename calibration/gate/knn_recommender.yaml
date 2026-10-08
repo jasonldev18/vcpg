@@ -1,0 +1,67 @@
+# Grader calibration: each answer is graded alone; `expected` is the status per rubric item
+# after the code's verbatim-evidence check. Changing expectations needs review (SECURITY.md 6).
+step:
+  title: KNN recommender core
+  component: backend
+  goal: Recommend five films for a user from their nearest neighbours in the MovieLens ratings.
+  concepts: [mean-centring, cosine similarity, k-nearest neighbours, cold start]
+build_summary: >
+  recommend.py subtracts each user's mean rating, computes cosine similarity between the
+  target user and all others over co-rated films, keeps the k=20 most similar users, and
+  ranks unseen films by the neighbours' similarity-weighted centred ratings. Users with no
+  ratings get the 5 most-rated films.
+question: Walk me through how the recommender picks films for someone, and why it is built that way.
+rubric:
+  - Explains that mean-centring removes each user's rating bias (harsh vs generous raters) before similarity is computed.
+  - Explains why cosine similarity suits sparse rating vectors better than raw Euclidean distance.
+  - Explains how the choice of k trades noise (too few neighbours) against over-smoothing toward popular items (too many).
+  - Explains the cold-start problem for a user with no ratings and how the system handles it.
+answers:
+  - style: strong
+    text: >
+      Before comparing anyone I subtract each user's average rating from their ratings. That way a
+      harsh critic who gives 2s and a generous fan who gives 4s to the same films end up looking
+      alike, because what matters is which films they like more than their own average, not their
+      personal scale. Then I compare users with cosine similarity. Most ratings are missing, and
+      Euclidean distance would treat every missing rating as a gap that pushes people apart, so it
+      mostly measures how many films two people rated. Cosine compares the direction of the two
+      rating vectors, so it looks at whether their tastes point the same way. I keep the k most
+      similar users. With a very small k one odd neighbour can swing the results, so they are noisy.
+      With a very large k you are averaging over almost everyone, so the results drift toward films
+      that are popular in general and stop being personal. Finally, a brand-new user has no ratings,
+      so there is nobody to compare them to and no neighbours at all. That is the cold-start problem,
+      and for those users we fall back to the five most-rated films until they rate a few.
+    expected: [covered, covered, covered, covered]
+  - style: shallow
+    text: >
+      We normalise the ratings first so the comparison is fairer. Then we use cosine similarity
+      because the data is sparse. k is the number of neighbours and we set it to 20. New users can
+      be a problem because they haven't rated much.
+    expected: [partial, partial, missing, partial]
+  - style: wrong_but_confident
+    text: >
+      Mean-centring rescales every rating to between 0 and 1 so the numbers are smaller and faster
+      to compute. Cosine similarity is better than Euclidean simply because it is cheaper to
+      calculate. A bigger k is always better, because more neighbours means more data and more
+      accuracy. Cold start is when the server is slow on the first request because its cache is empty.
+    expected: [missing, missing, missing, missing]
+  - style: off_topic
+    text: >
+      Honestly I really enjoyed building this. Recommendation systems are everywhere now, from
+      Netflix to Spotify, and it was fun to see how they work. Next I'd like to add a nicer web
+      interface and deploy it so my friends can try it.
+    expected: [missing, missing, missing, missing]
+  - style: partially_right
+    text: >
+      Each user's average is subtracted from their ratings, so someone who rates everything high
+      and someone who rates everything low can still be matched on what they actually prefer. If a
+      person has no ratings yet there is nobody to compare them with, so we can't find neighbours;
+      in that case we show the most-rated films instead. I used cosine because Euclidean distance
+      can't handle negative numbers.
+    expected: [covered, missing, missing, covered]
+  - style: copied_jargon
+    text: >
+      We apply mean-centring to mitigate user bias, leverage cosine similarity for sparse
+      high-dimensional vectors, tune k to balance the bias-variance trade-off, and address cold
+      start with a popularity-based fallback.
+    expected: [partial, partial, partial, partial]

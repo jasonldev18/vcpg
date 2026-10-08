@@ -1,0 +1,67 @@
+# Grader calibration: each answer is graded alone; `expected` is the status per rubric item
+# after the code's verbatim-evidence check. Changing expectations needs review (SECURITY.md 6).
+step:
+  title: Chunking and retrieval
+  component: llm
+  goal: Answer questions about course lecture notes by retrieving the most relevant passages.
+  concepts: [chunking, embeddings, similarity search, retrieval failure]
+build_summary: >
+  ingest.py splits each lecture note into chunks of about 300 words at paragraph boundaries with
+  a 50-word overlap and embeds each chunk with a sentence-embedding model. retrieve.py embeds the
+  question, scores every chunk by cosine similarity, and returns the top 4 chunks with their
+  source and position. The answer step only sees those 4 chunks.
+question: How does your app find the right part of the notes for a question, and how would you know when it doesn't?
+rubric:
+  - Explains why documents are split into chunks before embedding (one vector for a long document blurs its topics, and only a limited amount of text fits in the prompt).
+  - Explains the chunk-size trade-off (too small loses surrounding context, too large dilutes the match with unrelated text).
+  - Explains that retrieval embeds the question and returns the chunks whose embeddings are most similar to it (top-k nearest).
+  - Explains how to tell a retrieval failure from a generation failure (inspect whether the right chunk was among those retrieved, or measure that on labelled questions).
+answers:
+  - style: strong
+    text: >
+      A lecture note covers many topics, and if I embedded the whole note as one vector that vector
+      would be a blur of all of them, so a specific question would match it only weakly. The model
+      also can only read a limited amount of text, so I need small pieces I can hand it. That's why
+      I split notes into chunks of about 300 words. Size is a trade-off: if chunks are tiny, a
+      sentence loses the context around it that explains it; if they are huge, each chunk mixes the
+      relevant paragraph with lots of unrelated text and its similarity to the question gets
+      watered down. At question time I embed the question with the same model and return the four
+      chunks whose embeddings are closest to it by cosine similarity. When an answer is wrong, I
+      first look at the four retrieved chunks: if the passage that contains the answer isn't among
+      them, retrieval failed; if it is there and the answer is still wrong, generation failed. To do
+      that at scale I'd keep a small set of questions labelled with the chunk that answers them and
+      measure how often that chunk is retrieved.
+    expected: [covered, covered, covered, covered]
+  - style: shallow
+    text: >
+      We chunk the documents because they're too long. Chunk size matters, we used 300 words. Then
+      we use embeddings to find relevant chunks for the question. If the answer is wrong we'd look
+      into it.
+    expected: [partial, partial, partial, missing]
+  - style: wrong_but_confident
+    text: >
+      Chunking is needed because embedding models only accept English text in short pieces, so it's
+      really a language requirement. Bigger chunks are strictly better since they always contain
+      more information. Retrieval works by keyword matching on the chunk titles. If an answer is
+      wrong, that always means the language model hallucinated, so retrieval can't be the problem.
+    expected: [missing, missing, missing, missing]
+  - style: off_topic
+    text: >
+      I chose this project because I had exams coming up and wanted a study helper. The notes were
+      in a messy folder so I spent a while organising them. I think it will be really useful for
+      my classmates too.
+    expected: [missing, missing, missing, missing]
+  - style: partially_right
+    text: >
+      The question gets embedded with the same model as the chunks, and we return the four chunks
+      whose vectors are most similar to the question's vector. Chunks are 300 words because that's
+      the default the tutorial used. When an answer is wrong I check whether the chunk that actually
+      contains the answer was one of the four retrieved; if it wasn't, retrieval is the problem,
+      otherwise it's the generation step.
+    expected: [missing, missing, covered, covered]
+  - style: copied_jargon
+    text: >
+      We perform semantic chunking to optimise embedding granularity, balance the context window
+      against retrieval precision, run dense vector similarity search for top-k retrieval, and
+      evaluate retrieval with recall@k to decouple it from generation quality.
+    expected: [partial, partial, partial, partial]

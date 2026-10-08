@@ -1,0 +1,59 @@
+# Grader calibration: each answer is graded alone; `expected` is the status per rubric item
+# after the code's verbatim-evidence check. Changing expectations needs review (SECURITY.md 6).
+step:
+  title: Offline evaluation
+  component: evaluation
+  goal: Measure precision@5 of the recommender on a held-out split of the ratings.
+  concepts: [train/test split, precision@k, comparing models]
+build_summary: >
+  evaluate.py holds out 20% of each user's ratings as the test set, trains on the rest, and
+  computes precision@5 (the share of the top 5 recommended films that the user rated 4 or
+  higher in the held-out set), averaged over users. It reports the popularity baseline and the
+  KNN model on the same split, with the spread over 5 random splits.
+question: How do you know the recommender is any good?
+rubric:
+  - Explains why ratings are held out per user (each test user still has history to find neighbours) rather than holding out whole users or splitting at random across everyone.
+  - Explains what precision@5 measures (the share of the top five that the user liked in held-out data) and something it misses (such as ranking order, diversity, or unrated films the user might like).
+  - Explains how to tell whether a change really improved the recommender (same split, compared with a baseline, and checked against the variation between splits).
+answers:
+  - style: strong
+    text: >
+      I hide 20% of each user's own ratings and train on the rest. Doing it per user matters because
+      the recommender needs some history for a user to find their neighbours; if I held out whole
+      users they'd be cold-start cases and the test would only measure the fallback. Then precision@5
+      asks: of the five films we recommend, what fraction did the user rate 4 or more in the hidden
+      part? It doesn't care about the order inside the top five, and a film the user would love but
+      never rated counts as a miss, so it underestimates quality. To know a change helped, I compare
+      it with the popularity baseline on exactly the same split, and I repeat over five random splits:
+      if the improvement is smaller than the spread between splits, I don't trust it.
+    expected: [covered, covered, covered]
+  - style: shallow
+    text: >
+      We split the data into train and test. Precision@5 tells us how good the top recommendations
+      are. If the number goes up after a change, the model is better.
+    expected: [missing, partial, missing]
+  - style: wrong_but_confident
+    text: >
+      We hold out entire users so the test is completely fair, since the model has never seen
+      them. Precision@5 measures how accurately we predict the exact star rating for five films. Any
+      increase in precision, even 0.001, proves the new version is better.
+    expected: [missing, missing, missing]
+  - style: off_topic
+    text: >
+      Evaluation is a really important part of machine learning and lots of companies get it wrong.
+      I read a blog post about it last week. I'd like to learn more about A/B testing in the future.
+    expected: [missing, missing, missing]
+  - style: partially_right
+    text: >
+      Precision@5 is the fraction of the five recommended films that the user actually rated highly
+      in the held-out ratings, but it ignores whether the best one was ranked first. We split the
+      ratings randomly across the whole dataset. I compare the new model with the popularity
+      baseline on the same split, and I run five different splits to see if the gain is bigger
+      than the normal variation.
+    expected: [missing, covered, covered]
+  - style: copied_jargon
+    text: >
+      We use a leave-n-out protocol per user to avoid leakage, report precision@k as our top-k
+      ranking metric, and benchmark against a popularity baseline across multiple seeds for
+      statistical robustness.
+    expected: [partial, partial, partial]

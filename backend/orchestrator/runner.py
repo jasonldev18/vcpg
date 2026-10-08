@@ -138,12 +138,10 @@ def _transcript(rows: list[sqlite3.Row]) -> str:
     return "\n\n".join(f"{speaker[r['role']]}: {r['content']}" for r in rows) or "(not started)"
 
 
-def _rubric_block(items: list[sqlite3.Row], with_status: bool) -> str:
-    lines = [
-        f"{i}. {r['text']}" + (f" [{r['status']}]" if with_status else "")
-        for i, r in enumerate(items)
-    ]
-    return tag("rubric", "\n".join(lines))
+def _rubric_block(items: list[sqlite3.Row]) -> str:
+    return tag(
+        "rubric", "\n".join(f"{i}. {r['text']} [{r['status']}]" for i, r in enumerate(items))
+    )
 
 
 def _last_gap(conn: sqlite3.Connection, step_id: int) -> str:
@@ -213,7 +211,7 @@ async def _interviewer(step_id: int, request: str) -> None:
         msg = user_message(
             _step_block(step),
             tag("build_summary", step["build_note"] or ""),
-            _rubric_block(_items(conn, step_id), with_status=True),
+            _rubric_block(_items(conn, step_id)),
             tag("gap", _last_gap(conn, step_id)),
             tag("conversation", _transcript(_messages(conn, step_id, GATE))),
             tag("request", request),
@@ -233,18 +231,29 @@ async def start_interview(step_id: int) -> None:
     _advance(step_id, S.INTERVIEWING)
 
 
+def grader_message(
+    rubric_items: list[str], step: str, build_summary: str, answers: list[str], questions: list[str]
+) -> list[dict[str, str]]:
+    """Shared by the gate and the calibration suite, so both grade the same way."""
+    return user_message(
+        tag("rubric", "\n".join(f"{i}. {text}" for i, text in enumerate(rubric_items))),
+        step,
+        tag("build_summary", build_summary),
+        tag("learner_answers", "\n\n".join(f"[{i + 1}] {a}" for i, a in enumerate(answers))),
+        tag("interviewer_questions", "\n\n".join(questions)),
+    )
+
+
 async def _grade(step_id: int, project_id: int) -> GateGrade:
     with db.session() as conn:
         step = _step(conn, step_id)
         gate = _messages(conn, step_id, GATE)
-        answers = [m["content"] for m in gate if m["role"] == "user"]
-        questions = [m["content"] for m in gate if m["role"] == "assistant"]
-        msg = user_message(
-            _rubric_block(_items(conn, step_id), with_status=False),
+        msg = grader_message(
+            [r["text"] for r in _items(conn, step_id)],
             _step_block(step),
-            tag("build_summary", step["build_note"] or ""),
-            tag("learner_answers", "\n\n".join(f"[{i + 1}] {a}" for i, a in enumerate(answers))),
-            tag("interviewer_questions", "\n\n".join(questions)),
+            step["build_note"] or "",
+            [m["content"] for m in gate if m["role"] == "user"],
+            [m["content"] for m in gate if m["role"] == "assistant"],
         )
     return await client.structured("grader", msg, GateGrade, project_id=project_id, step_id=step_id)
 

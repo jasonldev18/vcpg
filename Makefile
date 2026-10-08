@@ -28,4 +28,4 @@ lint:
 	npm --prefix frontend run lint
 
 live:
-	$(PY) -m pytest -m live
+	$(PY) -m pytest -m live -s
