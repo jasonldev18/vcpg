@@ -43,3 +43,14 @@ class ItemGrade(BaseModel):
 class GateGrade(BaseModel):
     items: list[ItemGrade]
     gap: str
+
+
+class FileChange(BaseModel):
+    path: str
+    summary: str
+
+
+class BuildNote(BaseModel):
+    files: list[FileChange]
+    decisions: list[str]
+    not_done: list[str]
