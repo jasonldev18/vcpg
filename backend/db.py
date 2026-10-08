@@ -1,4 +1,6 @@
 import sqlite3
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 from backend.paths import vcpg_home
@@ -24,3 +26,14 @@ def migrate(conn: sqlite3.Connection) -> None:
         if number > current:
             sql = file.read_text(encoding="utf-8")
             conn.executescript(f"BEGIN;\n{sql}\nPRAGMA user_version = {number};\nCOMMIT;")
+
+
+@contextmanager
+def session() -> Iterator[sqlite3.Connection]:
+    """A connection that commits on success, rolls back on error, and always closes."""
+    conn = connect()
+    try:
+        with conn:
+            yield conn
+    finally:
+        conn.close()

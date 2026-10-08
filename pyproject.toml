@@ -8,10 +8,11 @@ dependencies = [
   "pydantic>=2.9",
   "pyyaml>=6.0",
   "keyring>=25",
+  "anthropic>=1.12",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "httpx2", "ruff>=0.8", "mypy>=1.13", "types-PyYAML"]
+dev = ["pytest>=8", "pytest-asyncio>=1", "httpx2", "ruff>=0.8", "mypy>=1.13", "types-PyYAML"]
 
 [tool.setuptools]
 packages = ["backend"]
@@ -32,3 +33,5 @@ files = ["backend", "scripts"]
 testpaths = ["tests"]
 markers = ["live: hits the real Claude API (opt-in via `make live`)"]
 addopts = "-m 'not live'"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
