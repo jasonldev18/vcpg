@@ -54,6 +54,7 @@ def create_app() -> FastAPI:
     routers = (projects, steps, deck, archive, discovery, core, events)
     for router in (r.router for r in routers):
         app.include_router(router)
+    app.include_router(core.github_router)
 
     def error(status: int) -> Callable[[Request, Exception], Awaitable[Response]]:
         async def handle(_: Request, exc: Exception) -> Response:

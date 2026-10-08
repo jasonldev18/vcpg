@@ -65,3 +65,21 @@ async def test_subscribe_replays_after_last_event_id_then_streams_live() -> None
     assert [(await anext(stream)).data["n"] for _ in range(2)] == [1, 2]
     bus.publish(1, "tick", n=3)
     assert (await anext(stream)).data == {"n": 3}
+
+
+def test_github_token_is_checked_and_a_broad_one_is_not_saved(
+    api: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backend.audit import github
+
+    async def check(token: str) -> github.TokenCheck:
+        problems = ["Has Administration"] if "admin" in token else []
+        return github.TokenCheck(found=["Metadata: read"], problems=problems)
+
+    monkeypatch.setattr(github, "check_token", check)
+    refused = api.put("/api/core/github", json={"token": "github_pat_admin_0123456789abcd"}).json()
+    assert refused["saved"] is False and refused["problems"] == ["Has Administration"]
+    saved = api.put("/api/core/github", json={"token": "github_pat_narrow_0123456789WXYZ"}).json()
+    assert saved == {"saved": True, "last4": "WXYZ", "found": ["Metadata: read"], "problems": []}
+    assert "narrow" not in api.get("/api/core/github").text
+    assert api.delete("/api/core/github").json()["saved"] is False
