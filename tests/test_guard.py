@@ -27,6 +27,7 @@ ALLOWED = [
     (SANDBOX_TOOL, {"command": "python -m app.main --user 3"}),
     (SANDBOX_TOOL, {"command": "pip install pandas==2.2"}),
     (SANDBOX_TOOL, {"command": "rm -rf build"}),
+    ("StructuredOutput", {"files": [], "decisions": [], "not_done": []}),
 ]
 
 DENIED = [

@@ -30,12 +30,15 @@ vcpg/
     orchestrator/
       machine.py         step states and allowed transitions
       runner.py          drives a step through teach → build → review → tour → gate → slide
+      build.py           background build per step: pause, resume, stop, retry
       planning.py        brief → questions → draft plan → edits → approve
       context.py         tagged data blocks for agent prompts
       project_end.py     final review, re-test, deck, README, dossier
     llm/
       client.py          Messages API calls: call(agent, messages, schema=None)
       sdk.py             Agent SDK sessions: run_agent(agent, task, cwd, ...)
+      guard.py           PreToolUse rules for agent tool calls (SECURITY section 4)
+      proxy.py           loopback proxy that adds the API key for Agent SDK sessions
       config.py          merges config/agents.yaml with Squad overrides
       prompts.py         loads prompts/<agent>.md
       log.py             records every call to agent_calls
@@ -190,6 +193,9 @@ async def run_agent(agent: str, task: str, cwd: Path, allowed: list[str], denied
 - `cwd` is the project workspace (builder, reviewer) or a fresh clone of vcpg on an audit branch (audit crew).
 - The `guard` hook checks every tool call against the rules in SECURITY.md section 4 and denies anything outside them, even if `allowed_tools` would allow it.
 - Tool lists per agent are in AGENTS.md.
+- **Keys never enter the session.** The Agent SDK runs the bundled Claude Code CLI as a child process, and that CLI needs a key. `proxy.py` starts a loopback server on a random port for each session; the CLI gets that URL as `ANTHROPIC_BASE_URL` and a random per-session secret as its `ANTHROPIC_API_KEY`. The proxy checks the secret, swaps in the real key from the keychain, and streams the reply. Every inherited environment variable whose name looks secret is blanked, and `CLAUDE_CONFIG_DIR` points at `~/.vcpg/agent-config` so the user's own Claude Code login and settings are never used.
+- The guard allows the SDK's internal `StructuredOutput` tool, which is how a session returns its final JSON note.
+- Pausing a build holds the next tool call in the guard hook until the user resumes.
 
 ## 6. Project workspace
 
@@ -203,7 +209,7 @@ async def run_agent(agent: str, task: str, cwd: Path, allowed: list[str], denied
 `sandbox.py` runs commands for generated code and tests.
 
 - **Docker (preferred):** one container per project from a slim language image, workspace mounted read-write, network off by default, CPU and memory limits, a timeout per command. Network can be turned on per command for package installs only (`pip install`, `npm install`) during the build step.
-- **venv fallback:** used when Docker is missing; the app warns the user once. Commands run in a per-project virtualenv with the workspace as `cwd`, a stripped environment (no keys), and a timeout.
+- **venv fallback:** used when Docker is missing; the build panel warns that isolation is weaker. Commands run in a per-project virtualenv at `~/.vcpg/venvs/<project_id>/` with the workspace as `cwd`, a stripped environment (no keys), and a timeout. Package caches go to `~/.vcpg/tmp/<project_id>/`, not the workspace. On Windows, `USERPROFILE`, `TEMP` and `TMP` also point into VCPG's folders, and `SYSTEMROOT` is added only for an install command; without it Python cannot open network sockets, so Python code has no network outside installs. Other programs are not network-isolated in this mode.
 - The builder and reviewer run commands through the sandbox via a custom tool (`run_in_sandbox`) rather than raw Bash where possible.
 
 ## 8. Streaming

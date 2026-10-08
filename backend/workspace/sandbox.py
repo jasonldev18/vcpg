@@ -55,7 +55,8 @@ def docker_start_argv(project_id: int, workspace: Path) -> list[str]:
         "docker", "run", "-d", "--name", _container(project_id),
         "--network", "none", "--user", "1000:1000", "--cpus", "2", "--memory", "2g",
         "-v", f"{workspace}:/workspace", "-w", "/workspace",
-        "-e", "HOME=/workspace", "-e", "PIP_USER=1",
+        "-e", "HOME=/workspace", "-e", "PIP_USER=1", "-e", "PIP_NO_CACHE_DIR=1",
+        "-e", "npm_config_cache=/tmp/npm",
         "-e", "PYTHONUSERBASE=/workspace/.local",
         "-e", "PATH=/workspace/.local/bin:/usr/local/bin:/usr/bin:/bin",
         IMAGE, "sleep", "infinity",
@@ -90,20 +91,23 @@ def venv_dir(project_id: int) -> Path:
 
 
 def stripped_env(project_id: int, network: bool) -> dict[str, str]:
-    """Only PATH, HOME (into the workspace) and LANG; no keys. On Windows, user and temp
-    folders also point into VCPG's own folders, and SYSTEMROOT, without which Python cannot
-    open network sockets, is added only for a package install."""
+    """PATH, HOME (into the workspace), LANG and package-cache folders; no keys. On Windows,
+    user and temp folders also point into VCPG's own folders, and SYSTEMROOT, without which
+    Python cannot open network sockets, is added only for a package install."""
     venv = venv_dir(project_id)
     scripts = venv / ("Scripts" if sys.platform == "win32" else "bin")
     workspace = workspace_path(project_id)
+    temp = vcpg_home() / "tmp" / str(project_id)
+    temp.mkdir(parents=True, exist_ok=True)
     env = {
         "PATH": os.pathsep.join([str(scripts), os.environ.get("PATH", "")]),
         "HOME": str(workspace),
         "LANG": "C.UTF-8",
+        # caches go to VCPG's temp folder, not into the workspace where they would be committed
+        "PIP_CACHE_DIR": str(temp / "pip"),
+        "npm_config_cache": str(temp / "npm"),
     }
     if sys.platform == "win32":
-        temp = vcpg_home() / "tmp" / str(project_id)
-        temp.mkdir(parents=True, exist_ok=True)
         env |= {"USERPROFILE": str(workspace), "TEMP": str(temp), "TMP": str(temp)}
         if network:
             env["SYSTEMROOT"] = os.environ.get("SYSTEMROOT", r"C:\Windows")

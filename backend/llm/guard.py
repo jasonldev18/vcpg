@@ -10,6 +10,7 @@ from typing import Any
 
 SANDBOX_TOOL = "mcp__vcpg__run_in_sandbox"
 FILE_TOOLS = {"Read", "Write", "Edit", "Glob", "Grep"}
+RESULT_TOOL = "StructuredOutput"  # how the SDK returns the final JSON; it touches nothing
 PATH_FIELDS = ("file_path", "path", "notebook_path")
 
 CHAINING = re.compile(r"[;&|`$<>(){}\n]")
@@ -56,6 +57,8 @@ def check(tool: str, tool_input: dict[str, Any], cwd: Path) -> str | None:
         return _command(str(tool_input.get("command", "")), bash=True)
     if tool == SANDBOX_TOOL:
         return _command(str(tool_input.get("command", "")), bash=False)
+    if tool == RESULT_TOOL:
+        return None
     if tool not in FILE_TOOLS:
         return f"The {tool} tool is not available in this session."
     for field in PATH_FIELDS:

@@ -16,6 +16,8 @@ node_modules/
 __pycache__/
 *.pyc
 .pytest_cache/
+.cache/
+.local/
 dist/
 """
 IDENTITY = ["-c", "user.name=VCPG", "-c", "user.email=vcpg@localhost", "-c", "commit.gpgsign=false"]

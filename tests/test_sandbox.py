@@ -42,7 +42,7 @@ async def test_commands_run_in_the_workspace_with_no_secrets(
 
 
 def test_stripped_env_has_only_the_allowed_names(project: int) -> None:
-    allowed = {"PATH", "HOME", "LANG"}
+    allowed = {"PATH", "HOME", "LANG", "PIP_CACHE_DIR", "npm_config_cache"}
     if sys.platform == "win32":
         allowed |= {"USERPROFILE", "TEMP", "TMP"}
     assert set(sandbox.stripped_env(project, network=False)) == allowed
