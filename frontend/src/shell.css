@@ -29,3 +29,236 @@
 .shell-main {
   padding: 28px;
 }
+
+.core-button {
+  margin-left: auto;
+}
+
+button {
+  font: 500 13px var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+  background: rgba(255, 155, 61, 0.08);
+  border: 1px solid rgba(255, 155, 61, 0.35);
+  border-radius: 6px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+button.primary {
+  background: linear-gradient(90deg, var(--acc), var(--acc2));
+  color: var(--bg);
+  border: none;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+input,
+textarea {
+  width: 100%;
+  font: 400 15px/1.5 var(--font-body);
+  color: var(--text);
+  background: rgba(13, 10, 8, 0.7);
+  border: 1px solid rgba(255, 155, 61, 0.26);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+textarea.you,
+textarea:focus,
+input:focus {
+  border-color: var(--you);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.spread {
+  justify-content: space-between;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mute,
+.kicker {
+  color: var(--mute);
+}
+
+.kicker {
+  font: 500 12px var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.error {
+  color: var(--acc2);
+}
+
+.ok {
+  color: var(--pass);
+}
+
+.chip {
+  display: inline-block;
+  font: 400 12px var(--font-mono);
+  border: 1px solid rgba(255, 155, 61, 0.35);
+  border-radius: 999px;
+  padding: 2px 10px;
+  margin: 0 6px 6px 0;
+}
+
+.plan-steps li {
+  margin-bottom: 18px;
+}
+
+.plan-steps input {
+  font: 600 16px var(--font-display);
+}
+
+.start {
+  max-width: 760px;
+}
+
+.mission {
+  display: grid;
+  grid-template-columns: 240px 1fr 300px;
+  gap: 20px;
+  align-items: start;
+}
+
+.step-list ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.step-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 155, 61, 0.12);
+}
+
+.step-list li.locked {
+  color: var(--dim);
+}
+
+.step-list li.current {
+  color: var(--acc);
+}
+
+.step-list .state {
+  font: 400 12px var(--font-mono);
+}
+
+.teach {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 20px;
+  align-items: start;
+}
+
+.messages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.msg {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255, 155, 61, 0.06);
+}
+
+.msg.user {
+  border-left: 2px solid var(--you);
+  background: rgba(92, 225, 230, 0.06);
+}
+
+.msg.reteach {
+  border-left: 2px solid var(--acc3);
+}
+
+.msg .who {
+  display: block;
+  font: 500 12px var(--font-mono);
+  color: var(--mute);
+}
+
+.progress {
+  font: 500 14px var(--font-mono);
+  color: var(--acc3);
+}
+
+.console ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font: 400 12px/1.6 var(--font-mono);
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.console .agent {
+  color: var(--acc);
+}
+
+.console .running {
+  color: var(--you);
+}
+
+.markdown pre,
+.mermaid-source {
+  overflow-x: auto;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(13, 10, 8, 0.8);
+}
+
+.core-access {
+  width: 560px;
+}
+
+.light {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.light.on {
+  background: var(--pass);
+}
+
+.light.off {
+  background: var(--acc2);
+}

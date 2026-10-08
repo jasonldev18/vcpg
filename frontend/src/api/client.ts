@@ -9,6 +9,13 @@ function sessionToken(): Promise<string> {
   return session
 }
 
+// The API reports problems as {detail}; show that to the user when it is there.
+async function errorDetail(res: Response, fallback: string): Promise<string> {
+  const body: unknown = await res.json().catch(() => null)
+  const detail = (body as { detail?: unknown } | null)?.detail
+  return typeof detail === 'string' ? detail : fallback
+}
+
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (method !== 'GET') headers[TOKEN_HEADER] = await sessionToken()
@@ -17,7 +24,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     headers,
     body: body === undefined ? undefined : JSON.stringify(body),
   })
-  if (!res.ok) throw new Error(`${method} ${path} failed: ${res.status}`)
+  if (!res.ok) throw new Error(await errorDetail(res, `${method} ${path} failed: ${res.status}`))
   return (await res.json()) as T
 }
 

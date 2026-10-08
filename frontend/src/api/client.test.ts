@@ -43,3 +43,15 @@ describe('api client', () => {
     await expect(api.get('/api/health')).rejects.toThrow('GET /api/health failed: 403')
   })
 })
+
+describe('api errors', () => {
+  it('surfaces the server detail message', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () => new Response(JSON.stringify({ detail: 'Step is locked.' }), { status: 409 }),
+      ),
+    )
+    await expect(api.get('/api/steps/2')).rejects.toThrow('Step is locked.')
+  })
+})
