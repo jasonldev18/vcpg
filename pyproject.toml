@@ -12,6 +12,8 @@ dependencies = [
   "claude-agent-sdk>=0.2.165",
   "python-pptx>=1.0",
   "matplotlib>=3.9",
+  "fastembed>=0.5",
+  "pypdf>=5",
 ]
 
 [project.optional-dependencies]

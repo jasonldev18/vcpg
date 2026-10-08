@@ -250,3 +250,86 @@ class DimensionScore(BaseModel):
 class Scorecard(BaseModel):
     dimensions: list[DimensionScore] = Field(min_length=4, max_length=4)
     practise: list[str]
+
+
+# ---- discovery: lessons (SPEC section 9) and ideas (SPEC section 3.2)
+
+SectionKind = Literal[
+    "start_here", "see_it", "worked_example", "check_yourself", "your_turn", "recap"
+]
+
+
+class LessonOutline(BaseModel):
+    title: str
+    goal: str
+    key_terms: list[str]
+
+
+class LessonPath(BaseModel):
+    lessons: list[LessonOutline] = Field(min_length=4, max_length=8)
+
+
+class Paragraph(BaseModel):
+    text: str
+    citations: list[str]
+
+
+class Option(BaseModel):
+    text: str
+    correct: bool
+    why: str
+
+
+class Question(BaseModel):
+    type: Literal["mc", "tf", "short", "code"]
+    prompt: str
+    options: list[Option]  # mc and tf
+    answer: str  # model answer for short; starter code for code
+    rubric: list[str]  # short: points a good answer covers
+    tests: str  # code: pytest tests the learner's solution must pass
+
+
+class Section(BaseModel):
+    kind: SectionKind
+    paragraphs: list[Paragraph]
+    visual_json: str  # see_it: a slide-style visual as JSON text, "" otherwise
+    code: str  # worked_example: the snippet, "" otherwise
+    questions: list[Question]
+
+
+class CommunityNote(BaseModel):
+    text: str
+    source_id: str
+
+
+class Lesson(BaseModel):
+    title: str
+    by_the_end: list[str]
+    sections: list[Section]
+    community: list[CommunityNote]
+
+
+class Thumbnail(BaseModel):
+    template: Literal["chat", "ranked", "cluster", "code_hits", "chart", "pipeline"]
+    data_json: str
+
+
+class IdeaConcept(BaseModel):
+    name: str
+    familiarity: Literal["new", "basics", "used"]
+
+
+class IdeaCard(BaseModel):
+    name: str
+    line: str
+    pitch: str
+    difficulty: Literal["gentle", "medium", "stretch"]
+    step_count: int = Field(ge=3, le=10)
+    thumbnail: Thumbnail
+    concepts: list[IdeaConcept] = Field(min_length=3, max_length=5)
+    architecture: list[str] = Field(min_length=3, max_length=6)
+    questions: list[str]
+
+
+class IdeaBatch(BaseModel):
+    cards: list[IdeaCard] = Field(min_length=4, max_length=4)
