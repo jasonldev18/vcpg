@@ -63,3 +63,22 @@ def hint_level(hints_since_progress: int) -> int:
 def progress(items: list[Item]) -> dict[str, int]:
     """The only view of the rubric the user ever gets: counts."""
     return {"covered": sum(i.status == "covered" for i in items), "total": len(items)}
+
+
+def replay(texts: list[str], graded: list[tuple[str, GateGrade]]) -> list[list[Item]]:
+    """The rubric after each answer, recomputed from stored (answer, grade) pairs."""
+    items, answers, states = [Item(t) for t in texts], [], []
+    for answer, grade in graded:
+        answers.append(answer)
+        items = merge(items, grade, answers)
+        states.append(items)
+    return states
+
+
+def hardest(states: list[list[Item]], count: int) -> int:
+    """The item covered last, or never: what the re-test asks about (SPEC section 6)."""
+
+    def first_covered(i: int) -> int:
+        return next((n for n, s in enumerate(states) if s[i].status == "covered"), len(states))
+
+    return max(range(count), key=lambda i: (first_covered(i), -i))

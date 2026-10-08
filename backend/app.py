@@ -12,7 +12,7 @@ from backend import db, redact
 from backend.errors import Conflict, NotFound
 from backend.llm.client import LLMError, MissingKey
 from backend.orchestrator.machine import InvalidTransition
-from backend.routes import core, events, projects, steps
+from backend.routes import core, deck, events, projects, steps
 
 HOST = "127.0.0.1"  # never 0.0.0.0 (SECURITY.md section 8)
 PORT = 8000
@@ -51,7 +51,7 @@ def create_app() -> FastAPI:
     # Blocks DNS rebinding: a foreign page resolved to 127.0.0.1 still sends its own Host.
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=[HOST, "localhost"])
 
-    for router in (projects.router, steps.router, core.router, events.router):
+    for router in (projects.router, steps.router, deck.router, core.router, events.router):
         app.include_router(router)
 
     def error(status: int) -> Callable[[Request, Exception], Awaitable[Response]]:

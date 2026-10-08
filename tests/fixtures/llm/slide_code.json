@@ -1,0 +1,38 @@
+{
+ "title": "KNN recommender core",
+ "kicker": "RECOMMENDER",
+ "what": "Finds the five films a user's nearest neighbours liked most.",
+ "visual": {
+  "kind": "code",
+  "spec": {
+   "path": "step_1.py",
+   "lines": [
+    1,
+    1
+   ],
+   "highlight": [
+    1
+   ]
+  }
+ },
+ "decisions": [
+  {
+   "choice": "Cosine similarity",
+   "tradeoff": "ignores how many films people rated"
+  },
+  {
+   "choice": "k = 20",
+   "tradeoff": "less noise, slightly blander picks"
+  }
+ ],
+ "failure_and_scale": [
+  "New users get popular films until they rate some."
+ ],
+ "struggled": [
+  {
+   "question": "Why mean-centre before comparing users?",
+   "hints": 2
+  }
+ ],
+ "notes": "I subtract each user's average rating so harsh and generous raters line up."
+}

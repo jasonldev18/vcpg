@@ -3,7 +3,8 @@ from typing import Any, Literal
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from backend.orchestrator import build, runner
+from backend.orchestrator import build, project_end, runner
+from backend.orchestrator.machine import State
 
 router = APIRouter(prefix="/api/steps")
 
@@ -11,7 +12,9 @@ Text = Field(min_length=1, max_length=5_000)
 
 
 class Advance(BaseModel):
-    action: Literal["ready", "build", "retry", "stop", "pause", "resume", "ready_for_interview"]
+    action: Literal[
+        "ready", "build", "retry", "stop", "pause", "resume", "ready_for_interview", "slide"
+    ]
 
 
 class Question(BaseModel):
@@ -69,12 +72,16 @@ async def advance(step_id: int, body: Advance) -> dict[str, Any]:
             build.pause(step_id, paused=body.action == "pause")
         case "ready_for_interview":
             await runner.start_interview(step_id)
+        case "slide":  # retry writing the slide after the gate passed
+            await project_end.complete_step(step_id)
     return view(step_id)
 
 
 @router.post("/{step_id}/gate/answer")
 async def answer(step_id: int, body: Answer) -> dict[str, Any]:
     await runner.answer(step_id, body.answer)
+    if runner.step_view(step_id)["state"] == State.PASSED:
+        await project_end.complete_step(step_id)
     return view(step_id)
 
 

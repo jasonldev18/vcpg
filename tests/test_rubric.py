@@ -1,5 +1,6 @@
 from backend.gate.rubric import (
     Item,
+    hardest,
     hint_level,
     improved,
     merge,
@@ -7,6 +8,7 @@ from backend.gate.rubric import (
     passed,
     progress,
     quote_found,
+    replay,
 )
 from backend.schemas import GateGrade, ItemGrade, Status
 
@@ -77,3 +79,16 @@ def test_hint_ladder_climbs_and_stops_at_the_code_pointer() -> None:
 def test_progress_is_counts_only() -> None:
     items = merge(ITEMS, grade(("covered", QUOTE)), ANSWERS)
     assert progress(items) == {"covered": 1, "total": 3}
+
+
+def test_replay_recomputes_progress_and_finds_the_hardest_item() -> None:
+    texts = [i.text for i in ITEMS]
+    graded = [
+        (ANSWERS[0], grade(("covered", QUOTE))),
+        ("I am not sure.", grade(("covered", QUOTE), ("missing", None), ("covered", QUOTE))),
+        ("x", grade(("covered", QUOTE), ("covered", QUOTE))),
+    ]
+    states = replay(texts, graded)
+    assert [progress(s)["covered"] for s in states] == [1, 2, 3]
+    assert hardest(states, 3) == 1
+    assert hardest(replay(texts, graded[:1]), 3) == 1  # never covered: the first such item

@@ -77,3 +77,8 @@ def file_at(repo: Path, sha: str, path: str) -> str:
         return _git(repo, "show", f"{sha}:{path}")
     except GitError as e:
         raise NotFound(f"{path} is not in this commit.") from e
+
+
+def changed_files(repo: Path, sha: str) -> list[str]:
+    out = _git(repo, "show", "--name-only", "--diff-filter=AM", "--format=", sha)
+    return [line for line in out.splitlines() if line]

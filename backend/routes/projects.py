@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 from backend import db
 from backend.errors import Conflict
-from backend.orchestrator import build, planning, runner
+from backend.orchestrator import build, planning, project_end, runner
 from backend.schemas import Plan
 
 router = APIRouter(prefix="/api/projects")
@@ -55,6 +55,7 @@ def project_view(project_id: int) -> dict[str, Any]:
         "steps": [runner.step_view(i) | {"chat": [], "gate": []} for i in step_ids],
         "current_step_id": current,
         "replan": replan,
+        "finish": project_end.view(project_id),
     }
 
 
@@ -123,4 +124,38 @@ def approve_replan(project_id: int) -> dict[str, Any]:
 @router.delete("/{project_id}/replan")
 def discard_replan(project_id: int) -> dict[str, Any]:
     planning.discard_replan(project_id)
+    return project_view(project_id)
+
+
+class Answer(BaseModel):
+    answer: str = Field(min_length=1, max_length=5_000)
+
+
+@router.post("/{project_id}/final-review")
+async def final_review(project_id: int) -> dict[str, Any]:  # starts a task on the loop
+    project_end.start_final_review(project_id)
+    return project_view(project_id)
+
+
+@router.post("/{project_id}/retest/start")
+async def retest_start(project_id: int) -> dict[str, Any]:
+    await project_end.retest_start(project_id)
+    return project_view(project_id)
+
+
+@router.post("/{project_id}/retest/answer")
+async def retest_answer(project_id: int, body: Answer) -> dict[str, Any]:
+    await project_end.retest_answer(project_id, body.answer)
+    return project_view(project_id)
+
+
+@router.post("/{project_id}/deck/prepare")
+async def prepare_deck(project_id: int) -> dict[str, Any]:
+    await project_end.prepare_deck(project_id)
+    return project_view(project_id)
+
+
+@router.post("/{project_id}/deck/done")
+def deck_done(project_id: int) -> dict[str, Any]:
+    project_end.deck_done(project_id)
     return project_view(project_id)

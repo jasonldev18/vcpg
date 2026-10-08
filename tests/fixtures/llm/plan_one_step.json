@@ -1,0 +1,44 @@
+{
+ "questions": [],
+ "project_name": "Movie Recommender",
+ "one_liner": "Recommends films from MovieLens ratings.",
+ "stack": [
+  "Python",
+  "FastAPI",
+  "pandas"
+ ],
+ "steps": [
+  {
+   "title": "Ratings loader",
+   "component": "data",
+   "goal": "Load MovieLens ratings into a user-item matrix.",
+   "concepts": [
+    "sparse matrices",
+    "data cleaning"
+   ],
+   "files": [
+    "app/ratings.py"
+   ],
+   "acceptance": [
+    "Ratings loader has a passing test"
+   ],
+   "rubric": [
+    "Explains why the user-item matrix is sparse and why that matters for memory.",
+    "Explains how missing ratings differ from zero ratings.",
+    "Explains how the loader would be checked for duplicate or malformed rows."
+   ]
+  }
+ ],
+ "changes_from_spine": [
+  {
+   "step": "interface",
+   "change": "skipped",
+   "reason": "A CLI is enough for a first version."
+  },
+  {
+   "step": "mission",
+   "change": "merged",
+   "reason": "Folded into the ratings loader step."
+  }
+ ]
+}

@@ -56,6 +56,7 @@ def at_gate(api: TestClient, fake_llm: FakeLLM) -> dict[str, Any]:
     build(api, first)
     api.post(f"/api/steps/{first}/advance", json={"action": "ready_for_interview"})
     fake_llm.reply("grader", grade("covered", "covered", "covered"))
+    fake_llm.reply_fixture("slide_writer", "slide_step.json")
     api.post(f"/api/steps/{first}/gate/answer", json={"answer": ANSWER})
     fake_llm.reply("interviewer", "Why mean-centre?")
     build(api, second)
@@ -223,8 +224,11 @@ def test_passing_the_gate_unlocks_the_next_step(api: TestClient, fake_llm: FakeL
     fake_llm.reply("interviewer", "q")
     api.post(f"/api/steps/{step['id']}/gate/answer", json={"answer": ANSWER})
     fake_llm.reply("grader", grade("missing", "missing", "covered", "covered"))
+    fake_llm.reply_fixture("slide_writer", "slide_step.json")
     view = api.post(f"/api/steps/{step['id']}/gate/answer", json={"answer": ANSWER}).json()
     assert view["state"] == "slide_done" and view["progress"] == {"covered": 4, "total": 4}
+    sent = fake_llm.requests_for("slide_writer")[-1][0]["content"]
+    assert "[2 of 4 points covered]" in sent and "[4 of 4 points covered]" in sent
     project = api.get(f"/api/projects/{step['project_id']}").json()
     assert project["current_step_id"] == project["steps"][2]["id"]
 

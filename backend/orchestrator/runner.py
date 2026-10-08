@@ -1,7 +1,6 @@
 """Drives one step: teach → build → review → tour → gate (SPEC section 5).
 
-Building lives in build.py. Until slides exist (phase 4), a passed gate marks the slide done
-without writing one.
+Building lives in build.py; the slide and the end of the project live in project_end.py.
 """
 
 import json
@@ -347,12 +346,23 @@ async def answer(step_id: int, text: str) -> None:
         )
 
     if rubric.passed(after):
-        _advance(step_id, S.PASSED, S.SLIDE_DONE)  # slides arrive in phase 4
+        _advance(step_id, S.PASSED)  # the route writes the slide next (project_end)
     elif stuck:
         await reteach(step_id)
     else:
         _advance(step_id, S.INTERVIEWING)
         await _interviewer(step_id, "question")
+
+
+def graded_answers(conn: sqlite3.Connection, step_id: int) -> list[tuple[str, GateGrade]]:
+    return [
+        (a["content"], GateGrade.model_validate(json.loads(a["grader_json"])["grade"]))
+        for a in conn.execute(
+            "SELECT content, grader_json FROM attempts WHERE step_id = ? AND kind = 'answer'"
+            " ORDER BY id",
+            (step_id,),
+        )
+    ]
 
 
 def _since_last(attempts: list[sqlite3.Row], kind: str) -> list[sqlite3.Row]:

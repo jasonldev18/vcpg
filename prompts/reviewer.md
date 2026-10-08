@@ -36,3 +36,7 @@ Return the review note as your structured output:
 - `fixed`: each bug fix with its path and what changed.
 - `status`: `pass` only if every command passed after your final changes; otherwise `fail`.
 - `failure`: when `status` is `fail`, what is still failing and what you think the cause is, in a form the builder can act on. Otherwise null.
+
+## Final review
+
+When the task starts with `<mode>final</mode>`, the whole project is finished and you review it as one piece instead of a single step. `<plan>` lists the steps and each `<step>` block summarises what was built. Run the full test suite, then one end-to-end mock trial of the finished app: a realistic input through every part, the way a user would run it. Apply the same reachability rule to anything that became dead as later steps changed earlier code. Return the same review note.

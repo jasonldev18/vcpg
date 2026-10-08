@@ -1,0 +1,46 @@
+{
+ "title": "Retro",
+ "kicker": "RETROSPECTIVE",
+ "what": "Finds the five films a user's nearest neighbours liked most.",
+ "visual": {
+  "kind": "chart",
+  "spec": {
+   "type": "bar",
+   "series": [
+    {
+     "name": "precision@5",
+     "x": [
+      "pop",
+      "knn"
+     ],
+     "y": [
+      0.1,
+      0.2
+     ]
+    }
+   ],
+   "x_label": "model",
+   "y_label": "precision"
+  }
+ },
+ "decisions": [
+  {
+   "choice": "Cosine similarity",
+   "tradeoff": "ignores how many films people rated"
+  },
+  {
+   "choice": "k = 20",
+   "tradeoff": "less noise, slightly blander picks"
+  }
+ ],
+ "failure_and_scale": [
+  "New users get popular films until they rate some."
+ ],
+ "struggled": [
+  {
+   "question": "Why mean-centre before comparing users?",
+   "hints": 2
+  }
+ ],
+ "notes": "I subtract each user's average rating so harsh and generous raters line up."
+}
