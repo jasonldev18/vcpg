@@ -107,7 +107,7 @@ ItemGrade
 ```
 
 - **Rules:** grade only what the user wrote, not what they probably meant. `covered` needs a quote that states the idea correctly. Correct but shallow is `partial`. Wrong statements are `missing` even if they use the right words. Status never goes down across the conversation unless the user contradicts themselves.
-- **Code decides:** `gate/rubric.py` merges grades, checks every `evidence` quote appears verbatim in the user's messages (a quote that is not found downgrades the item to `missing`), and opens the gate when every item is `covered`.
+- **Code decides:** `gate/rubric.py` merges grades, checks every `evidence` quote appears verbatim in the user's messages, ignoring case, whitespace, curly quotes and surrounding punctuation (a quote that is not found downgrades the item to `missing`), and opens the gate when every item is `covered`.
 - **Calibration:** `calibration/gate/` holds 5 to 6 graded answers per rubric style (strong, shallow, wrong-but-confident, off-topic, partially right, copied jargon) with expected statuses. `pytest -m live calibration` must agree on at least 90% of items before a grader prompt change ships.
 
 ### Slide writer

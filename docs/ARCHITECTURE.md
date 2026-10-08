@@ -30,6 +30,8 @@ vcpg/
     orchestrator/
       machine.py         step states and allowed transitions
       runner.py          drives a step through teach → build → review → tour → gate → slide
+      planning.py        brief → questions → draft plan → edits → approve
+      context.py         tagged data blocks for agent prompts
       project_end.py     final review, re-test, deck, README, dossier
     llm/
       client.py          Messages API calls: call(agent, messages, schema=None)
@@ -56,6 +58,8 @@ vcpg/
       secrets_scan.py
       github.py          branches and pull requests
     db.py                connection and numbered migrations (stdlib sqlite3)
+    schemas.py           Pydantic models for structured agent outputs (Plan, GateGrade, ...)
+    errors.py            NotFound (404) and Conflict (409), mapped in app.py
     migrations/          NNN_name.sql files, applied in order; version kept in PRAGMA user_version
     secrets.py           keyring wrapper
     redact.py            log redaction filter (SECURITY.md section 2)
@@ -109,7 +113,7 @@ stateDiagram-v2
 
 | Table | Key columns |
 |---|---|
-| `projects` | id, name, brief, start_path (plan/idea/lesson), status, workspace_path, created_at, finished_at |
+| `projects` | id, name, brief, start_path (plan/idea/lesson), status, workspace_path, created_at, finished_at, plan_json (planner's latest draft, rubrics included, until approval) |
 | `steps` | id, project_id, position, title, component, goal, concepts (json), files (json), acceptance (json), state, build_note, review_note, commit_sha |
 | `rubric_items` | id, step_id, text, status (missing/partial/covered), evidence |
 | `attempts` | id, step_id, kind (answer/hint/reteach), content, grader_json, created_at |
@@ -230,10 +234,13 @@ async def run_agent(agent: str, task: str, cwd: Path, allowed: list[str], denied
 | Route | Purpose |
 |---|---|
 | `POST /api/projects` | create from plan, idea or lesson |
+| `GET /api/projects/current` · `GET /api/projects/{id}` | project with public plan draft and steps |
+| `POST /api/projects/{id}/plan/answers` · `/plan/revise` · `PUT /api/projects/{id}/plan` | answer planner questions, ask for changes, reorder/rename/drop steps |
 | `POST /api/projects/{id}/plan/approve` | lock plan, init workspace |
 | `POST /api/steps/{id}/advance` | user actions: ready, stop, retry, ready-for-interview |
 | `POST /api/steps/{id}/gate/answer` · `/hint` · `/reteach` | gate actions |
 | `POST /api/steps/{id}/ask` | tutor side chat |
+| `GET /api/steps/{id}` · `POST /api/steps/{id}/teach` | step view (progress as counts only) and the tutor's lesson |
 | `GET/POST /api/projects/{id}/deck` · `/deck/export` | deck and exports |
 | `GET/PUT /api/projects/{id}/readme` · `/readme/review` | README editor and coach |
 | `POST /api/ideas` · `POST /api/lessons` | discovery |

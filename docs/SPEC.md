@@ -93,8 +93,8 @@ The tutor walks the user through the actual committed diff, file by file, in rea
 - The user types answers. There is no voice input.
 - After each answer the grader scores every rubric item as `covered`, `partial` or `missing`, quoting the user's words as evidence. The gate state is computed in code from the grader's output; the grader does not decide pass or fail.
 - **Pass:** every rubric item is `covered` (across the whole gate conversation, not one answer).
-- **Hints:** after an answer that leaves items `partial` or `missing`, the user can ask for a hint. Hints come in order: a nudge, then a narrower question, then a worked pointer to the relevant code. Hints never state the answer.
-- **Re-teach:** after three answers in a row that cover no new rubric items, or whenever the user clicks *Teach me this again*, the tutor re-teaches the missing items with a new explanation and a fresh angle, then the interview resumes with new questions.
+- **Hints:** after an answer that leaves items `partial` or `missing`, the user can ask for a hint. Hints come in order: a nudge, then a narrower question, then a worked pointer to the relevant code; further hints stay at the code pointer. The ladder starts again after an answer that raises any item. Hints never state the answer.
+- **Re-teach:** after three answers in a row that raise no rubric item (counted since the last re-teach), or whenever the user clicks *Teach me this again*, the tutor re-teaches the missing items with a new explanation and a fresh angle, then the interview resumes with new questions.
 - There is no limit on attempts and no way to skip. The step stays locked until it passes.
 - The panel shows rubric progress as a count (for example *2 of 4 points covered*), not the items themselves.
 
