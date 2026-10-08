@@ -1,11 +1,14 @@
 import json
 
 import httpx2 as httpx
+import pytest
 
 from backend import secrets
 from backend.llm.proxy import KeyProxy
 
 REAL_KEY = "sk-ant-api03-real-key-in-keychain"
+
+pytestmark = pytest.mark.network  # local sockets or the embedding model download
 
 
 def upstream(seen: list[httpx.Request]) -> httpx.MockTransport:

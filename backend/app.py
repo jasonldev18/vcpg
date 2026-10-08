@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from hmac import compare_digest
@@ -9,10 +10,11 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 
 from backend import db, redact
+from backend.audit import runner as audit_runner
 from backend.errors import Conflict, NotFound
 from backend.llm.client import LLMError, MissingKey
 from backend.orchestrator.machine import InvalidTransition
-from backend.routes import archive, core, deck, discovery, events, projects, steps
+from backend.routes import archive, audit, core, deck, discovery, events, projects, steps
 
 HOST = "127.0.0.1"  # never 0.0.0.0 (SECURITY.md section 8)
 PORT = 8000
@@ -25,7 +27,9 @@ SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     redact.install()
     db.connect().close()  # apply migrations before the first request
+    scheduler = asyncio.create_task(audit_runner.scheduler())
     yield
+    scheduler.cancel()
 
 
 def create_app() -> FastAPI:
@@ -51,7 +55,7 @@ def create_app() -> FastAPI:
     # Blocks DNS rebinding: a foreign page resolved to 127.0.0.1 still sends its own Host.
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=[HOST, "localhost"])
 
-    routers = (projects, steps, deck, archive, discovery, core, events)
+    routers = (projects, steps, deck, archive, discovery, audit, core, events)
     for router in (r.router for r in routers):
         app.include_router(router)
     app.include_router(core.github_router)

@@ -6,6 +6,7 @@ import sqlite3
 from typing import Any
 
 from backend import db
+from backend.audit import runner as audit
 from backend.errors import Conflict
 from backend.llm import client
 from backend.llm.client import LLMError
@@ -131,6 +132,7 @@ async def finish(project_id: int) -> None:
     await write_dossier(project_id)
     with db.session() as conn:
         project_end._advance_stage(conn, project_id, "done")
+    audit.start("project", project_id)  # the quick audit of this project's calls
 
 
 def dossier_problems(text: str, sources: str) -> list[str]:

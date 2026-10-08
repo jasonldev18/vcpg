@@ -16,6 +16,8 @@ COSINE = (
     "In recommender systems it compares users by the direction of their rating vectors. " * 3
 )
 
+pytestmark = pytest.mark.network  # local sockets or the embedding model download
+
 
 def card(name: str, concepts: list[str]) -> dict[str, Any]:
     return {

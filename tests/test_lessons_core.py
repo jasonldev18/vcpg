@@ -75,6 +75,7 @@ def test_fetch_refuses_local_and_non_web_urls(url: str) -> None:
         sources.fetch(url)
 
 
+@pytest.mark.network  # downloads the embedding model on first use
 def test_retrieval_ranks_by_meaning_and_keeps_kinds_apart() -> None:
     sources.add("Cosine notes", COSINE, "cosine.md", "trusted", "user")
     sources.add("KNN notes", KNN, "knn.md", "trusted", "user")
