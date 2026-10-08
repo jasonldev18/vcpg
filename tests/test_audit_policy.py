@@ -37,7 +37,7 @@ def test_a_small_allowed_wording_change_that_passes_everything_is_merged() -> No
     ["prompts/grader.md", "backend/audit/policy.py", "docs/SECURITY.md", ".github/workflows/ci.yml",
      "calibration/gate/knn.yaml", "Makefile", "frontend/package-lock.json", "templates/rubric.md",
      "README.md", "templates/slides/../../prompts/x.md", "/templates/slides/x.md",
-     "templates/slides\..\..\prompts\x.md", "./templates/slides/x.md"],
+     r"templates\slides\..\..\prompts\x.md", "./templates/slides/x.md"],
 )  # fmt: skip
 def test_rules_1_and_2_paths_off_the_allowlist_or_blocked(path: str) -> None:
     [failure] = failures(replace(OK, files=[replace(WORDING, path=path)]))
