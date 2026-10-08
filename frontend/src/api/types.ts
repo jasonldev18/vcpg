@@ -84,6 +84,7 @@ export interface Project {
   plan: PlanView | null
   steps: Step[]
   current_step_id: number | null
+  finish: Finish | null
   replan: {
     old: { title: string; goal: string }[]
     new: { title: string; goal: string; concepts: string[]; component: string }[]
@@ -94,4 +95,67 @@ export interface Project {
 export interface KeyStatus {
   saved: boolean
   last4: string | null
+}
+
+export type Visual =
+  | {
+      kind: 'architecture'
+      spec: {
+        nodes: { id: string; label: string; group: string }[]
+        edges: { from: string; to: string; label: string }[]
+      }
+    }
+  | { kind: 'flow'; spec: { steps: string[] } }
+  | {
+      kind: 'chart'
+      spec: {
+        type: 'bar' | 'line' | 'scatter'
+        series: { name: string; x: (number | string)[]; y: number[] }[]
+        x_label: string
+        y_label: string
+      }
+    }
+  | { kind: 'code'; spec: { path: string; lines: [number, number]; highlight: number[] } }
+  | { kind: 'table'; spec: { columns: string[]; rows: string[][] } }
+
+export interface SlideData {
+  title: string
+  kicker: string
+  what: string
+  visual: Visual
+  decisions: { choice: string; tradeoff: string }[]
+  failure_and_scale: string[]
+  struggled: { question: string; hints: number }[]
+  notes: string
+}
+
+export interface DeckSlide {
+  id: number
+  kind: 'title' | 'overview' | 'step' | 'retrospective'
+  slide: SlideData
+  code: string[] | null
+}
+
+export interface DeckExport {
+  id: number
+  version: number
+  format: 'pptx' | 'pdf'
+  created_at: string
+}
+
+export interface Deck {
+  slides: DeckSlide[]
+  exports: DeckExport[]
+}
+
+export interface Finish {
+  stage: 'final_review' | 'retest' | 'deck' | 'readme' | 'done'
+  final_review: ReviewNote | null
+  final_review_status: { running: boolean; error: string | null }
+  retest: {
+    passed: number
+    total: number
+    current_step: string | null
+    messages: Message[]
+  } | null
 }

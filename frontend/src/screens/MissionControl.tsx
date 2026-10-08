@@ -5,7 +5,9 @@ import type { Project, Step } from '../api/types'
 import { type Events, useEvents } from '../api/useEvents'
 import { BlockedPanel, ReplanReview } from '../components/Blocked'
 import { BuildPanel } from '../components/BuildPanel'
+import { FinishPanel } from '../components/FinishPanel'
 import { TourPanel } from '../components/TourPanel'
+import { useAction } from '../components/useAction'
 import { Console } from '../components/Console'
 import { GatePanel } from '../components/GatePanel'
 import { PlanReview } from '../components/PlanReview'
@@ -46,6 +48,26 @@ function StepList({ steps, currentId }: { steps: Step[]; currentId: number | nul
   )
 }
 
+// The gate passed but writing the slide failed: let the user retry it.
+function PassedPanel({ step, onChange }: { step: Step; onChange: (s: Step) => void }) {
+  const { busy, error, run } = useAction()
+  const retry = () =>
+    run(() => api.post<Step>(`/api/steps/${step.id}/advance`, { action: 'slide' })).then(
+      (s) => s && onChange(s),
+    )
+  return (
+    <section className="panel stack">
+      <p className="kicker">Step {step.position + 1} · slide</p>
+      <h1>Gate passed</h1>
+      <p>The slide for this step could not be written yet.</p>
+      <button className="primary" disabled={busy} onClick={retry}>
+        {busy ? 'Writing the slide…' : 'Write the slide'}
+      </button>
+      {error && <p className="error">{error}</p>}
+    </section>
+  )
+}
+
 function CurrentPanel({
   step,
   events,
@@ -66,6 +88,7 @@ function CurrentPanel({
     return <TourPanel step={step} live={live.tutor} onChange={onChange} />
   if (step.state === 'blocked')
     return <BlockedPanel step={step} onStep={onChange} onProject={onProject} />
+  if (step.state === 'passed') return <PassedPanel step={step} onChange={onChange} />
   return <GatePanel step={step} live={live} onChange={onChange} />
 }
 
@@ -83,7 +106,7 @@ export function MissionControl() {
         .catch((e: Error) => setError(e.message)),
     [],
   )
-  useEffect(() => void load(), [load])
+  useEffect(() => void load(), [load, events.version]) // stages change in the background
 
   const currentId = project?.current_step_id ?? null
   useEffect(() => {
@@ -134,9 +157,16 @@ export function MissionControl() {
             onChange={onStep}
             onProject={setProject}
           />
+        ) : project.finish ? (
+          <FinishPanel
+            project={project}
+            finish={project.finish}
+            live={events.live}
+            onProject={setProject}
+          />
         ) : (
           <section className="panel">
-            <h1>{currentId === null ? 'Every step has passed its gate' : 'Loading…'}</h1>
+            <h1>Loading…</h1>
           </section>
         )}
       </div>

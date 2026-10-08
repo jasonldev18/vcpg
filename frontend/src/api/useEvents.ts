@@ -58,6 +58,11 @@ export function useEvents(projectId: number | null): Events {
       version: e.version + 1,
       lines: log(e, { id, agent: 'builder', text: `failed: ${d.error as string}` }),
     }))
+    on('project_stage', (e, d, id) => ({
+      ...e,
+      version: e.version + 1,
+      lines: log(e, { id, agent: 'orchestrator', text: `project → ${d.stage as string}` }),
+    }))
     on('build_stopped', (e, _d, id) => ({
       ...e,
       version: e.version + 1,

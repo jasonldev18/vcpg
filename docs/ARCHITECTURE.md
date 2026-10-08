@@ -34,6 +34,7 @@ vcpg/
       planning.py        brief → questions → draft plan → edits → approve
       context.py         tagged data blocks for agent prompts
       project_end.py     final review, re-test, deck, README, dossier
+      slides.py          slide writing, deck order, edits, regenerate, versioned exports
     llm/
       client.py          Messages API calls: call(agent, messages, schema=None)
       sdk.py             Agent SDK sessions: run_agent(agent, task, cwd, ...)
@@ -109,19 +110,19 @@ stateDiagram-v2
 
 - Transitions are defined in one table in `machine.py`; anything else raises. Agents never set state.
 - Review failures: `built → built` (builder retry once, with both notes), then the step is marked `blocked` with both notes until the user picks *Retry build* (`blocked → taught`) or *Edit plan* (the planner revises every unpassed step; on approval those steps are replaced).
-- A project is `planning → active → finishing → done`. `finishing` covers final review, re-test, deck and README.
+- A project is `planning → active → finishing → done`. `finishing` covers final review, re-test, deck and README; `projects.finish_stage` holds which (`final_review → retest → deck → readme → done`).
 - On restart, any step that was mid-run (`taught` with a running build, `built` with a running review) is resumed from its last committed state; partial agent runs are discarded.
 
 ## 4. Data model (SQLite)
 
 | Table | Key columns |
 |---|---|
-| `projects` | id, name, brief, start_path (plan/idea/lesson), status, workspace_path, created_at, finished_at, plan_json (planner's latest draft, rubrics included, until approval), replan_json (a revision of the unpassed steps awaiting approval) |
+| `projects` | id, name, brief, start_path (plan/idea/lesson), status, workspace_path, created_at, finished_at, plan_json (planner's latest draft, rubrics included, until approval), replan_json (a revision of the unpassed steps awaiting approval), finish_stage, final_review_json, retest_json |
 | `steps` | id, project_id, position, title, component, goal, concepts (json), files (json), acceptance (json), state, build_note (json), review_note (json), commit_sha, tour_json |
 | `rubric_items` | id, step_id, text, status (missing/partial/covered), evidence |
 | `attempts` | id, step_id, kind (answer/hint/reteach), content, grader_json, created_at |
 | `messages` | id, project_id, step_id, agent, role, content, created_at (tutor chat, tour Q&A, interviewer turns) |
-| `slides` | id, project_id, step_id (null for title/overview/retro), position, json, notes |
+| `slides` | id, project_id, step_id (null for title/overview/retro), kind, position, json, notes |
 | `deck_exports` | id, project_id, version, format (pptx/pdf), path, created_at |
 | `readmes` | id, project_id, template, content, review_json, ready |
 | `lessons` | id, concept, path_json, status |
@@ -225,9 +226,10 @@ async def run_agent(agent: str, task: str, cwd: Path, allowed: list[str], denied
 
 ## 10. Exports
 
-- `render.py` turns slide visuals into PNG: mermaid via the mermaid CLI (`mmdc`) or a headless browser, charts via matplotlib with the Solar palette.
+- `render.py` draws every visual kind (architecture, flow, chart, code, table) with matplotlib in the Solar palette, so exports need no browser or mermaid CLI. Code visuals use the file from the step's commit.
 - `pptx.py` builds 16:9 slides from slide JSON with fixed layouts per visual kind, Solar colours, fonts embedded as names with fallbacks (Oxanium → Arial, IBM Plex Sans → Calibri), and speaker notes.
-- `pdf.py` renders the same deck to PDF (via LibreOffice headless conversion of the pptx, or HTML to PDF with Playwright).
+- `pdf.py` renders each slide as a full page with the same matplotlib drawing code, one page per slide in deck order, so no LibreOffice is needed.
+- Exports are written to `~/.vcpg/exports/<project_id>/deck_v<n>.<format>`; each format counts its own versions.
 
 ## 11. Audit runner
 
@@ -249,7 +251,9 @@ async def run_agent(agent: str, task: str, cwd: Path, allowed: list[str], denied
 | `GET /api/steps/{id}` · `POST /api/steps/{id}/teach` | step view (progress as counts only) and the tutor's lesson |
 | `POST /api/steps/{id}/tour` · `GET /api/steps/{id}/file?path=` | code tour, and a toured file as it is in the step's commit |
 | `POST /api/projects/{id}/replan` · `/replan/approve` · `DELETE /replan` | Edit plan: propose, approve or discard a revision of the unpassed steps |
-| `GET/POST /api/projects/{id}/deck` · `/deck/export` | deck and exports |
+| `GET /api/projects/{id}/deck` · `POST /deck/order` · `/deck/export` | deck, reorder, export (pptx or pdf) |
+| `PUT /api/slides/{id}` · `POST /api/slides/{id}/regenerate` · `GET /api/exports/{id}/download` | inline edit, regenerate one slide, download a version |
+| `POST /api/projects/{id}/final-review` · `/retest/start` · `/retest/answer` · `/deck/prepare` · `/deck/done` | end-of-project stages |
 | `GET/PUT /api/projects/{id}/readme` · `/readme/review` | README editor and coach |
 | `POST /api/ideas` · `POST /api/lessons` | discovery |
 | `GET /api/archive` · `POST /api/archive/{id}/mock` | archive and mock interviews |

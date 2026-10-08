@@ -66,6 +66,7 @@ export function makeProject(overrides: Partial<Project> = {}): Project {
     steps: [makeStep()],
     current_step_id: 1,
     replan: null,
+    finish: null,
     ...overrides,
   }
 }

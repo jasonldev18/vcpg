@@ -129,6 +129,7 @@ Slide
 ```
 
 - **Rules:** every claim must be supported by the code or notes. Short phrases, not paragraphs. `visual.spec` follows the per-kind schema in DESIGN.md section 6.
+- **Wire format:** the model returns `visual` as `{kind, spec_json}` with the spec as JSON text, because one typed schema per visual kind compiles to a grammar the API rejects as too large. Code parses `spec_json` into the typed spec for its kind; a mismatch is a validation error and triggers the usual single retry.
 
 ## Helpers
 

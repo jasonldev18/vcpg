@@ -1,4 +1,5 @@
 import type { RouteObject } from 'react-router'
+import { DeckViewer } from './screens/DeckViewer'
 import { MissionControl } from './screens/MissionControl'
 import { Start } from './screens/Start'
 import { SCREENS } from './screens'
@@ -7,6 +8,7 @@ import { Shell } from './Shell'
 const BUILT: Record<string, React.ReactNode> = {
   '/': <MissionControl />,
   '/start': <Start />,
+  '/deck': <DeckViewer />,
 }
 
 export const routes: RouteObject[] = [

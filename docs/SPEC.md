@@ -111,7 +111,7 @@ The step is marked done, the next step unlocks, and mission control animates the
 After the last step passes:
 
 1. **Final review.** The reviewer runs the whole test suite and a full end-to-end mock trial of the finished app.
-2. **Re-test.** A short combined gate covering earlier steps: one question per step, focused on the items that needed hints. Same grading rules; a miss triggers a re-teach for that step only.
+2. **Re-test.** A short combined gate covering earlier steps: one question per step, on the rubric point that was covered last at that step's gate (the one that needed the most answers or hints). Same grading rules; a miss triggers a re-teach for that step only, then the question is asked again.
 3. **Deck** (section 7).
 4. **README** (section 8).
 5. **Dossier and archive** (section 10).
