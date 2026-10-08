@@ -9,7 +9,7 @@ export interface Screen {
 export const SCREENS: Screen[] = [
   { path: '/', title: 'Mission control' },
   { path: '/start', title: 'Start a project' },
-  { path: '/lesson', title: 'Concept lesson', phase: 6 },
+  { path: '/lesson', title: 'Concept lesson' },
   { path: '/squad', title: 'Squad loadout', phase: 8 },
   { path: '/audit', title: 'Audit bay', phase: 7 },
   { path: '/deck', title: 'Deck viewer' },

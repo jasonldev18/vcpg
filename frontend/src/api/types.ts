@@ -203,3 +203,74 @@ export interface MockInterview {
     practise: string[]
   } | null
 }
+
+export interface Idea {
+  name: string
+  line: string
+  pitch: string
+  difficulty: 'gentle' | 'medium' | 'stretch'
+  step_count: number
+  thumbnail: {
+    template: 'chat' | 'ranked' | 'cluster' | 'code_hits' | 'chart' | 'pipeline'
+    data_json: string
+  }
+  concepts: { name: string; familiarity: 'new' | 'basics' | 'used' }[]
+  architecture: string[]
+  questions: string[]
+}
+
+export interface IdeaBatch {
+  id: number
+  topic: string
+  cards: Idea[]
+}
+
+export interface LessonQuestion {
+  type: 'mc' | 'tf' | 'short' | 'code'
+  prompt: string
+  options: { text: string; correct: boolean; why: string }[]
+  answer: string
+  rubric: string[]
+  tests: string
+}
+
+export interface LessonSection {
+  kind: 'start_here' | 'see_it' | 'worked_example' | 'check_yourself' | 'your_turn' | 'recap'
+  paragraphs: { text: string; citations: string[] }[]
+  visual_json: string
+  code: string
+  questions: LessonQuestion[]
+}
+
+export interface LessonContent {
+  title: string
+  by_the_end: string[]
+  sections: LessonSection[]
+  community: { text: string; source_id: string }[]
+}
+
+export interface LessonPathView {
+  id: number
+  concept: string
+  status: string
+  return_idea_id: number | null
+  return_card: number | null
+  dropped_note: string
+  lessons: {
+    title: string
+    goal: string
+    key_terms: string[]
+    content: LessonContent | null
+    dropped: LessonSection['kind'][]
+    passages?: Record<string, { title: string; text: string }>
+  }[]
+}
+
+export interface SourceRow {
+  id: number
+  kind: 'trusted' | 'community'
+  title: string
+  url_or_path: string
+  added_by: string
+  passages: number
+}

@@ -17,12 +17,15 @@ async function errorDetail(res: Response, fallback: string): Promise<string> {
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  const raw = body instanceof Blob // file uploads go as the raw request body
+  const headers: Record<string, string> = {
+    'Content-Type': raw ? 'application/octet-stream' : 'application/json',
+  }
   if (method !== 'GET') headers[TOKEN_HEADER] = await sessionToken()
   const res = await fetch(API_BASE + path, {
     method,
     headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: raw ? body : body === undefined ? undefined : JSON.stringify(body),
   })
   if (!res.ok) throw new Error(await errorDetail(res, `${method} ${path} failed: ${res.status}`))
   return (await res.json()) as T
@@ -33,4 +36,5 @@ export const api = {
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
   put: <T>(path: string, body?: unknown) => request<T>('PUT', path, body),
   delete: <T>(path: string) => request<T>('DELETE', path),
+  upload: <T>(path: string, file: Blob) => request<T>('POST', path, file),
 }

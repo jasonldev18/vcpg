@@ -11,7 +11,12 @@ const renderAt = (path: string) =>
 
 describe('app shell', () => {
   it.each(SCREENS)('renders $title at $path', async ({ path, title }) => {
-    fakeApi({ 'GET /api/projects/current': null, 'GET /api/archive': [] })
+    fakeApi({
+      'GET /api/projects/current': null,
+      'GET /api/archive': [],
+      'GET /api/lessons': [],
+      'GET /api/sources': [],
+    })
     renderAt(path)
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument()
   })

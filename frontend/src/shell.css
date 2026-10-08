@@ -551,3 +551,221 @@ button.current {
   border-left: 2px solid var(--you);
   color: var(--you);
 }
+
+.paths {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.path-card {
+  text-align: left;
+  text-transform: none;
+  font: inherit;
+}
+
+.path-card.current,
+.chip.current {
+  border-color: var(--you);
+}
+
+.chips .chip {
+  text-transform: none;
+  font: 400 12px var(--font-mono);
+}
+
+.chip.new small {
+  color: var(--acc2);
+}
+
+.chip.basics small {
+  color: var(--acc3);
+}
+
+.chip.used small {
+  color: var(--pass);
+}
+
+.ideas {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.idea-head {
+  all: unset;
+  display: block;
+  cursor: pointer;
+  width: 100%;
+}
+
+.idea-head:focus-visible {
+  outline: 2px solid var(--you);
+}
+
+.th {
+  height: 90px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font: 400 11px var(--font-body);
+  overflow: hidden;
+}
+
+.th .bubble {
+  border-radius: 8px;
+  padding: 2px 8px;
+  max-width: 80%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.th .bubble.q {
+  align-self: flex-end;
+  background: rgba(92, 225, 230, 0.15);
+}
+
+.th .bubble.a {
+  background: rgba(255, 155, 61, 0.12);
+}
+
+.th .cite {
+  align-self: flex-start;
+  font: 400 10px var(--font-mono);
+  color: var(--you);
+  border: 1px solid var(--you);
+  border-radius: 999px;
+  padding: 0 6px;
+}
+
+.th .bar-row {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  gap: 6px;
+  align-items: center;
+}
+
+.th .bar {
+  height: 8px;
+  background: var(--acc);
+  border-radius: 4px;
+}
+
+.th-cluster circle {
+  fill: var(--acc);
+}
+
+.th-cluster .ring {
+  fill: none;
+  stroke: var(--acc3);
+  stroke-dasharray: 3 2;
+}
+
+.th-cluster text {
+  fill: var(--mute);
+  font-size: 7px;
+}
+
+.th .line {
+  height: 6px;
+  background: var(--dim);
+  border-radius: 3px;
+}
+
+.th .line.hit {
+  background: var(--acc3);
+}
+
+.th-chart {
+  flex-direction: row;
+  align-items: flex-end;
+  position: relative;
+}
+
+.th-chart .col {
+  flex: 1;
+  background: var(--acc);
+  border-radius: 2px 2px 0 0;
+}
+
+.th-chart .cite {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+}
+
+.th-pipeline,
+.arch-strip {
+  flex-direction: row;
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.th-pipeline .block,
+.arch-strip .block {
+  border: 1px solid var(--acc);
+  border-radius: 4px;
+  padding: 4px 6px;
+}
+
+.lesson-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr 300px;
+  gap: 20px;
+  align-items: start;
+}
+
+.lesson-rail ol {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lesson-rail button {
+  width: 100%;
+  text-align: left;
+  text-transform: none;
+  font: 500 13px var(--font-body);
+}
+
+.cite-chip {
+  font: 500 10px var(--font-mono);
+  padding: 0 6px;
+  border-radius: 999px;
+  border-color: var(--you);
+  color: var(--you);
+  vertical-align: super;
+}
+
+.question {
+  border-top: 1px solid rgba(255, 155, 61, 0.15);
+  padding-top: 10px;
+}
+
+.row.wrap {
+  flex-wrap: wrap;
+}
+
+button.right {
+  border-color: var(--pass);
+}
+
+button.wrong {
+  border-color: var(--acc2);
+}
+
+.code-input {
+  font: 400 13px/1.5 var(--font-mono);
+}
+
+.community {
+  border-style: dashed;
+}

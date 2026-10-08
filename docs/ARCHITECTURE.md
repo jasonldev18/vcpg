@@ -37,6 +37,7 @@ vcpg/
       slides.py          slide writing, deck order, edits, regenerate, versioned exports
       wrapup.py          README template, coach review, finish; dossier with code checks
       mock.py            timed mock interviews from the dossier, live scorecard
+      ideas.py           Give me ideas: cards, familiarity from history, Build this, Teach me first
     llm/
       client.py          Messages API calls: call(agent, messages, schema=None)
       sdk.py             Agent SDK sessions: run_agent(agent, task, cwd, ...)
@@ -51,6 +52,7 @@ vcpg/
       sources.py         ingest, split into passages, embed
       retrieve.py        top-k passages for a query
       validate.py        deterministic citation validator
+      builder.py         lesson paths: outline, lessons on demand, section regeneration, answers
     workspace/
       git.py             init, commit, diff for project repos
       sandbox.py         run commands in Docker or a venv
@@ -127,7 +129,8 @@ stateDiagram-v2
 | `slides` | id, project_id, step_id (null for title/overview/retro), kind, position, json, notes |
 | `deck_exports` | id, project_id, version, format (pptx/pdf), path, created_at |
 | `readmes` | id, project_id, template, content, review_json, ready |
-| `lessons` | id, concept, path_json, status |
+| `lessons` | id, concept, path_json (outline, built lessons, dropped sections, cited passages), status, return_idea_id, return_card |
+| `ideas` | id, topic, cards_json, created_at |
 | `sources` | id, kind (trusted/community), title, url_or_path, added_by |
 | `passages` | id, source_id, text, embedding (blob), position |
 | `dossiers` | id, project_id, markdown |
@@ -223,7 +226,10 @@ async def run_agent(agent: str, task: str, cwd: Path, allowed: list[str], denied
 ## 9. Lessons retrieval
 
 - Sources are split into passages of about 200 to 400 words at heading or paragraph boundaries, with stable IDs (`<source_id>:<position>`).
-- Embeddings use a small local model (`sentence-transformers/all-MiniLM-L6-v2`) so retrieval needs no extra API. Vectors live in the `passages` table; search is brute-force cosine over the topic's passages (small enough that an index is not needed).
+- Embeddings use a small local model (`sentence-transformers/all-MiniLM-L6-v2`), run through `fastembed` (ONNX) rather than the `sentence-transformers` package so no PyTorch install is needed; the model downloads once into `~/.vcpg/models/`. Vectors live in the `passages` table; search is brute-force cosine over stored passages (small enough that an index is not needed).
+- Seeded open sources live in `content/sources.yaml` (official documentation only, so they count as trusted). When a lesson finds no trusted passage scoring at least 0.3 for its topic, the seeds whose topics match the concept's words are fetched and stored.
+- URL sources are fetched over http(s) only, never to loopback, private or link-local addresses, without following redirects, and limited to 50 MB. Uploads (PDF, markdown, text) arrive as the raw request body and are parsed, never executed.
+- Lesson paths are written in two steps: an outline of 4 to 8 lessons, then each lesson when it is opened. Each section is validated; a rejected section is regenerated with the validator's errors up to twice, then dropped with a note. Code answers run their pytest tests in the sandbox under a reserved id (0) that no project uses.
 - The lesson builder receives only retrieved trusted passages (with IDs) and, separately labelled, community snippets. `validate.py` enforces the grounding rule in SPEC section 9.2.
 
 ## 10. Exports
@@ -257,7 +263,9 @@ async def run_agent(agent: str, task: str, cwd: Path, allowed: list[str], denied
 | `PUT /api/slides/{id}` · `POST /api/slides/{id}/regenerate` · `GET /api/exports/{id}/download` | inline edit, regenerate one slide, download a version |
 | `POST /api/projects/{id}/final-review` · `/retest/start` · `/retest/answer` · `/deck/prepare` · `/deck/done` | end-of-project stages |
 | `GET/PUT /api/projects/{id}/readme` · `POST /readme/template` · `/readme/review` · `/readme/finish` | README editor and coach; finish commits it, writes the dossier, archives the project |
-| `POST /api/ideas` · `POST /api/lessons` | discovery |
+| `POST /api/ideas` · `GET /api/ideas/{id}` · `POST /api/ideas/{id}/build` · `/teach` | Give me ideas, Build this, Teach me first |
+| `POST /api/lessons` · `GET /api/lessons[/{id}]` · `POST /api/lessons/{id}/build/{n}` · `/answer` | lesson paths, a lesson on demand, question answers |
+| `GET /api/sources` · `POST /api/sources/url` · `POST /api/sources/upload?filename=&kind=` | lesson sources |
 | `GET /api/archive` · `POST /api/archive/{id}/mock` · `GET /api/mock/{id}` · `POST /api/mock/{id}/answer` · `/end` | archive and mock interviews |
 | `GET/PUT /api/squad` | agent overrides |
 | `GET/PUT/DELETE /api/core/{anthropic,github}` | key status, save, test, remove (keys are never returned) |
