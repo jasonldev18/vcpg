@@ -16,12 +16,21 @@ describe('app shell', () => {
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument()
   })
 
-  it('navigates between screens from the nav', async () => {
+  it('navigates between built screens from the nav', async () => {
     fakeApi({ 'GET /api/projects/current': null })
     renderAt('/')
-    await userEvent.click(screen.getByRole('link', { name: 'Squad loadout' }))
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Squad loadout')
-    expect(screen.getByRole('link', { name: 'Squad loadout' })).toHaveClass('active')
+    await userEvent.click(screen.getByRole('link', { name: 'Start a project' }))
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Start a project')
+  })
+
+  it('greys out screens that are not built yet, with their phase', () => {
+    fakeApi({ 'GET /api/projects/current': null })
+    renderAt('/')
+    for (const s of SCREENS.filter((s) => s.phase)) {
+      expect(screen.queryByRole('link', { name: s.title })).toBeNull()
+      expect(screen.getByText(s.title)).toHaveAttribute('aria-disabled', 'true')
+      expect(screen.getByText(s.title)).toHaveTextContent(`Phase ${s.phase}`)
+    }
   })
 
   it('starts a project from a brief and returns to mission control', async () => {

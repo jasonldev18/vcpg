@@ -17,6 +17,7 @@ export const routes: RouteObject[] = [
       element: BUILT[s.path] ?? (
         <section className="panel">
           <h1>{s.title}</h1>
+          <p className="mute">This screen arrives in phase {s.phase}.</p>
         </section>
       ),
     })),

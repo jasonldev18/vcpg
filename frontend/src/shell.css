@@ -262,3 +262,13 @@ input:focus {
 .light.off {
   background: var(--acc2);
 }
+
+.nav-soon {
+  color: var(--dim);
+  cursor: default;
+}
+
+.nav-soon small {
+  font: 400 10px var(--font-mono);
+  margin-left: 4px;
+}

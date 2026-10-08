@@ -10,11 +10,17 @@ export function Shell() {
       <header className="shell-header">
         <span className="brand shell-logo">VCPG</span>
         <nav>
-          {SCREENS.map((s) => (
-            <NavLink key={s.path} to={s.path} end>
-              {s.title}
-            </NavLink>
-          ))}
+          {SCREENS.map((s) =>
+            s.phase ? (
+              <span key={s.path} className="nav-soon" aria-disabled="true">
+                {s.title} <small>Phase {s.phase}</small>
+              </span>
+            ) : (
+              <NavLink key={s.path} to={s.path} end>
+                {s.title}
+              </NavLink>
+            ),
+          )}
         </nav>
         <button className="core-button" onClick={() => setCoreOpen(true)}>
           Core access
