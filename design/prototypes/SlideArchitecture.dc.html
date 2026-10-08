@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Deck slide: architecture diagram</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+body{margin:0}
+a{color:#FF9B3D}a:hover{color:#FFD27A}
+.sa{--acc:#FF9B3D;--acc2:#FF4D5E;--acc3:#FFD27A;--mute:#BFA58F}
+.sa .disp{font-family:'Oxanium',sans-serif;letter-spacing:.1em;text-transform:uppercase}
+.sa .mono{font-family:'IBM Plex Mono',monospace}
+.sa .box{position:absolute;width:170px;height:76px;box-sizing:border-box;border:1px solid rgba(255,155,61,.5);background:linear-gradient(160deg,rgba(255,155,61,.16),rgba(255,77,94,.06));display:flex;flex-direction:column;justify-content:center;gap:4px;padding:0 16px}
+.sa .box.hot{border-color:#FF9B3D;box-shadow:0 0 28px -6px #FF9B3D;animation:sa-hot 2.4s ease-in-out infinite}
+.sa .wire{position:absolute;background:linear-gradient(90deg,#FF9B3D,#FF4D5E)}
+.sa .wire.h{height:2px}.sa .wire.v{width:2px;background:linear-gradient(180deg,#FF4D5E,#FFD27A)}
+.sa .pk{position:absolute;width:8px;height:8px;background:#fff;box-shadow:0 0 10px #FF9B3D}
+.sa .wire.h .pk{top:-3px;animation:sa-x 1.6s linear infinite}
+.sa .wire.v .pk{left:-3px;animation:sa-y 1.6s linear infinite}
+.sa .pk.d{animation-delay:.8s}
+.sa .seg{height:100%;transform-origin:0 50%;animation:sa-grow 1.2s cubic-bezier(.2,.8,.2,1) both}
+@keyframes sa-x{from{left:0;opacity:0}15%{opacity:1}85%{opacity:1}to{left:100%;opacity:0}}
+@keyframes sa-y{from{top:0;opacity:0}15%{opacity:1}85%{opacity:1}to{top:100%;opacity:0}}
+@keyframes sa-hot{50%{box-shadow:0 0 44px -4px #FF9B3D}}
+@keyframes sa-grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){.sa *{animation:none!important}}
+</style>
+</helmet>
+<div class="sa" style="position: relative; width: 1280px; height: 720px; box-sizing: border-box; padding: 48px 56px 40px; background: radial-gradient(900px circle at 78% 30%, rgba(255,77,94,.20), transparent 60%), radial-gradient(700px circle at 10% 100%, rgba(255,210,122,.14), transparent 60%), #0D0A08; color: #F7EBDD; font-family: 'IBM Plex Sans', sans-serif; display: flex; flex-direction: column; gap: 24px; overflow: hidden">
+
+<div style="position: absolute; left: 20px; top: 20px; width: 34px; height: 34px; border-left: 2px solid #FF9B3D; border-top: 2px solid #FF9B3D"></div>
+<div style="position: absolute; right: 20px; bottom: 20px; width: 34px; height: 34px; border-right: 2px solid #FFD27A; border-bottom: 2px solid #FFD27A"></div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div class="mono" style="font-size: 16px; color: #FF9B3D; letter-spacing: .1em">02 / ARCHITECTURE</div>
+<h1 style="margin: 0; font-family: 'Oxanium', sans-serif; font-size: 44px; font-weight: 600; line-height: 1.1">How a request becomes a recommendation</h1>
+</div>
+
+<div style="display: flex; gap: 40px; flex: 1; min-height: 0">
+
+<div style="width: 400px; display: flex; flex-direction: column; gap: 18px">
+<div style="font-size: 19px; line-height: 1.45">The browser asks the API for picks. The API hands the user's rating vector to the KNN core, which scans an in-memory ratings matrix loaded from SQLite at startup.</div>
+<div class="disp" style="font-size: 14px; font-weight: 600; color: #FF9B3D">Decisions I can defend</div>
+<div style="display: flex; flex-direction: column; gap: 12px; font-size: 17px; line-height: 1.4">
+<div style="display: flex; gap: 12px"><span class="mono" style="color: #FFD27A">01</span><span>Matrix lives in memory: the scan is the hot path, so no query per request.</span></div>
+<div style="display: flex; gap: 12px"><span class="mono" style="color: #FFD27A">02</span><span>SQLite over Postgres: one file, one user, zero ops.</span></div>
+<div style="display: flex; gap: 12px"><span class="mono" style="color: #FFD27A">03</span><span>KNN core has no web imports, so it tests without a server.</span></div>
+</div>
+</div>
+
+<div style="flex: 1; display: flex; flex-direction: column; gap: 22px; min-width: 0">
+<div style="position: relative; width: 724px; height: 290px">
+<div class="box" style="left: 0; top: 24px"><span class="disp" style="font-size: 15px; font-weight: 600">Browser UI</span><span class="mono" style="font-size: 13px; color: #BFA58F">React</span></div>
+<div class="box" style="left: 277px; top: 24px"><span class="disp" style="font-size: 15px; font-weight: 600">API</span><span class="mono" style="font-size: 13px; color: #BFA58F">FastAPI</span></div>
+<div class="box hot" style="left: 554px; top: 24px"><span class="disp" style="font-size: 15px; font-weight: 600">KNN core</span><span class="mono" style="font-size: 13px; color: #BFA58F">NumPy</span></div>
+<div class="box" style="left: 277px; top: 204px"><span class="disp" style="font-size: 15px; font-weight: 600">SQLite</span><span class="mono" style="font-size: 13px; color: #BFA58F">ratings, films</span></div>
+<div class="box" style="left: 554px; top: 204px"><span class="disp" style="font-size: 15px; font-weight: 600">Ratings matrix</span><span class="mono" style="font-size: 13px; color: #BFA58F">in memory</span></div>
+
+<div class="wire h" style="left: 170px; top: 61px; width: 107px"><div class="pk"></div><div class="pk d"></div></div>
+<div class="wire h" style="left: 447px; top: 61px; width: 107px"><div class="pk"></div><div class="pk d"></div></div>
+<div class="wire v" style="left: 361px; top: 100px; height: 104px"><div class="pk"></div></div>
+<div class="wire v" style="left: 638px; top: 100px; height: 104px"><div class="pk d"></div></div>
+<div class="wire h" style="left: 447px; top: 241px; width: 107px; opacity: .55"><div class="pk"></div></div>
+
+<div class="mono" style="position: absolute; left: 170px; top: 0; width: 107px; text-align: center; font-size: 13px; color: #BFA58F">POST</div>
+<div class="mono" style="position: absolute; left: 447px; top: 0; width: 107px; text-align: center; font-size: 13px; color: #BFA58F">vector</div>
+<div class="mono" style="position: absolute; left: 372px; top: 142px; font-size: 13px; color: #BFA58F">history</div>
+<div class="mono" style="position: absolute; left: 649px; top: 142px; font-size: 13px; color: #BFA58F">scan</div>
+<div class="mono" style="position: absolute; left: 447px; top: 252px; width: 107px; text-align: center; font-size: 13px; color: #BFA58F">at startup</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px; width: 724px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<span class="disp" style="font-size: 14px; font-weight: 600; color: #FF9B3D">Where one request spends its time</span>
+<span class="mono" style="font-size: 14px; color: #BFA58F">82 ms total</span>
+</div>
+<div style="display: flex; gap: 3px; height: 30px">
+<div style="flex: 4"><div class="seg" style="background: #FFD27A"></div></div>
+<div style="flex: 11"><div class="seg" style="background: #FF4D5E; animation-delay: .15s"></div></div>
+<div style="flex: 58"><div class="seg" style="background: linear-gradient(90deg, #FF9B3D, #FFC27A); animation-delay: .3s"></div></div>
+<div style="flex: 9"><div class="seg" style="background: #8A7260; animation-delay: .45s"></div></div>
+</div>
+<div class="mono" style="display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 14px; color: #F7EBDD">
+<span><span style="color: #FFD27A">■</span> parse 4</span>
+<span><span style="color: #FF4D5E">■</span> load vector 11</span>
+<span><span style="color: #FF9B3D">■</span> KNN scan 58</span>
+<span><span style="color: #8A7260">■</span> rank and reply 9</span>
+</div>
+</div>
+</div>
+
+</div>
+
+<div class="mono" style="display: flex; justify-content: space-between; font-size: 14px; color: #BFA58F">
+<span>VCPG / Movie recommender / interview deck / sample data</span>
+<span>02 of 08</span>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

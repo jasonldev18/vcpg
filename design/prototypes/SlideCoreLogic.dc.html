@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Deck slide: core logic graphs</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+body{margin:0}
+a{color:#FF9B3D}a:hover{color:#FFD27A}
+.sb .disp{font-family:'Oxanium',sans-serif;letter-spacing:.1em;text-transform:uppercase}
+.sb .mono{font-family:'IBM Plex Mono',monospace}
+.sb .card{position:relative;border:1px solid rgba(255,155,61,.35);background:linear-gradient(160deg,rgba(255,155,61,.12),rgba(255,77,94,.04) 60%,rgba(255,210,122,.05))}
+</style>
+</helmet>
+<div class="sb" style="position: relative; width: 1280px; height: 720px; box-sizing: border-box; padding: 48px 56px 40px; background: radial-gradient(800px circle at 85% 15%, rgba(255,77,94,.20), transparent 60%), radial-gradient(800px circle at 20% 110%, rgba(255,210,122,.14), transparent 60%), #0D0A08; color: #F7EBDD; font-family: 'IBM Plex Sans', sans-serif; display: flex; flex-direction: column; gap: 22px; overflow: hidden">
+
+<div style="position: absolute; left: 0; top: 0; width: 100%; height: 4px; background: linear-gradient(90deg, #FF9B3D, #FF4D5E, #FFD27A)"></div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div class="mono" style="font-size: 16px; color: #FFD27A; letter-spacing: .1em">03 / CORE LOGIC</div>
+<h1 style="margin: 0; font-family: 'Oxanium', sans-serif; font-size: 44px; font-weight: 600; line-height: 1.1">KNN: recommend from your nearest neighbors</h1>
+</div>
+
+<div style="display: flex; gap: 36px; flex: 1; min-height: 0">
+
+<div style="width: 400px; display: flex; flex-direction: column; gap: 16px">
+<div style="font-size: 19px; line-height: 1.45">Each dot is a user, placed by taste. We find the 20 closest to you by cosine distance and rank the films they loved that you have not seen.</div>
+<div class="disp" style="font-size: 14px; font-weight: 600; color: #FF9B3D">Decisions and trade-offs</div>
+<div style="display: flex; flex-direction: column; gap: 10px; font-size: 17px; line-height: 1.4">
+<div style="display: flex; gap: 12px"><span class="mono" style="color: #FFD27A">01</span><span>Cosine, not Euclidean: matches taste, ignores how harshly someone rates.</span></div>
+<div style="display: flex; gap: 12px"><span class="mono" style="color: #FFD27A">02</span><span>k = 20: quality peaks there, then far neighbors add noise.</span></div>
+<div style="display: flex; gap: 12px"><span class="mono" style="color: #FFD27A">03</span><span>argpartition, not sort: top k in O(n).</span></div>
+</div>
+<div class="card" style="padding: 14px 16px; border-color: #5CE1E6; background: rgba(92,225,230,.08); display: flex; flex-direction: column; gap: 6px">
+<span class="disp" style="font-size: 13px; font-weight: 600; color: #5CE1E6">How it fails</span>
+<span style="font-size: 16px; line-height: 1.4">Cold start: a new user has a zero vector, so we fall back to most-popular.</span>
+</div>
+</div>
+
+<div style="flex: 1; display: flex; flex-direction: column; gap: 16px; min-width: 0">
+<div class="card" style="padding: 14px 16px 10px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<span class="disp" style="font-size: 14px; font-weight: 600; color: #FF9B3D">Taste space</span>
+<span class="mono" style="font-size: 14px; color: #BFA58F"><span style="color: #FF4D5E">◆</span> you  <span style="color: #FFD27A">●</span> 20 nearest  <span style="color: #8A7260">●</span> everyone else</span>
+</div>
+<canvas ref="{{ setA }}" role="img" aria-label="Scatter plot of users with the 20 nearest neighbors linked to you" style="width: 716px; height: 248px; display: block"></canvas>
+</div>
+<div class="card" style="padding: 14px 16px 10px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<span class="disp" style="font-size: 14px; font-weight: 600; color: #FF9B3D">Precision at 10 as k grows</span>
+<span class="mono" style="font-size: 14px; color: #BFA58F">peak 0.28 at k = 20</span>
+</div>
+<canvas ref="{{ setB }}" role="img" aria-label="Line chart: precision at 10 rises to a peak at k equals 20, then declines" style="width: 716px; height: 120px; display: block"></canvas>
+</div>
+</div>
+
+</div>
+
+<div class="mono" style="display: flex; justify-content: space-between; font-size: 14px; color: #BFA58F">
+<span>VCPG / Movie recommender / interview deck / sample data</span>
+<span>03 of 08</span>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {
+setA = (el) => { this.a = el; };
+setB = (el) => { this.b = el; };
+
+fit(c, w, h) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
+  const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  return g;
+}
+
+componentDidMount() {
+  let s = 11;
+  const rnd = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+  const centers = [[0.2, 0.3], [0.45, 0.55], [0.75, 0.3], [0.8, 0.75], [0.25, 0.8]];
+  this.pts = [];
+  for (let i = 0; i < 130; i++) {
+    const c = centers[i % 5], sp = i % 5 === 1 ? 0.3 : 0.24;
+    this.pts.push({ x: c[0] + (rnd() + rnd() + rnd() - 1.5) * sp, y: c[1] + (rnd() + rnd() + rnd() - 1.5) * sp, ph: rnd() * 6.28 });
+  }
+  this.me = { x: 0.47, y: 0.52 };
+  this.pts.forEach((p) => { p.d = Math.sqrt((p.x - this.me.x) * (p.x - this.me.x) * 4.6 + (p.y - this.me.y) * (p.y - this.me.y)); });
+  const sorted = this.pts.slice().sort((p, q) => p.d - q.d);
+  sorted.forEach((p, i) => { p.rank = i; });
+  this.t0 = performance.now();
+  this.still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  this.raf = requestAnimationFrame(this.frame);
+}
+componentWillUnmount() { cancelAnimationFrame(this.raf); }
+
+frame = (now) => {
+  this.raf = requestAnimationFrame(this.frame);
+  const t = this.still ? 99999 : now - this.t0;
+  if (this.a) this.scatter(t);
+  if (this.b) this.curve(t);
+};
+
+scatter(t) {
+  const W = 716, H = 248, g = this.fit(this.a, W, H), TAU = Math.PI * 2;
+  const X = (v) => 16 + v * (W - 32), Y = (v) => 12 + v * (H - 24);
+  g.lineWidth = 1; g.strokeStyle = 'rgba(255,155,61,0.10)';
+  for (let i = 1; i < 8; i++) { g.beginPath(); g.moveTo(i * W / 8, 0); g.lineTo(i * W / 8, H); g.stroke(); }
+  for (let i = 1; i < 4; i++) { g.beginPath(); g.moveTo(0, i * H / 4); g.lineTo(W, i * H / 4); g.stroke(); }
+  const mx = X(this.me.x), my = Y(this.me.y), K = 20;
+  g.globalCompositeOperation = 'lighter';
+  this.pts.forEach((p) => {
+    const px = X(p.x), py = Y(p.y);
+    if (px < 4 || px > W - 4 || py < 4 || py > H - 4) return;
+    if (p.rank < K) {
+      const show = Math.max(0, Math.min(1, (t - 300 - p.rank * 90) / 400));
+      if (show > 0) {
+        const lg = g.createLinearGradient(mx, my, px, py);
+        lg.addColorStop(0, 'rgba(255,77,94,' + (0.8 * show).toFixed(3) + ')'); lg.addColorStop(1, 'rgba(255,210,122,' + (0.8 * show).toFixed(3) + ')');
+        g.strokeStyle = lg; g.lineWidth = 1.4;
+        g.beginPath(); g.moveTo(mx, my); g.lineTo(mx + (px - mx) * show, my + (py - my) * show); g.stroke();
+        const u = (t / 1600 + p.rank * 0.13) % 1;
+        g.fillStyle = 'rgba(255,255,255,' + (0.9 * show).toFixed(3) + ')';
+        g.fillRect(mx + (px - mx) * u - 1.5, my + (py - my) * u - 1.5, 3, 3);
+      }
+      g.shadowColor = '#FFD27A'; g.shadowBlur = 12;
+      g.fillStyle = 'rgba(255,210,122,' + (0.45 + 0.55 * show).toFixed(3) + ')';
+      g.beginPath(); g.arc(px, py, 4.5 + show * 1.5, 0, TAU); g.fill();
+      g.shadowBlur = 0;
+    } else {
+      g.fillStyle = 'rgba(138,114,96,' + (0.5 + 0.2 * Math.sin(t / 700 + p.ph)).toFixed(3) + ')';
+      g.beginPath(); g.arc(px, py, 3, 0, TAU); g.fill();
+    }
+  });
+  for (let k = 0; k < 2; k++) {
+    const pr = (t / 2200 + k / 2) % 1;
+    g.strokeStyle = 'rgba(255,77,94,' + ((1 - pr) * 0.7).toFixed(3) + ')'; g.lineWidth = 1.5;
+    g.beginPath(); g.ellipse(mx, my, 12 + pr * 86, 12 + pr * 70, 0, 0, TAU); g.stroke();
+  }
+  g.shadowColor = '#FF4D5E'; g.shadowBlur = 18; g.fillStyle = '#FF4D5E';
+  g.beginPath(); g.moveTo(mx, my - 10); g.lineTo(mx + 10, my); g.lineTo(mx, my + 10); g.lineTo(mx - 10, my); g.closePath(); g.fill();
+  g.shadowBlur = 0; g.fillStyle = '#FFFFFF';
+  g.beginPath(); g.moveTo(mx, my - 4); g.lineTo(mx + 4, my); g.lineTo(mx, my + 4); g.lineTo(mx - 4, my); g.closePath(); g.fill();
+  g.globalCompositeOperation = 'source-over';
+}
+
+curve(t) {
+  const W = 716, H = 120, g = this.fit(this.b, W, H), L = 44, R = 12, T = 10, B = 26;
+  const f = (k) => 0.12 + 0.2 * (1 - Math.exp(-k / 7)) - 0.0016 * k;
+  const X = (k) => L + ((k - 1) / 49) * (W - L - R), Y = (v) => T + (1 - (v - 0.1) / 0.2) * (H - T - B);
+  g.font = '13px "IBM Plex Mono", monospace'; g.fillStyle = '#BFA58F'; g.lineWidth = 1;
+  [0.1, 0.2, 0.3].forEach((v) => {
+    g.strokeStyle = 'rgba(255,155,61,0.16)'; g.beginPath(); g.moveTo(L, Y(v)); g.lineTo(W - R, Y(v)); g.stroke();
+    g.textAlign = 'right'; g.fillText(v.toFixed(1), L - 8, Y(v) + 4);
+  });
+  g.textAlign = 'center';
+  [1, 10, 20, 30, 40, 50].forEach((k) => g.fillText('k=' + k, X(k), H - 6));
+  const prog = Math.max(0, Math.min(1, (t - 400) / 1800)), kEnd = 1 + 49 * (1 - Math.pow(1 - prog, 3));
+  const lg = g.createLinearGradient(L, 0, W - R, 0);
+  lg.addColorStop(0, '#FF9B3D'); lg.addColorStop(0.45, '#FF4D5E'); lg.addColorStop(1, '#FFD27A');
+  g.beginPath(); g.moveTo(X(1), Y(f(1)));
+  for (let k = 1; k <= kEnd; k += 0.5) g.lineTo(X(k), Y(f(k)));
+  g.lineTo(X(kEnd), Y(f(kEnd)));
+  g.strokeStyle = lg; g.lineWidth = 3; g.lineJoin = 'round'; g.shadowColor = '#FF4D5E'; g.shadowBlur = 12; g.stroke(); g.shadowBlur = 0;
+  g.lineTo(X(kEnd), H - B); g.lineTo(X(1), H - B); g.closePath();
+  const ag = g.createLinearGradient(0, T, 0, H - B);
+  ag.addColorStop(0, 'rgba(255,77,94,0.30)'); ag.addColorStop(1, 'rgba(255,77,94,0)');
+  g.fillStyle = ag; g.fill();
+  if (kEnd >= 20) {
+    const px = X(20), py = Y(f(20)), pulse = 0.5 + 0.5 * Math.sin(t / 380);
+    g.setLineDash([4, 5]); g.strokeStyle = 'rgba(92,225,230,0.8)'; g.lineWidth = 1.5;
+    g.beginPath(); g.moveTo(px, py); g.lineTo(px, H - B); g.stroke(); g.setLineDash([]);
+    g.strokeStyle = 'rgba(92,225,230,' + (0.9 - pulse * 0.6).toFixed(3) + ')';
+    g.beginPath(); g.arc(px, py, 8 + pulse * 7, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = '#5CE1E6'; g.beginPath(); g.arc(px, py, 5.5, 0, Math.PI * 2); g.fill();
+  }
+  if (prog >= 1) {
+    const k = 1 + 49 * ((t / 4200) % 1);
+    g.fillStyle = '#FFFFFF'; g.fillRect(X(k) - 2, Y(f(k)) - 2, 4, 4);
+  }
+}
+
+renderVals() {
+  return { setA: this.setA, setB: this.setB };
+}
+}
+</script>
+</body>
+</html>

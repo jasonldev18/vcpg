@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VCPG: README coach</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=Silkscreen:wght@400;700&display=swap">
+<style>
+body{margin:0;background:#0D0A08}
+a{color:#FF9B3D}a:hover{color:#FFD27A}
+.rc{font-family:'IBM Plex Sans',sans-serif;color:#F7EBDD}
+.disp{font-family:'Oxanium',sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.pix{font-family:'Silkscreen',monospace;letter-spacing:.04em}
+.mono{font-family:'IBM Plex Mono',monospace}
+.panel{position:relative;background:linear-gradient(160deg,rgba(255,155,61,.08),transparent 45%),rgba(30,20,14,.85);border:1px solid rgba(255,155,61,.3)}
+.panel::before{content:"";position:absolute;left:-1px;top:-1px;height:2px;width:55%;background:linear-gradient(90deg,#FF9B3D,#FF4D5E,#FFD27A,transparent)}
+.btn{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;background:transparent;border:1px solid #FF9B3D;color:#FF9B3D;cursor:pointer;font:600 12px 'Oxanium',sans-serif;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;box-sizing:border-box}
+.btn:hover{background:rgba(255,155,61,.16);color:#FF9B3D}
+.btn.go{background:linear-gradient(90deg,#FF9B3D,#FFD27A);color:#1A0E06;border-color:transparent}
+.step{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid rgba(255,155,61,.2);font:600 12px 'Oxanium',sans-serif;letter-spacing:.1em;text-transform:uppercase}
+textarea.ed{width:100%;box-sizing:border-box;min-height:720px;padding:18px;background:#0A0705;border:1px solid rgba(255,210,122,.25);color:#FFE9C7;font:14px/1.75 'IBM Plex Mono',monospace;resize:vertical}
+textarea.ed:focus{outline:none;border-color:#FFD27A}
+.crit{padding:14px 16px;border:1px solid;display:flex;flex-direction:column;gap:6px}
+@keyframes scanln{from{transform:translateY(0)}to{transform:translateY(700px)}}
+.scan{position:absolute;left:0;right:0;top:44px;height:2px;background:linear-gradient(90deg,transparent,#FFD27A,transparent);opacity:.6;animation:scanln 2.4s linear infinite}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</helmet>
+<div class="rc" style="min-height: 100vh; box-sizing: border-box; padding: 24px; background: radial-gradient(900px circle at 85% 10%, rgba(255,77,94,.12), transparent 60%), #0D0A08; display: flex; flex-direction: column; gap: 18px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px">
+<span class="pix" style="font-size: 22px; font-weight: 700; color: #FFD27A">README COACH</span>
+<span class="disp" style="font-size: 13px; color: #BFA58F">Movie recommender</span>
+<div style="flex: 1 1 0"></div>
+<a class="btn" href="Deck.dc.html">Deck</a>
+<a class="btn" href="MissionControl.dc.html">Mission control</a>
+</header>
+
+<nav aria-label="Project wrap-up" style="display: flex; flex-wrap: wrap; gap: 8px">
+<span class="step" style="color: #9FD8AE">6 of 6 steps passed</span>
+<span class="step" style="color: #9FD8AE">Deck exported</span>
+<span class="step" style="color: #1A0E06; background: linear-gradient(90deg, #FF9B3D, #FFD27A); border-color: transparent">README / you write it</span>
+<span class="step" style="color: #BFA58F">Mock interview / unlocks next</span>
+</nav>
+
+<div style="display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start">
+
+<section class="panel" style="flex: 3 1 640px; min-width: 0; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+<span class="mono" style="font-size: 13px; padding: 6px 12px; background: #0A0705; border: 1px solid rgba(255,210,122,.3); border-bottom-color: #0A0705; color: #FFD27A">README.md</span>
+<span style="font-size: 14px; color: #BFA58F">The template is generated from your project. Replace every comment with your own words. Diagrams and tables are filled in for you.</span>
+</div>
+<label for="ed" class="disp" style="font-size: 12px; color: #FF9B3D">Your README</label>
+<textarea id="ed" class="ed" value="{{ text }}" onChange="{{ setText }}" spellcheck="false"></textarea>
+<div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center">
+<button class="btn go" onClick="{{ review }}">Ask the coach to review</button>
+<button class="btn">Open preview</button>
+<span class="mono" style="font-size: 12px; color: #BFA58F">{{ remaining }}</span>
+</div>
+</section>
+
+<section class="panel" style="flex: 2 1 420px; min-width: 0; padding: 20px; display: flex; flex-direction: column; gap: 14px; overflow: hidden">
+<sc-if value="{{ reviewing }}" hint-placeholder-val="{{ false }}"><div class="scan"></div></sc-if>
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 10px">
+<h2 class="disp" style="margin: 0; font-size: 14px; font-weight: 700; color: #FF9B3D">Coach review</h2>
+<span class="mono" style="font-size: 12px; color: {{ statusColor }}">{{ status }}</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between"><span class="disp" style="font-size: 12px; color: #BFA58F">Ready to publish</span><span class="mono" style="font-size: 13px">{{ score }} of 9 sections</span></div>
+<div style="display: flex; gap: 3px">
+<sc-for list="{{ bar }}" as="b" hint-placeholder-count="9"><div style="flex: 1; height: 8px; background: {{ b.bg }}"></div></sc-for>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<sc-for list="{{ sections }}" as="s" hint-placeholder-count="9">
+<div style="display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,155,61,.12); font-size: 14px"><span>{{ s.name }}</span><span class="pix" style="font-size: 11px; color: {{ s.color }}">{{ s.tag }}</span></div>
+</sc-for>
+</div>
+<span class="disp" style="font-size: 12px; color: #FF9B3D; padding-top: 4px">Checked against your project</span>
+<sc-for list="{{ crits }}" as="c" hint-placeholder-count="4">
+<div class="crit" style="border-color: {{ c.color }}; background: {{ c.bg }}">
+<div style="display: flex; justify-content: space-between; gap: 10px"><span class="pix" style="font-size: 12px; color: {{ c.color }}">{{ c.kind }}</span><span class="mono" style="font-size: 12px; color: #BFA58F">{{ c.where }}</span></div>
+<span style="font-size: 15px; line-height: 1.5">{{ c.text }}</span>
+<span class="mono" style="font-size: 12px; color: #BFA58F">evidence: {{ c.evidence }}</span>
+</div>
+</sc-for>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+state = { reviewing: false, reviewed: true,
+  text: '# Movie Recommender\n\n<!-- WRITE: one sentence. What does it do, and for whom? -->\nFinds films you will like by looking at people whose ratings look like yours.\n\n![Demo](docs/demo.gif)\n<!-- ADD: record a 10 second GIF of a search and save it to docs/demo.gif -->\n\n## Why I built it\n<!-- EXPLAIN: the problem in your own words, and what you wanted to learn -->\nI wanted to learn how recommendation systems work, so I trained a neural network on movie ratings.\n\n## How it works\n```mermaid\nflowchart LR\n  UI[React UI] --> API[FastAPI]\n  API --> KNN[KNN core]\n  KNN --> M[Ratings matrix]\n  DB[(SQLite)] -. load at startup .-> M\n```\n<!-- EXPLAIN: walk one request through the diagram in 3 to 4 sentences -->\n\n## Key decisions\n<!-- EXPLAIN: distance metric, top-k selection, brute force vs an index -->\nI used Euclidean distance because it is the standard.\n\n## Evaluation\n| Metric | Most popular | KNN |\n|---|---|---|\n| Precision@10 | 0.11 | 0.28 |\n<!-- EXPLAIN: how you split the data and why the baseline matters -->\n\n## Limitations and next steps\n<!-- WRITE: cold start, and what breaks past a million users -->\n\n## Run it\n```bash\npip install -r requirements.txt\nuvicorn api.main:app --reload\n```\n\n## What I learned\n<!-- WRITE: two or three things you can now explain in an interview -->\n' };
+
+SECTIONS = [['Title and one-liner', 'done'], ['Demo GIF', 'empty'], ['Why I built it', 'wrong'], ['How it works', 'work'], ['Key decisions', 'wrong'], ['Evaluation', 'work'], ['Limitations', 'empty'], ['Run it', 'done'], ['What I learned', 'empty']];
+CRITS = [
+  ['MISMATCH', 'Why I built it', 'You say you trained a neural network. This project never trains a model: KNN compares rating vectors directly. An interviewer will ask about the training, and there is none to describe.', 'plan step 3, recommender/knn.py'],
+  ['MISMATCH', 'Key decisions', 'You say you used Euclidean distance. The code uses cosine similarity, and you explained why at the step 3 gate: it ignores how harshly someone rates.', 'recommender/knn.py line 4, step 3 gate answer'],
+  ['MISSING', 'Evaluation', 'The table only has precision. Your evaluation step also measured recall at 10 (0.17) and NDCG (0.31). Add them, then explain the time-based split in one or two sentences.', 'step 6 eval log'],
+  ['MATCHES', 'How it works', 'The diagram matches the code: same four components, same names, and the matrix really is loaded from SQLite at startup. Now explain one request in your own words below it.', 'api/main.py, recommender/store.py']
+];
+
+renderVals() {
+  const st = { done: ['DONE', '#9FD8AE'], work: ['NEEDS WORK', '#FFD27A'], wrong: ['DOES NOT MATCH', '#FF7A84'], empty: ['EMPTY', '#BFA58F'] };
+  const col = { MISMATCH: ['#FF7A84', 'rgba(255,77,94,.08)'], MISSING: ['#FFD27A', 'rgba(255,210,122,.06)'], MATCHES: ['#5CE1E6', 'rgba(92,225,230,.06)'] };
+  const score = this.SECTIONS.filter((s) => s[1] === 'done').length;
+  const left = (this.state.text.match(/<!--/g) || []).length;
+  return {
+    text: this.state.text, setText: (e) => this.setState({ text: e.target.value }),
+    review: () => { this.setState({ reviewing: true }); clearTimeout(this.tm); this.tm = setTimeout(() => this.setState({ reviewing: false }), 2400); },
+    reviewing: this.state.reviewing,
+    status: this.state.reviewing ? 'Reviewing against your code, plan and gate answers...' : 'Last review: 2 mismatches, 1 gap', statusColor: this.state.reviewing ? '#FFD27A' : '#FF7A84',
+    remaining: left + ' prompts left to replace',
+    score: score, bar: this.SECTIONS.map((s) => ({ bg: s[1] === 'done' ? '#9FD8AE' : s[1] === 'work' ? '#FFD27A' : s[1] === 'wrong' ? '#FF4D5E' : 'rgba(255,155,61,.16)' })),
+    sections: this.SECTIONS.map((s) => ({ name: s[0], tag: st[s[1]][0], color: st[s[1]][1] })),
+    crits: this.CRITS.map((c) => ({ kind: c[0], where: c[1], text: c[2], evidence: c[3], color: col[c[0]][0], bg: col[c[0]][1] }))
+  };
+}
+componentWillUnmount() { clearTimeout(this.tm); }
+}
+</script>
+</body>
+</html>

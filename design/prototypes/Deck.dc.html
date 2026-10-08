@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VCPG: interview deck</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=Silkscreen:wght@400;700&display=swap">
+<style>
+body{margin:0;background:#0D0A08}
+a{color:#FF9B3D}a:hover{color:#FFD27A}
+.dk{font-family:'IBM Plex Sans',sans-serif;color:#F7EBDD}
+.disp{font-family:'Oxanium',sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.pix{font-family:'Silkscreen',monospace;letter-spacing:.04em}
+.mono{font-family:'IBM Plex Mono',monospace}
+.panel{position:relative;background:linear-gradient(160deg,rgba(255,155,61,.08),transparent 45%),rgba(30,20,14,.85);border:1px solid rgba(255,155,61,.3)}
+.panel::before{content:"";position:absolute;left:-1px;top:-1px;height:2px;width:55%;background:linear-gradient(90deg,#FF9B3D,#FF4D5E,#FFD27A,transparent)}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;background:transparent;border:1px solid #FF9B3D;color:#FF9B3D;cursor:pointer;font:600 12px 'Oxanium',sans-serif;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;box-sizing:border-box}
+.btn:hover{background:rgba(255,155,61,.16);color:#FF9B3D}
+.btn.go{background:linear-gradient(90deg,#FF9B3D,#FFD27A);color:#1A0E06;border-color:transparent}
+.th{display:flex;gap:10px;align-items:center;width:100%;padding:8px;background:transparent;border:1px solid transparent;color:#F7EBDD;cursor:pointer;font:inherit;text-align:left}
+.th:hover{background:rgba(255,155,61,.08)}
+.th.on{border-color:#FFD27A;background:rgba(255,210,122,.08)}
+.mini{width:96px;height:54px;flex:none;background:#0D0A08;border:1px solid rgba(255,155,61,.35);position:relative;overflow:hidden}
+.grow{transform-origin:50% 100%;animation:up .9s cubic-bezier(.2,.8,.2,1) both}
+.pk{position:absolute;top:-3px;width:7px;height:7px;background:#fff;animation:fl 1.6s linear infinite}
+@keyframes up{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes fl{from{left:0;opacity:0}15%{opacity:1}85%{opacity:1}to{left:100%;opacity:0}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</helmet>
+<div class="dk" style="min-height: 100vh; box-sizing: border-box; padding: 24px; background: radial-gradient(900px circle at 50% 0%, rgba(255,155,61,.10), transparent 60%), #0D0A08; display: flex; flex-direction: column; gap: 18px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px">
+<span class="pix" style="font-size: 22px; font-weight: 700; color: #FFD27A">INTERVIEW DECK</span>
+<span class="disp" style="font-size: 13px; color: #BFA58F">Movie recommender / 8 slides</span>
+<div style="flex: 1 1 0"></div>
+<a class="btn" href="Readme.dc.html">README</a>
+<a class="btn" href="Archive.dc.html">Archive</a>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start">
+
+<section class="panel" style="flex: 0 1 300px; min-width: 240px; padding: 14px; display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{ slides }}" as="s" hint-placeholder-count="8">
+<button class="th {{ s.cls }}" aria-pressed="{{ s.on }}" onClick="{{ s.pick }}">
+<span class="mini"><span style="position: absolute; left: 6px; top: 6px; width: 50px; height: 4px; background: #FF9B3D"></span><span style="position: absolute; left: 6px; top: 14px; width: 34px; height: 2px; background: #6B5646"></span><span style="position: absolute; left: 6px; top: 19px; width: 30px; height: 2px; background: #6B5646"></span><span style="position: absolute; right: 6px; bottom: 6px; width: 34px; height: 30px; background: {{ s.tint }}"></span></span>
+<span style="display: flex; flex-direction: column; gap: 3px"><span class="mono" style="font-size: 12px; color: #FFD27A">{{ s.num }}</span><span style="font-size: 14px">{{ s.title }}</span></span>
+</button>
+</sc-for>
+</section>
+
+<section style="flex: 3 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+<div style="position: relative; width: 100%; aspect-ratio: 16 / 9; box-sizing: border-box; padding: 4% 5%; background: radial-gradient(700px circle at 90% 0%, rgba(255,77,94,.20), transparent 60%), #0D0A08; border: 1px solid rgba(255,155,61,.4); display: flex; flex-direction: column; gap: 3%; overflow: hidden">
+<div style="position: absolute; left: 14px; top: 14px; width: 80px; height: 2px; background: #FF9B3D"></div><div style="position: absolute; left: 14px; top: 14px; width: 2px; height: 80px; background: #FF9B3D"></div>
+<div class="mono" style="font-size: 15px; color: #FFD27A; letter-spacing: .1em">{{ cur.num }} / {{ cur.kicker }}</div>
+<div style="font: 600 34px/1.15 'Oxanium', sans-serif">{{ cur.title }}</div>
+<div style="display: flex; gap: 4%; flex: 1; min-height: 0">
+<div style="flex: 1 1 45%; display: flex; flex-direction: column; gap: 14px">
+<sc-for list="{{ cur.bullets }}" as="b" hint-placeholder-count="3"><div style="display: flex; gap: 12px; font-size: 18px; line-height: 1.4"><span class="mono" style="color: #FFD27A">{{ b.n }}</span><span>{{ b.t }}</span></div></sc-for>
+</div>
+<div style="flex: 1 1 50%; border: 1px solid rgba(255,155,61,.3); background: rgba(255,155,61,.06); position: relative; display: flex; align-items: flex-end; justify-content: space-around; padding: 16px; box-sizing: border-box">
+<sc-if value="{{ cur.isBars }}" hint-placeholder-val="{{ false }}">
+<sc-for list="{{ cur.bars }}" as="r" hint-placeholder-count="4"><div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><span class="mono" style="font-size: 14px">{{ r.v }}</span><div class="grow" style="width: 40px; height: {{ r.h }}px; background: {{ r.c }}; animation-delay: {{ r.d }}s"></div><span class="mono" style="font-size: 12px; color: #BFA58F">{{ r.l }}</span></div></sc-for>
+</sc-if>
+<sc-if value="{{ cur.isFlow }}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; left: 16px; right: 16px; top: 50%; transform: translateY(-50%); display: flex; align-items: center">
+<sc-for list="{{ cur.flow }}" as="f" hint-placeholder-count="4"><div style="padding: 12px 10px; border: 1px solid #FF9B3D; background: rgba(255,155,61,.12); font: 500 13px 'IBM Plex Mono', monospace; text-align: center; flex: 1 1 0">{{ f.n }}</div><sc-if value="{{ f.more }}" hint-placeholder-val="{{ true }}"><div style="position: relative; width: 26px; height: 2px; background: linear-gradient(90deg, #FF9B3D, #FF4D5E); flex: none"><i class="pk"></i></div></sc-if></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ cur.isList }}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 16px; display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{ cur.items }}" as="q" hint-placeholder-count="3"><div style="padding: 10px 12px; border: 1px solid {{ q.c }}; font-size: 15px; line-height: 1.4">{{ q.t }}</div></sc-for>
+</div>
+</sc-if>
+</div>
+</div>
+<div class="mono" style="display: flex; justify-content: space-between; font-size: 13px; color: #BFA58F"><span>VCPG / Movie recommender / interview deck</span><span>{{ cur.num }} of 08</span></div>
+</div>
+<div style="padding: 14px 16px; background: rgba(0,0,0,.3); border: 1px solid rgba(255,155,61,.2); display: flex; flex-direction: column; gap: 6px">
+<span class="disp" style="font-size: 12px; color: #FF9B3D">Speaker notes (included in the .pptx)</span>
+<span style="font-size: 15px; line-height: 1.5; color: #E8DCCB">{{ cur.notes }}</span>
+</div>
+</section>
+
+<section class="panel" style="flex: 1 1 300px; min-width: 260px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+<h2 class="disp" style="margin: 0; font-size: 14px; font-weight: 700; color: #FF9B3D">Export</h2>
+<div style="padding: 14px; border: 1px solid rgba(255,210,122,.4); background: rgba(255,210,122,.06); display: flex; flex-direction: column; gap: 6px">
+<span class="mono" style="font-size: 14px; color: #FFD27A">movie-recommender-deck.pptx</span>
+<span class="mono" style="font-size: 12px; color: #BFA58F">8 slides / speaker notes / saved with the project</span>
+</div>
+<button class="btn go">Download .pptx</button>
+<button class="btn">Download PDF</button>
+<button class="btn">Regenerate this slide</button>
+<span class="disp" style="font-size: 12px; color: #FF9B3D; padding-top: 6px">Versions</span>
+<sc-for list="{{ versions }}" as="v" hint-placeholder-count="3">
+<div style="display: flex; justify-content: space-between; gap: 10px; font-size: 14px; padding: 6px 0; border-bottom: 1px solid rgba(255,155,61,.12)"><span>{{ v.n }}</span><span class="mono" style="font-size: 12px; color: #BFA58F">{{ v.w }}</span></div>
+</sc-for>
+<span style="font-size: 13px; line-height: 1.5; color: #BFA58F">The deck is rebuilt as a real PowerPoint file each time a slide changes, so the download always matches what you see here.</span>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":860}}'>
+class Component extends DCLogic {
+state = { sel: 2 };
+
+S = [
+  { title: 'Mission', kicker: 'MISSION', kind: 'list', tint: '#3A2A1E', bullets: ['Recommend films from people with similar taste', 'Built to learn similarity search end to end', 'Every step passed an explain-it-back gate'], items: [['Users rate films 1 to 5', '#FF9B3D'], ['We find their 20 nearest neighbors', '#FFD27A'], ['We rank what those neighbors loved', '#5CE1E6']], notes: 'Open with the problem, not the tech: people do not know what to watch next. Then say what you set out to learn.' },
+  { title: 'How a request becomes a recommendation', kicker: 'ARCHITECTURE', kind: 'flow', tint: '#5A3214', bullets: ['Matrix lives in memory, so no query per request', 'SQLite: one file, one user, zero ops', 'KNN core has no web imports, so it tests alone'], flow: ['UI', 'API', 'KNN', 'Matrix'], notes: 'Trace one request left to right. Pause on the in-memory matrix, since it is the main performance decision.' },
+  { title: 'KNN recommender core', kicker: 'CORE LOGIC', kind: 'bars', tint: '#7A4A1E', bullets: ['Cosine, not Euclidean: matches taste, ignores harsh raters', 'k = 20, where quality peaked', 'argpartition: top k in O(n), not O(n log n)'], bars: [['k=5', 0.21], ['k=10', 0.25], ['k=20', 0.28], ['k=40', 0.26]], notes: 'Expect "why cosine?" Answer with the harsh-rater example, then mention that k was chosen by measuring, not guessing.' },
+  { title: 'Loading and cleaning ratings', kicker: 'DATA PIPELINE', kind: 'flow', tint: '#3A2A1E', bullets: ['Drop users with fewer than 5 ratings', 'Mean-center each user before comparing', 'Rebuild the matrix nightly, not per request'], flow: ['CSV', 'Clean', 'Center', 'Matrix'], notes: 'Mean-centering is the same idea as the normalization question from the gate. Say it in your own words.' },
+  { title: 'The API layer', kicker: 'API LAYER', kind: 'list', tint: '#3A2A1E', bullets: ['One endpoint: POST /recommend', 'Input validated once, at the boundary', 'Responses cached per user for an hour'], items: [['422 on unknown user IDs', '#FF4D5E'], ['p95 latency 118 ms', '#FFD27A'], ['Cold users get most-popular', '#5CE1E6']], notes: 'If asked about validation, explain why the reviewer removed the duplicate check inside the KNN function.' },
+  { title: 'Does it beat showing what is popular?', kicker: 'EVALUATION', kind: 'bars', tint: '#7A4A1E', bullets: ['Held out each user\'s 5 most recent ratings', 'Split by time so the test never sees the future', 'KNN wins on every metric'], bars: [['base P', 0.11], ['KNN P', 0.28], ['base N', 0.13], ['KNN N', 0.31]], notes: 'Lead with the baseline. A number without a baseline means nothing, and saying that unprompted signals evaluation maturity.' },
+  { title: 'What I would do differently', kicker: 'RETROSPECTIVE', kind: 'list', tint: '#3A2A1E', bullets: ['Approximate index once users pass 100k', 'Blend in film metadata for cold starts', 'Track quality in production, not just offline'], items: [['HNSW index', '#FF9B3D'], ['Hybrid with content features', '#FFD27A'], ['Online A/B on click-through', '#5CE1E6']], notes: 'Show you know where it breaks. Tie each change to a measured weakness.' },
+  { title: 'Questions I prepared for', kicker: 'PREP', kind: 'list', tint: '#3A2A1E', bullets: ['Why normalize ratings before measuring distance?', 'When would you not use KNN?', 'How would you scale this to 10 million users?'], items: [['Needed 2 hints at the gate', '#FF4D5E'], ['Needed 1 hint at the gate', '#FFD27A'], ['Covered in the mock interview', '#5CE1E6']], notes: 'Rehearse these out loud before any interview where this project is on your resume.' }
+];
+
+renderVals() {
+  const i = this.state.sel, s = this.S[i], num = (n) => String(n + 1).padStart(2, '0'), max = 0.32;
+  return {
+    slides: this.S.map((x, k) => ({ num: num(k), title: x.kicker.charAt(0) + x.kicker.slice(1).toLowerCase(), tint: x.tint, on: k === i, cls: k === i ? 'on' : '', pick: () => this.setState({ sel: k }) })),
+    cur: { num: num(i), kicker: s.kicker, title: s.title, notes: s.notes,
+      bullets: s.bullets.map((t, k) => ({ n: num(k), t: t })),
+      isBars: s.kind === 'bars', isFlow: s.kind === 'flow', isList: s.kind === 'list',
+      bars: (s.bars || []).map((b, k) => ({ l: b[0], v: b[1].toFixed(2), h: Math.round((b[1] / max) * 140), c: k % 2 ? 'linear-gradient(180deg, #FFD27A, #FF9B3D 45%, #FF4D5E)' : (s.kicker === 'EVALUATION' ? '#6B5646' : 'linear-gradient(180deg, #FFD27A, #FF9B3D)'), d: (k * 0.12).toFixed(2) })),
+      flow: (s.flow || []).map((n, k) => ({ n: n, more: k < s.flow.length - 1 })),
+      items: (s.items || []).map((q) => ({ t: q[0], c: q[1] })) },
+    versions: [['v3 / after README', 'current'], ['v2 / after step 6', 'kept'], ['v1 / after step 3', 'kept']].map((v) => ({ n: v[0], w: v[1] }))
+  };
+}
+}
+</script>
+</body>
+</html>

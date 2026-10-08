@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VCPG: concept lesson</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+:root{--bg:#0D0A08;--panel:rgba(30,20,14,.78);--acc:#FF9B3D;--acc2:#FF4D5E;--acc3:#FFD27A;--you:#5CE1E6;--text:#F7EBDD;--mute:#BFA58F;--mx:50%;--my:20%}
+body{margin:0;background:#0D0A08}
+a{color:#FF9B3D}a:hover{color:#FFD27A}
+.hud{font-family:'IBM Plex Sans',sans-serif;color:var(--text);background:var(--bg)}
+.disp{font-family:'Oxanium',sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.mono{font-family:'IBM Plex Mono',monospace}
+.brand{background:linear-gradient(90deg,var(--acc),var(--acc2) 55%,var(--acc3));-webkit-background-clip:text;background-clip:text;color:transparent}
+.glow{position:absolute;inset:0;pointer-events:none;background:radial-gradient(560px circle at var(--mx) var(--my),rgba(255,155,61,.12),rgba(255,77,94,.05) 45%,transparent 70%)}
+.panel{position:relative;background:linear-gradient(160deg,rgba(255,155,61,.08),transparent 45%),var(--panel);border:1px solid rgba(255,155,61,.26);box-shadow:0 30px 70px -40px rgba(255,77,94,.7)}
+.panel::before{content:"";position:absolute;left:-1px;top:-1px;height:2px;width:60%;background:linear-gradient(90deg,var(--acc),var(--acc2),var(--acc3),transparent);background-size:200% 100%;animation:sheen 5s linear infinite;pointer-events:none}
+.panel::after{content:"";position:absolute;right:-1px;bottom:-1px;width:16px;height:16px;border-right:2px solid var(--acc);border-bottom:2px solid var(--acc);pointer-events:none}
+.sec{padding:28px;display:flex;flex-direction:column;gap:16px}
+.kick{font:600 12px 'Oxanium',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--acc)}
+.h2{margin:0;font:600 24px 'Oxanium',sans-serif;letter-spacing:.02em}
+.p{font-size:17px;line-height:1.65;max-width:720px}
+.btn{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;background:transparent;border:1px solid var(--acc);color:var(--acc);cursor:pointer;font:600 13px 'Oxanium',sans-serif;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;box-sizing:border-box}
+.btn:hover{background:rgba(255,155,61,.16);color:var(--acc)}
+.btn.go{background:linear-gradient(90deg,var(--acc),var(--acc3));color:#1A0E06;border-color:transparent}
+.btn.you{border-color:var(--you);color:var(--you)}
+.btn.you:hover{background:rgba(92,225,230,.14);color:var(--you)}
+.chip{min-height:44px;padding:0 16px;background:transparent;border:1px solid rgba(255,155,61,.3);color:var(--mute);cursor:pointer;font:500 15px 'IBM Plex Mono',monospace}
+.chip:hover{border-color:var(--acc);color:var(--text)}
+.chip.on{border-color:var(--acc3);color:#1A0E06;background:var(--acc3)}
+.opt{display:block;width:100%;text-align:left;min-height:48px;padding:12px 16px;background:rgba(0,0,0,.3);border:1px solid rgba(255,155,61,.3);color:var(--text);cursor:pointer;font:16px 'IBM Plex Sans',sans-serif;line-height:1.4}
+.opt:hover{border-color:var(--acc)}
+.opt.ok{border-color:var(--acc3);background:rgba(255,210,122,.14);box-shadow:0 0 0 1px var(--acc3)}
+.opt.no{border-color:var(--acc2);background:rgba(255,77,94,.12)}
+.term{flex:1 1 200px;padding:16px;border:1px solid rgba(255,210,122,.3);background:rgba(0,0,0,.3);display:flex;flex-direction:column;gap:6px}
+.note{padding:16px 18px;border:1px solid var(--you);background:rgba(92,225,230,.07);font-size:16px;line-height:1.55;max-width:720px}
+pre.code{margin:0;padding:18px;background:rgba(0,0,0,.5);border:1px solid rgba(255,210,122,.25);font:14px/1.7 'IBM Plex Mono',monospace;color:#FFE9C7;overflow-x:auto;white-space:pre}
+textarea{width:100%;box-sizing:border-box;background:rgba(0,0,0,.5);border:1px solid var(--you);color:var(--text);padding:14px;font:14px/1.6 'IBM Plex Mono',monospace;resize:vertical}
+.fb{padding:14px 16px;border:1px solid rgba(255,210,122,.4);background:rgba(255,210,122,.08);font-size:16px;line-height:1.5}
+.step{display:flex;align-items:center;gap:12px;padding:10px 12px;font-size:14px;line-height:1.35}
+.spr{position:relative;width:60px;height:60px;color:var(--acc);animation:bob 2.4s steps(2) infinite;flex:none}
+.px{position:absolute;left:-5px;top:-5px;width:5px;height:5px}
+.lid{opacity:0;animation:lid 4.2s steps(1) infinite}
+@keyframes sheen{from{background-position:200% 0}to{background-position:0 0}}
+@keyframes bob{50%{transform:translateY(-3px)}}
+@keyframes lid{0%,92%{opacity:0}93%,100%{opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div class="hud" ref="{{ setRoot }}" onMouseMove="{{ onMove }}" style="position: relative; min-height: 100vh; overflow: hidden; padding: 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+<canvas ref="{{ setCanvas }}" aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none"></canvas>
+<div class="glow"></div>
+
+<header style="position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px">
+<div class="disp brand" style="font-size: 30px; font-weight: 700; letter-spacing: .22em">VCPG</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span class="disp" style="font-size: 12px; color: var(--mute)">Lesson path</span>
+<span class="disp" style="font-size: 16px; font-weight: 600">RAG from zero</span>
+</div>
+<div style="flex: 1 1 0"></div>
+<div style="display: flex; flex-direction: column; gap: 6px; min-width: 220px">
+<span class="mono" style="font-size: 13px; color: var(--you)">{{ doneLabel }}</span>
+<div style="display: flex; gap: 6px">
+<sc-for list="{{ checks }}" as="c" hint-placeholder-count="4">
+<div style="flex: 1; height: 8px; background: {{ c.bg }}"></div>
+</sc-for>
+</div>
+</div>
+<a class="btn" href="Ideas.dc.html">Back to projects</a>
+</header>
+
+<div style="position: relative; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+
+<aside style="flex: 1 1 280px; max-width: 360px; display: flex; flex-direction: column; gap: 20px">
+<section class="panel" style="padding: 20px; display: flex; flex-direction: column; gap: 8px">
+<h2 class="disp" style="margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--acc)">Seven lessons</h2>
+<sc-for list="{{ path }}" as="s" hint-placeholder-count="7">
+<div class="step" style="border: 1px solid {{ s.border }}; background: {{ s.bg }}; color: {{ s.text }}">
+<span class="mono" style="font-size: 12px; color: {{ s.color }}; width: 40px; flex: none">{{ s.tag }}</span>
+<span>{{ s.name }}</span>
+</div>
+</sc-for>
+<div style="font-size: 14px; line-height: 1.5; color: var(--mute); padding-top: 8px">Pass the readiness check after lesson 7 and RAG is marked as known for every project.</div>
+</section>
+
+<section class="panel" style="padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<h2 class="disp" style="margin: 0; font-size: 13px; font-weight: 600; color: var(--acc)">Where this comes from</h2>
+<div style="display: flex; flex-direction: column; gap: 4px"><span class="mono" style="font-size: 12px; color: var(--acc3)">TEXTBOOK</span><span style="font-size: 14px; line-height: 1.45">Jurafsky and Martin, Speech and Language Processing, chapter on vector semantics and embeddings</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><span class="mono" style="font-size: 12px; color: var(--acc3)">PAPERS</span><span style="font-size: 14px; line-height: 1.45">Lewis et al. 2020, Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks</span><span style="font-size: 14px; line-height: 1.45">Reimers and Gurevych 2019, Sentence-BERT</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><span class="mono" style="font-size: 12px; color: var(--acc3)">LECTURE NOTES</span><span style="font-size: 14px; line-height: 1.45">Stanford CS224N notes on word vectors</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><span class="mono" style="font-size: 12px; color: var(--mute)">COMMUNITY</span><span style="font-size: 14px; line-height: 1.45; color: var(--mute)">Practitioner posts, used for examples only and marked as opinion</span></div>
+</section>
+</aside>
+
+<main style="flex: 999 1 620px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+
+<section class="panel sec">
+<div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap">
+<div class="spr"><div class="px" style="box-shadow: {{ sprite }}"></div><div class="px lid" style="box-shadow: {{ lid }}"></div></div>
+<div style="flex: 1 1 420px; display: flex; flex-direction: column; gap: 10px">
+<span class="mono" style="font-size: 14px; color: var(--acc3)">Lesson 2 of 7 / about 25 minutes / no maths background needed</span>
+<h1 style="margin: 0; font: 600 38px/1.15 'Oxanium', sans-serif">Embeddings: turning meaning into numbers</h1>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span class="kick">By the end you can</span>
+<div class="p">1. Say what an embedding is without using the word "vector".</div>
+<div class="p">2. Read a similarity score and tell whether two texts are related.</div>
+<div class="p">3. Write the function that compares two embeddings.</div>
+</div>
+</section>
+
+<section class="panel sec">
+<span class="kick">01 / Start here</span>
+<h2 class="h2">The idea in plain words</h2>
+<div class="p">Computers compare numbers easily and meaning badly. An embedding closes that gap: it turns a piece of text into a list of numbers, chosen so that texts with similar meanings get similar lists.</div>
+<div class="p">Think of a library. Books on the same subject sit on the same shelf, so a book's location tells you what it is about. An embedding is a shelf location for a sentence. Nearby locations mean related meanings.</div>
+<div style="display: flex; flex-wrap: wrap; gap: 12px">
+<div class="term"><span class="disp" style="font-size: 14px; font-weight: 600; color: var(--acc3)">Embedding</span><span style="font-size: 15px; line-height: 1.5">A list of numbers that stands for the meaning of some text.</span></div>
+<div class="term"><span class="disp" style="font-size: 14px; font-weight: 600; color: var(--acc3)">Vector</span><span style="font-size: 15px; line-height: 1.5">The maths word for a list of numbers. Picture an arrow from the centre of a map to a point.</span></div>
+<div class="term"><span class="disp" style="font-size: 14px; font-weight: 600; color: var(--acc3)">Dimension</span><span style="font-size: 15px; line-height: 1.5">One number in the list. Real models use hundreds. The picture below uses two.</span></div>
+</div>
+<div class="note"><span class="disp" style="font-size: 12px; color: var(--you)">Common mix-up</span><br>An embedding model does not look words up in a dictionary. It learned from a huge amount of text that words used in similar sentences should sit close together.</div>
+</section>
+
+<section class="panel sec">
+<span class="kick">02 / See it</span>
+<h2 class="h2">Pick a word and watch what lands near it</h2>
+<div class="p">Each arrow is one word. Arrows that point in nearly the same direction have nearly the same meaning. The score is called cosine similarity: 1.00 means the same direction, and a score near 0 means unrelated.</div>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<sc-for list="{{ words }}" as="w" hint-placeholder-count="7">
+<button class="chip {{ w.cls }}" aria-pressed="{{ w.on }}" onClick="{{ w.pick }}">{{ w.word }}</button>
+</sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: center">
+<canvas ref="{{ setPlot }}" role="img" aria-label="Seven word arrows from a shared origin, with the selected word and its nearest neighbors highlighted" style="width: 420px; height: 370px; max-width: 100%; background: rgba(0,0,0,.3); border: 1px solid rgba(255,210,122,.2)"></canvas>
+<div style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 10px">
+<span class="disp" style="font-size: 13px; color: var(--acc3)">Closest to "{{ query }}"</span>
+<sc-for list="{{ ranked }}" as="r" hint-placeholder-count="6">
+<div style="display: flex; align-items: center; gap: 12px">
+<span class="mono" style="width: 64px; font-size: 15px; color: {{ r.color }}">{{ r.word }}</span>
+<div style="flex: 1; height: 10px; background: rgba(255,155,61,.12)"><div style="width: {{ r.width }}%; height: 100%; background: {{ r.bar }}"></div></div>
+<span class="mono" style="width: 48px; text-align: right; font-size: 15px">{{ r.val }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+<div class="note"><span class="disp" style="font-size: 12px; color: var(--you)">Why direction?</span><br>Two arrows can be different lengths and still point the same way. Comparing direction ignores length, which is why cosine similarity is the usual default for text.</div>
+</section>
+
+<section class="panel sec">
+<span class="kick">03 / Worked example</span>
+<h2 class="h2">Three lines that make real embeddings</h2>
+<pre class="code">from sentence_transformers import SentenceTransformer
+
+model = SentenceTransformer("all-MiniLM-L6-v2")
+vectors = model.encode(["a puppy asleep on the couch", "how to change a flat tire"])
+print(vectors.shape)   # (2, 384)</pre>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div class="p"><span class="mono" style="color: var(--acc3)">model = ...</span>  loads a small, free embedding model that runs on a laptop.</div>
+<div class="p"><span class="mono" style="color: var(--acc3)">model.encode(...)</span>  turns each sentence into one vector.</div>
+<div class="p"><span class="mono" style="color: var(--acc3)">(2, 384)</span>  means two sentences went in and two vectors came out, each with 384 numbers.</div>
+</div>
+<div class="note"><span class="disp" style="font-size: 12px; color: var(--you)">Where this fits in RAG</span><br>You embed every chunk of your documents once and store the vectors. When a question arrives you embed it with the same model and fetch the chunks whose vectors point closest to it. That fetch is the "retrieval" in retrieval-augmented generation.</div>
+</section>
+
+<section class="panel sec">
+<span class="kick" style="color: var(--you)">04 / Check yourself</span>
+<h2 class="h2">Three quick questions</h2>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div class="p"><span class="mono" style="color: var(--you)">Q1</span>  Two sentences have embeddings that are very close together. What does that tell you?</div>
+<sc-for list="{{ mc }}" as="o" hint-placeholder-count="4">
+<button class="opt {{ o.cls }}" aria-pressed="{{ o.on }}" onClick="{{ o.pick }}">{{ o.text }}</button>
+</sc-for>
+<sc-if value="{{ mcShown }}" hint-placeholder-val="{{ false }}"><div class="fb">{{ mcFeedback }}</div></sc-if>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div class="p"><span class="mono" style="color: var(--you)">Q2</span>  True or false: two texts must share words for their embeddings to land close together.</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap">
+<sc-for list="{{ tf }}" as="o" hint-placeholder-count="2">
+<button class="opt {{ o.cls }}" aria-pressed="{{ o.on }}" onClick="{{ o.pick }}" style="width: 160px">{{ o.text }}</button>
+</sc-for>
+</div>
+<sc-if value="{{ tfShown }}" hint-placeholder-val="{{ false }}"><div class="fb">{{ tfFeedback }}</div></sc-if>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<label for="sa" class="p"><span class="mono" style="color: var(--you)">Q3</span>  In your own words: why does a RAG system turn documents into embeddings before searching them?</label>
+<textarea id="sa" rows="3" style="font-family: 'IBM Plex Sans', sans-serif; font-size: 16px" placeholder="Because the system needs to compare..."></textarea>
+<div><button class="btn you" onClick="{{ showShort }}">Check with the grader</button></div>
+<sc-if value="{{ shortShown }}" hint-placeholder-val="{{ false }}">
+<div class="fb"><span class="disp" style="font-size: 12px; color: var(--acc3)">What the grader looks for</span><br>1. Embeddings let text be compared by meaning, not exact words.<br>2. The question is embedded with the same model as the documents.<br>3. The closest vectors are treated as the most relevant chunks.<br><span style="color: var(--mute)">Miss one and you get a hint, not the answer.</span></div>
+</sc-if>
+</div>
+</section>
+
+<section class="panel sec">
+<span class="kick" style="color: var(--you)">05 / Your turn</span>
+<h2 class="h2">Write the comparison yourself</h2>
+<div class="p">Finish the function so it returns the cosine similarity of two vectors. You have seen everything you need.</div>
+<label for="code" class="disp" style="font-size: 12px; color: var(--you)">similarity.py</label>
+<textarea id="code" rows="6" value="{{ code }}" onChange="{{ setCode }}"></textarea>
+<div style="display: flex; gap: 12px; flex-wrap: wrap">
+<button class="btn you" onClick="{{ showTests }}">Run tests</button>
+<button class="btn" onClick="{{ toggleHint }}">{{ hintLabel }}</button>
+</div>
+<sc-if value="{{ hintShown }}" hint-placeholder-val="{{ false }}">
+<div class="fb">Divide the dot product of a and b by the product of their lengths. <span class="mono">np.dot</span> gives the first and <span class="mono">np.linalg.norm</span> gives a length.</div>
+</sc-if>
+<sc-if value="{{ testsShown }}" hint-placeholder-val="{{ false }}">
+<pre class="code">same direction    cosine_similarity([1, 2], [2, 4])    expects  1.0
+perpendicular     cosine_similarity([1, 0], [0, 1])    expects  0.0
+opposite          cosine_similarity([1, 0], [-1, 0])   expects -1.0
+
+In the app these run in the sandbox and report pass or fail per line.</pre>
+</sc-if>
+</section>
+
+<section class="panel sec">
+<span class="kick">06 / Recap</span>
+<h2 class="h2">What to carry into the next lesson</h2>
+<div class="p">1. An embedding is a list of numbers that stands for meaning.</div>
+<div class="p">2. Similar meanings give arrows that point the same way, and cosine similarity measures that.</div>
+<div class="p">3. RAG embeds documents and questions with the same model, then matches them by direction.</div>
+<div style="display: flex; gap: 14px; flex-wrap: wrap; align-items: center; padding-top: 6px">
+<button class="btn go">Next: similarity search</button>
+<span class="mono" style="font-size: 14px; color: var(--you)">{{ doneLabel }}</span>
+</div>
+</section>
+
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"ripple":{"editor":"range","default":1,"min":0,"max":2,"step":0.1},"$preview":{"width":1440,"height":2760}}'>
+class Component extends DCLogic {
+state = { q: 0, mc: -1, tf: -1, short: false, hint: false, tests: false,
+  code: 'import numpy as np\n\ndef cosine_similarity(a, b):\n    # your code here\n    pass\n' };
+
+WORDS = [['dog', 0.92, 0.3], ['puppy', 0.88, 0.42], ['kitten', 0.78, 0.56], ['car', 0.25, 0.93], ['truck', 0.42, 0.85], ['pizza', 0.7, -0.55], ['pasta', 0.5, -0.7]];
+MC = [
+  ['They use the same words', false, 'Not quite. "Couch" and "sofa" are different words, yet their embeddings sit close together.'],
+  ['They mean similar things', true, 'Correct. Closeness in embedding space is closeness in meaning.'],
+  ['They are the same length', false, 'Not quite. A one-word text and a long paragraph can land close together if they are about the same thing.'],
+  ['They came from the same document', false, 'Not quite. The model only sees the text itself, not where it came from.']
+];
+TF = [['True', false, 'Not quite. "How do I reset my password?" and "account recovery steps" share no words and still land close together.'], ['False', true, 'Correct. Matching on meaning without shared words is the whole point of embeddings.']];
+PATH = ['Why a language model needs to look things up', 'Embeddings: turning meaning into numbers', 'Similarity search: finding the nearest meaning', 'Chunking: cutting documents into useful pieces', 'The full pipeline: retrieve, then generate', 'Is it any good? Measuring a RAG system', 'Mini build: answer questions from three documents'];
+OWL = ['#6FD98A', '#D9F7C9', ['.oooooooooo.', '...oooooo.y.', '..obbbbbboy.', '.obbbbbbbbo.', '.obwwbbwwbo.', '.obwpbbwpbo.', '.okbbyybbko.', '.obbbbbbbbo.', '.obhhhhhhbo.', '..obhhhhbo..', '...oooooo...', '...yy..yy...']];
+
+setRoot = (el) => { this.root = el; };
+setCanvas = (el) => { this.canvas = el; };
+setPlot = (el) => { this.plot = el; };
+
+cos(a, b) { return (a[1] * b[1] + a[2] * b[2]) / (Math.sqrt(a[1] * a[1] + a[2] * a[2]) * Math.sqrt(b[1] * b[1] + b[2] * b[2])); }
+
+ranked() {
+  const q = this.WORDS[this.state.q];
+  return this.WORDS.filter((w) => w !== q).map((w) => ({ w: w, v: this.cos(q, w) })).sort((a, b) => b.v - a.v);
+}
+
+onMove = (e) => {
+  const el = this.root; if (!el) return;
+  const r = el.getBoundingClientRect(), k = el.offsetWidth / (r.width || 1);
+  const x = (e.clientX - r.left) * k, y = (e.clientY - r.top) * k;
+  el.style.setProperty('--mx', x + 'px'); el.style.setProperty('--my', y + 'px');
+  const l = this.last;
+  if (!l || Math.abs(x - l.x) + Math.abs(y - l.y) > 46) {
+    this.last = { x: x, y: y };
+    this.ripples = (this.ripples || []).slice(-9);
+    this.ripples.push({ x: x, y: y, t: performance.now() });
+  }
+};
+
+fit(c, w, h) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
+  const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  return g;
+}
+
+frame = (t) => {
+  this.raf = requestAnimationFrame(this.frame);
+  const c = this.canvas, el = this.root;
+  if (c && el) {
+    const w = el.offsetWidth, h = el.offsetHeight, g = this.fit(c, w, h);
+    const str = this.still ? 0 : (this.props.ripple ?? 1), life = 1700;
+    const rip = this.ripples = (this.ripples || []).filter((r) => t - r.t < life);
+    for (let y = 11, row = 0; y < h; y += 22, row++) for (let x = (row % 2 ? 22 : 11); x < w; x += 22) {
+      let ox = 0, oy = 0, a = 0;
+      for (let i = 0; i < rip.length; i++) {
+        const r = rip[i], age = (t - r.t) / life, rad = age * 280, dx = x - r.x, dy = y - r.y;
+        if (Math.abs(dy) > 320 || Math.abs(dx) > 320) continue;
+        const d = Math.sqrt(dx * dx + dy * dy) || 1, k = Math.exp(-((d - rad) * (d - rad)) / 1100) * (1 - age) * str;
+        ox += (dx / d) * k; oy += (dy / d) * k; a += k;
+      }
+      g.fillStyle = (a > 0.35 ? 'rgba(255,210,122,' : 'rgba(255,155,61,') + Math.min(0.1 + a * 0.34, 0.6).toFixed(3) + ')';
+      const s = 2 + a * 1.8;
+      g.fillRect(x + ox * 3.5 - s / 2, y + oy * 3.5 - s / 2, s, s);
+    }
+  }
+  if (this.plot) this.drawPlot(t);
+};
+
+drawPlot(t) {
+  const W = 420, H = 370, g = this.fit(this.plot, W, H), ox = 70, oy = 205, sc = 200, TAU = Math.PI * 2;
+  const q = this.WORDS[this.state.q], rk = this.ranked(), top = [rk[0].w, rk[1].w];
+  g.lineWidth = 1; g.strokeStyle = 'rgba(255,210,122,0.18)';
+  g.beginPath(); g.moveTo(20, oy); g.lineTo(W - 16, oy); g.moveTo(ox, 12); g.lineTo(ox, H - 12); g.stroke();
+  g.font = '500 14px "IBM Plex Mono", monospace'; g.lineCap = 'round';
+  const tip = (w) => [ox + w[1] * sc, oy - w[2] * sc];
+  this.WORDS.forEach((w) => {
+    const p = tip(w), isQ = w === q, isTop = top.indexOf(w) >= 0;
+    g.shadowColor = '#FF9B3D'; g.shadowBlur = isQ ? 16 : isTop ? 8 : 0;
+    g.strokeStyle = isQ ? '#FFD27A' : isTop ? 'rgba(255,155,61,0.95)' : 'rgba(138,114,96,0.75)';
+    g.lineWidth = isQ ? 3.5 : isTop ? 2.2 : 1.2;
+    g.beginPath(); g.moveTo(ox, oy); g.lineTo(p[0], p[1]); g.stroke();
+    g.fillStyle = isQ ? '#FFD27A' : isTop ? '#FF9B3D' : '#8A7260';
+    g.beginPath(); g.arc(p[0], p[1], isQ ? 6 : isTop ? 5 : 3.5, 0, TAU); g.fill();
+    g.shadowBlur = 0;
+    g.fillStyle = isQ ? '#FFD27A' : isTop ? '#F7EBDD' : '#BFA58F';
+    g.fillText(w[0], p[0] + 10, p[1] + 5);
+  });
+  const aq = -Math.atan2(q[2], q[1]), a1 = -Math.atan2(top[0][2], top[0][1]);
+  g.setLineDash([4, 4]); g.strokeStyle = '#5CE1E6'; g.lineWidth = 2;
+  g.beginPath(); g.arc(ox, oy, 60, Math.min(aq, a1), Math.max(aq, a1)); g.stroke(); g.setLineDash([]);
+  const qp = tip(q);
+  for (let k = 0; k < 2; k++) {
+    const u = (t / 1400 + k / 2) % 1;
+    g.fillStyle = 'rgba(255,255,255,' + (1 - u).toFixed(3) + ')';
+    g.fillRect(ox + (qp[0] - ox) * u - 2, oy + (qp[1] - oy) * u - 2, 4, 4);
+  }
+  const pr = (t / 1500) % 1;
+  g.strokeStyle = 'rgba(255,210,122,' + ((1 - pr) * 0.8).toFixed(3) + ')'; g.lineWidth = 1.5;
+  g.beginPath(); g.arc(qp[0], qp[1], 8 + pr * 14, 0, TAU); g.stroke();
+}
+
+componentDidMount() {
+  this.still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  this.raf = requestAnimationFrame(this.frame);
+}
+componentWillUnmount() { cancelAnimationFrame(this.raf); }
+
+sprite(lidOnly) {
+  const P = this.OWL, pal = { o: '#2E3A63', w: '#FFFFFF', p: '#10162B', k: '#FF8FA3', y: '#FFD45E', b: P[0], h: P[1] }, out = [];
+  P[2].forEach((row, y) => row.split('').forEach((ch, x) => {
+    if (ch === '.') return;
+    const eye = ch === 'w' || ch === 'p';
+    if (lidOnly && !eye) return;
+    out.push((x + 1) * 5 + 'px ' + (y + 1) * 5 + 'px 0 ' + (lidOnly ? pal.b : pal[ch]));
+  }));
+  return out.join(', ');
+}
+
+renderVals() {
+  const st = this.state, rk = this.ranked();
+  const done = [st.mc >= 0 && this.MC[st.mc][1], st.tf >= 0 && this.TF[st.tf][1], st.short, st.tests];
+  const n = done.filter(Boolean).length;
+  const optCls = (list, picked, i) => (picked === i ? (list[i][1] ? 'ok' : 'no') : '');
+  return {
+    setRoot: this.setRoot, setCanvas: this.setCanvas, setPlot: this.setPlot, onMove: this.onMove,
+    sprite: this.sprite(false), lid: this.sprite(true),
+    doneLabel: n + ' of 4 checks done', checks: done.map((d) => ({ bg: d ? '#5CE1E6' : 'rgba(92,225,230,.18)' })),
+    path: this.PATH.map((name, i) => {
+      const s = i === 0 ? 'done' : i === 1 ? 'run' : 'lock';
+      return { name: name, tag: s === 'done' ? 'PASS' : s === 'run' ? 'LIVE' : 'LOCK', color: s === 'lock' ? 'var(--mute)' : s === 'run' ? 'var(--acc)' : 'var(--acc3)',
+        text: s === 'lock' ? 'var(--mute)' : 'var(--text)', border: s === 'run' ? 'var(--acc)' : 'rgba(255,155,61,.16)', bg: s === 'run' ? 'rgba(255,155,61,.11)' : 'transparent' };
+    }),
+    words: this.WORDS.map((w, i) => ({ word: w[0], on: i === st.q, cls: i === st.q ? 'on' : '', pick: () => this.setState({ q: i }) })),
+    query: this.WORDS[st.q][0],
+    ranked: rk.map((r, i) => ({ word: r.w[0], val: r.v.toFixed(2), width: Math.max(0, Math.round(r.v * 100)),
+      color: i < 2 ? 'var(--text)' : 'var(--mute)', bar: i < 2 ? 'linear-gradient(90deg, #FF9B3D, #FFD27A)' : '#8A7260' })),
+    mc: this.MC.map((o, i) => ({ text: o[0], on: st.mc === i, cls: optCls(this.MC, st.mc, i), pick: () => this.setState({ mc: i }) })),
+    mcShown: st.mc >= 0, mcFeedback: st.mc >= 0 ? this.MC[st.mc][2] : '',
+    tf: this.TF.map((o, i) => ({ text: o[0], on: st.tf === i, cls: optCls(this.TF, st.tf, i), pick: () => this.setState({ tf: i }) })),
+    tfShown: st.tf >= 0, tfFeedback: st.tf >= 0 ? this.TF[st.tf][2] : '',
+    shortShown: st.short, showShort: () => this.setState({ short: true }),
+    code: st.code, setCode: (e) => this.setState({ code: e.target.value }),
+    testsShown: st.tests, showTests: () => this.setState({ tests: true }),
+    hintShown: st.hint, toggleHint: () => this.setState({ hint: !st.hint }), hintLabel: st.hint ? 'Hide hint' : 'Show a hint'
+  };
+}
+}
+</script>
+</body>
+</html>

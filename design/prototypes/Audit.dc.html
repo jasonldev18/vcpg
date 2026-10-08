@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VCPG: audit bay</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=Silkscreen:wght@400;700&display=swap">
+<style>
+:root{--acc:#FF9B3D;--acc3:#FFD27A;--text:#F7EBDD;--mute:#BFA58F}
+body{margin:0;background:#050302}
+a{color:#FF9B3D}a:hover{color:#FFD27A}
+.bay{font-family:'IBM Plex Sans',sans-serif;color:var(--text)}
+.pix{font-family:'Silkscreen',monospace;letter-spacing:.04em}
+.mono{font-family:'IBM Plex Mono',monospace}
+.chip{min-height:44px;padding:0 14px;background:rgba(13,9,6,.7);border:1px solid rgba(255,155,61,.35);color:var(--mute);cursor:pointer;font:500 12px 'Oxanium',sans-serif;letter-spacing:.1em;text-transform:uppercase}
+.chip:hover{border-color:var(--acc);color:var(--text)}
+.chip.on{color:#1A0E06;background:linear-gradient(90deg,#FF9B3D,#FFD27A);border-color:transparent}
+.btn{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;background:rgba(13,9,6,.7);border:1px solid #FF9B3D;color:#FF9B3D;font:600 12px 'Oxanium',sans-serif;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;box-sizing:border-box}
+.btn:hover{background:rgba(255,155,61,.18);color:#FF9B3D}
+</style>
+</helmet>
+<div class="bay" style="position: relative; width: 100%; background: #050302; overflow: hidden">
+<canvas ref="{{ setView }}" onMouseMove="{{ onCanvasMove }}" onMouseLeave="{{ onCanvasLeave }}" onClick="{{ onCanvasClick }}" role="img" aria-label="Pixel-art space mission control room. Four agents in black suits and sunglasses work at consoles, pin issues to a red intel board, repair them in a side bay, test them in a glass chamber, and pin cleared pull requests to a second board." style="display: block; width: 100%; aspect-ratio: 16 / 9; image-rendering: pixelated; cursor: crosshair"></canvas>
+
+<div style="position: absolute; left: 0; top: 0; right: 0; padding: 14px 20px 40px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; background: linear-gradient(rgba(5,3,2,.85), rgba(5,3,2,0)); pointer-events: none">
+<span class="pix" style="font-size: 20px; font-weight: 700; color: #FFD27A">AUDIT BAY</span>
+<span class="mono" style="font-size: 13px; color: {{ statusColor }}">{{ status }}</span>
+<div style="flex: 1 1 0"></div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; pointer-events: auto">
+<sc-for list="{{ modes }}" as="m" hint-placeholder-count="3">
+<button class="chip {{ m.cls }}" aria-pressed="{{ m.on }}" onClick="{{ m.pick }}">{{ m.label }}</button>
+</sc-for>
+<a class="btn" href="MissionControl.dc.html">Mission control</a>
+</div>
+</div>
+
+<div style="position: absolute; left: 20px; bottom: 18px; max-width: 640px; padding: 10px 14px; background: rgba(5,3,2,.72); border: 1px solid rgba(255,155,61,.25); display: flex; flex-direction: column; gap: 3px; pointer-events: none">
+<span class="pix" style="font-size: 12px; color: #FF9B3D">SHIP LOG</span>
+<sc-for list="{{ log }}" as="l" hint-placeholder-count="3">
+<div class="mono" style="font-size: 12px; color: {{ l.color }}">{{ l.text }}</div>
+</sc-for>
+</div>
+<div class="mono" style="position: absolute; right: 20px; bottom: 18px; font-size: 12px; color: #BFA58F; background: rgba(5,3,2,.72); padding: 8px 12px; pointer-events: none">Hover an agent for their dossier. Click to poke.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"mode":{"editor":"enum","default":"offline","options":["offline","quick","deep"]},"$preview":{"width":1440,"height":810}}'>
+class Component extends DCLogic {
+state = { mode: null, log: [], line: '' };
+
+CREW = {
+  lead: { name: 'ROOK', role: 'AUDIT LEAD', code: 'AGENT 001', tie: '#FF4D5E', tieD: '#B8303C', skin: '#E0B48F', skinD: '#C4936C', hair: '#C9CED6', hl: '#EEF0F4', home: 'seat_lead', coat: true },
+  build: { name: 'BOLT', role: 'BUILD AUDITOR', code: 'AGENT 004', tie: '#5AA9FF', tieD: '#2F6FD0', skin: '#8D5A3B', skinD: '#6E4329', hair: '#2A1E16', hl: '#4A3A2E', home: 'seat_code' },
+  teach: { name: 'ECHO', role: 'TEACHING AUDITOR', code: 'AGENT 007', tie: '#41D6C3', tieD: '#1E9C8C', skin: '#F1C7A3', skinD: '#D8A884', hair: '#1A1420', hl: '#3A2E48', home: 'seat_lessons', mic: true },
+  out: { name: 'PIXEL', role: 'OUTPUT AUDITOR', code: 'AGENT 009', tie: '#FFD45E', tieD: '#D9A62A', skin: '#C68B5E', skinD: '#A56E45', hair: '#F2C25A', hl: '#FFE7A0', home: 'seat_slides', pocket: '#FFD45E' }
+};
+HUB = [0, 262];
+LOC = {
+  seat_code: { p: [-0.585, 252], via: [[-0.585, 262]], face: 'back', sit: true },
+  seat_plans: { p: [-0.275, 252], via: [[-0.275, 262]], face: 'back', sit: true },
+  seat_lessons: { p: [0.275, 252], via: [[0.275, 262]], face: 'back', sit: true },
+  seat_inter: { p: [0.585, 252], via: [[0.585, 262]], face: 'back', sit: true },
+  seat_slides: { p: [-0.42, 302], via: [[-0.42, 318], [0, 318]], face: 'back', sit: true },
+  behind_slides: { p: [-0.42, 314], via: [[-0.42, 318], [0, 318]], face: 'back' },
+  seat_lead: { p: [0, 357], via: [[0.28, 357], [0.28, 318], [0, 318]], face: 'back', sit: true },
+  issue_a: { p: [-0.56, 216], via: [[0, 216]], face: 'back' }, issue_b: { p: [-0.44, 216], via: [[0, 216]], face: 'back' }, issue_c: { p: [-0.32, 216], via: [[0, 216]], face: 'back' },
+  pr_a: { p: [0.32, 216], via: [[0, 216]], face: 'back' }, pr_b: { p: [0.44, 216], via: [[0, 216]], face: 'back' }, pr_c: { p: [0.56, 216], via: [[0, 216]], face: 'back' },
+  bench_a: { p: [0.8, 232], via: [[0.8, 262]], face: 'right' }, bench_b: { p: [0.8, 244], via: [[0.8, 262]], face: 'right' }, bench_c: { p: [0.8, 256], via: [[0.8, 262]], face: 'right' },
+  test_a: { p: [-0.8, 232], via: [[-0.8, 262]], face: 'left' }, test_b: { p: [-0.8, 244], via: [[-0.8, 262]], face: 'left' }, test_c: { p: [-0.8, 256], via: [[-0.8, 262]], face: 'left' }
+};
+DESKS = [
+  { yF: 240, u0: -0.74, u1: -0.12, st: [['code', -0.74, -0.43, ['code', 'tree']], ['plans', -0.43, -0.12, ['gantt', 'list']]] },
+  { yF: 240, u0: 0.12, u1: 0.74, st: [['lessons', 0.12, 0.43, ['quiz', 'bars']], ['interviews', 0.43, 0.74, ['wave', 'chat']]] },
+  { yF: 290, u0: -0.64, u1: -0.2, st: [['slides', -0.64, -0.2, ['slide', 'thumbs', 'chart']]] },
+  { yF: 290, u0: 0.2, u1: 0.64, st: [['comms', 0.2, 0.64, ['radar', 'map']]] },
+  { yF: 345, u0: -0.2, u1: 0.2, st: [['holo', -0.2, 0.2, ['list', 'globe', 'map']]] },
+  { yF: 345, u0: -1.0, u1: -0.45, st: [['decorL', -1.0, -0.45, ['chart', 'radar']]] },
+  { yF: 345, u0: 0.45, u1: 1.0, st: [['decorR', 0.45, 1.0, ['map', 'bars']]] }
+];
+LABEL = { code: 'CODE', plans: 'PLANS', lessons: 'LESSONS', interviews: 'INTERVIEWS', slides: 'SLIDES', comms: 'COMMS', holo: 'COMMAND', decorL: 'NAV', decorR: 'SIGNALS' };
+CHAIRS = [['seat_code', -0.585, 252], ['seat_plans', -0.275, 252], ['seat_lessons', 0.275, 252], ['seat_inter', 0.585, 252], ['seat_slides', -0.42, 302], ['seat_comms', 0.42, 302], ['seat_lead', 0, 357]];
+ISSUES = {
+  0: { id: 'I-12', tag: 'HINT LEAK', title: 'Interviewer gave away the answer in a hint', pr: '#41', prTag: 'HINT RULE', prTitle: 'Interviewer: hints never name the concept' },
+  1: { id: 'I-13', tag: 'SLIDE VS CODE', title: 'Slide says full sort, code uses argpartition', pr: '#42', prTag: 'DIFF SLIDES', prTitle: 'Slide writer reads the final diff, not the plan' },
+  2: { id: 'I-14', tag: 'REPLANS', title: 'Step 5 needed three replans', pr: '#43', prTag: 'SPLIT STEPS', prTitle: 'Planner splits steps over 200 lines' }
+};
+CHECKS = { reviewer: 'Reviewer cuts were safe', quizzes: 'Lesson quizzes are balanced', grader: 'Grader calibration 6 of 6' };
+
+setView = (el) => { this.view = el; };
+
+hw(y) { return 260 * (y - 60) / 140; }
+X(u, y) { return 360 + u * this.hw(y); }
+sc(y) { return this.hw(y) / 260; }
+hs(n) { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); }
+poly(g, pts, fill) { g.fillStyle = fill; g.beginPath(); pts.forEach((p, i) => (i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]))); g.closePath(); g.fill(); }
+rect(g, x, y, w, h, c) { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h))); }
+yt(x) { return 60 - 0.14615 * Math.abs(360 - x); }
+yb(x) { return 60 + 0.53846 * Math.abs(360 - x); }
+
+mode() { return this.state.mode || this.props.mode || 'offline'; }
+
+scripts(mode) {
+  const go = (k, run) => ({ type: 'go', to: k, run: run });
+  const work = (secs, say, anim, at, fx) => ({ type: 'work', secs: secs, say: say, anim: anim || 'type', at: at, fx: fx });
+  const ev = (e) => ({ type: 'ev', ev: e });
+  const emo = (e, secs) => ({ type: 'emote', e: e, secs: secs });
+  const carry = (c) => ({ type: 'carry', c: c });
+  const rest = () => work(1e9, '', 'idle'), sleep = () => work(1e9, '', 'sleep');
+  const fix = (k, iss, bench, test, pr, fixSay, testSay, extra) => [emo('!', 0.7), go(iss, true), work(1, 'PINNING INTEL', 'pin'), ev('pin:' + k), work(0.5, '', 'idle'),
+    carry('issue'), ev('take:' + k), go(bench), carry(null), ev('fix:' + k), work(4.2, fixSay, 'hammer', 'bench', 'spark'), carry('pr'), go(test), carry(null),
+    work(2.5, testSay, 'scan', 'test')].concat(extra || [], [carry('pr'), go(pr), work(0.8, '', 'pin'), carry(null), ev('pr:' + k), work(1.4, '', 'cheer')]);
+  if (mode === 'offline') return { lead: [sleep()], build: [sleep()], teach: [sleep()], out: [sleep()] };
+  if (mode === 'quick') {
+    return { build: [sleep()], teach: [sleep()], out: [sleep()],
+      lead: [work(1.3, '', 'stretch'), go('seat_inter'), work(2.4, 'CHECKING ANSWERS', 'type', 'interviews'), ev('pass:grader'), go('behind_slides'), work(2.8, 'CHECKING SLIDES', 'type', 'slides')]
+        .concat(fix(1, 'issue_b', 'bench_b', 'test_b', 'pr_b', 'FIXING SLIDE WRITER', 'RUNNING TESTS'), [ev('ready'), go('seat_lead'), work(2.4, 'SCAN COMPLETE', 'idle'), ev('done'), rest()]) };
+  }
+  return {
+    lead: [work(1.3, '', 'stretch'), work(5, 'COLLECTING REPORTS', 'type', 'holo'), { type: 'until', n: 3, say: 'TRACING CAUSES', anim: 'type', at: 'holo' },
+      emo('!', 0.6), go('pr_b', true), work(1.8, 'STAMPING APPROVAL', 'pin'), ev('ready'), work(1.6, '', 'cheer'), go('seat_lead'), work(2.6, 'SCAN COMPLETE', 'idle'), ev('done'), rest()],
+    build: [work(1.0, '', 'stretch'), work(3, 'CHECKING CODE', 'type', 'code'), ev('pass:reviewer'), emo('ok', 0.6), go('seat_plans'), work(3, 'CHECKING PLANS', 'type', 'plans')]
+      .concat(fix(2, 'issue_a', 'bench_a', 'test_a', 'pr_a', 'FIXING PLANNER', 'RUNNING TESTS'), [go('seat_code'), rest()]),
+    teach: [work(1.5, '', 'stretch'), work(3, 'CHECKING QUIZZES', 'type', 'lessons'), ev('pass:quizzes'), emo('ok', 0.6), go('seat_inter'), work(3.6, 'READING TRANSCRIPTS', 'type', 'interviews')]
+      .concat(fix(0, 'issue_b', 'bench_b', 'test_b', 'pr_c', 'FIXING INTERVIEWER', 'RERUNNING CALIBRATION', [ev('pass:grader')]), [go('seat_lessons'), rest()]),
+    out: [work(2.0, '', 'stretch'), work(4.2, 'CHECKING SLIDES', 'type', 'slides')]
+      .concat(fix(1, 'issue_c', 'bench_c', 'test_c', 'pr_b', 'FIXING SLIDE WRITER', 'RECHECKING SLIDES'), [go('seat_slides'), rest()])
+  };
+}
+
+reset(mode) {
+  const sc = this.scripts(mode), ids = ['lead', 'build', 'teach', 'out'];
+  const S = this.sim = { t: 0, mode: mode, alarmAt: -10, doneAt: null, readyAt: -10, shake: 0, parts: [], beams: [], log: [],
+    issues: {}, prs: {}, issueOrder: [], prOrder: [], cardT: {}, prT: {},
+    agents: ids.map((id, i) => { const L = this.LOC[this.CREW[id].home];
+      return { id: id, u: L.p[0], y: L.p[1], loc: this.CREW[id].home, seated: true, walking: false, face: 'back', anim: 'sleep', say: '', prevSay: '', sayAt: 0,
+        at: null, fx: null, carry: null, emote: null, poke: -10, off: i * 0.73, front: id === 'out' && mode !== 'deep', q: sc[id].slice(), cur: null }; }) };
+  if (mode === 'offline') {
+    S.issueOrder = ['0', '1', '2']; S.prOrder = ['0', '1', '2'];
+    ['0', '1', '2'].forEach((k) => { S.issues[k] = 'fixed'; S.prs[k] = 'merged'; });
+    S.log = [{ text: '> Last deep scan: 3 issues found, 3 pull requests merged', color: '#BFA58F' }, { text: '> All agents off duty. Next scan after the current project.', color: '#8FA2C4' }];
+  }
+  this.sync();
+}
+
+logLine(text, color) { this.sim.log.push({ text: text, color: color }); }
+who(a) { return a ? 'Agent ' + this.CREW[a.id].name.charAt(0) + this.CREW[a.id].name.slice(1).toLowerCase() : ''; }
+
+burst(x, y, n, cols, spread, up, floor) {
+  for (let i = 0; i < n; i++) this.sim.parts.push({ x: x, y: y, vx: (Math.random() - 0.5) * spread, vy: -up * (0.4 + Math.random() * 0.8), g: 160, life: 0.9 + Math.random() * 0.9, c: cols[i % cols.length], s: Math.random() < 0.3 ? 2 : 1, floor: floor || 400 });
+}
+
+fire(ev, a) {
+  const S = this.sim, kv = ev.split(':'), k = kv[0], v = kv[1], I = this.ISSUES[v];
+  if (k === 'pin') {
+    const i = S.issueOrder.length; S.issueOrder.push(v); S.issues[v] = 'open'; S.cardT[v] = S.t; S.alarmAt = S.t; S.shake = 0.5;
+    S.beams.push({ x0: 360, y0: 94, x1: 181, y1: 70 + i * 31, c: '255,77,94', t0: S.t });
+    this.logLine('! ' + this.who(a) + ' pinned ' + I.id + ': ' + I.title, '#FF7A84');
+  }
+  if (k === 'take') S.issues[v] = 'repair';
+  if (k === 'fix') this.logLine('> ' + this.who(a) + ' took ' + I.id + ' to the repair bay', '#FFD27A');
+  if (k === 'pr') {
+    const i = S.prOrder.length; S.issues[v] = 'fixed'; S.prOrder.push(v); S.prs[v] = 'tests'; S.prT[v] = S.t;
+    S.beams.push({ x0: 360, y0: 94, x1: 539, y1: 70 + i * 31, c: '92,225,230', t0: S.t });
+    this.burst(this.X(a.u, a.y), a.y - 40, 14, ['#5CE1E6', '#FFFFFF'], 60, 70, a.y);
+    this.logLine('> ' + I.pr + ' pinned to the cleared board, tests passing', '#5CE1E6');
+  }
+  if (k === 'pass') this.logLine('> ' + this.who(a) + ': ' + this.CHECKS[v], '#BFA58F');
+  if (k === 'ready') {
+    Object.keys(S.prs).forEach((p) => { S.prs[p] = 'ready'; }); S.readyAt = S.t;
+    this.burst(539, 90, 70, ['#FFD27A', '#FF9B3D', '#FF4D5E', '#5CE1E6', '#FFFFFF'], 160, 120, 216);
+    this.logLine('> ' + this.who(a) + ': pull requests approved for your review', '#FFD27A');
+  }
+  if (k === 'done') { S.doneAt = S.t; this.logLine('> Scan complete. Agents returning to stations.', '#F7EBDD'); }
+  this.sync();
+}
+
+sync() {
+  const S = this.sim, ready = S.prOrder.filter((k) => S.prs[k] === 'ready').length;
+  const line = S.mode === 'offline' ? 'OFFLINE / ALL AGENTS ASLEEP' : S.doneAt !== null ? 'SCAN COMPLETE / ' + ready + ' PULL REQUESTS READY FOR REVIEW' : 'SCAN IN PROGRESS / ' + S.issueOrder.length + ' ISSUES / ' + S.prOrder.length + ' FIXES';
+  this.setState({ log: S.log.slice(-3), line: line });
+}
+
+route(fromKey, toKey) {
+  const F = this.LOC[fromKey], T = this.LOC[toKey];
+  const fl = F && F.via.length ? F.via[F.via.length - 1] : null, tl = T.via.length ? T.via[T.via.length - 1] : null;
+  const sameAisle = fl && tl && Math.abs(fl[1] - tl[1]) < 1e-6;
+  let pts = (F ? F.via : []).concat(sameAisle ? [] : [this.HUB], T.via.slice().reverse(), [T.p]);
+  const eq = (p, q) => Math.abs(p[0] - q[0]) < 1e-6 && Math.abs(p[1] - q[1]) < 1e-6;
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let i = 1; i < pts.length; i++) if (eq(pts[i], pts[i - 1])) { pts.splice(i, 1); changed = true; break; }
+    for (let i = 1; i < pts.length - 1 && !changed; i++) if (eq(pts[i - 1], pts[i + 1])) { pts.splice(i, 2); changed = true; }
+  }
+  return pts.map((p) => p.slice());
+}
+
+step(dt) {
+  const S = this.sim; S.t += dt; S.shake = Math.max(0, S.shake - dt);
+  if (S.doneAt !== null && S.t - S.doneAt > 8) { this.reset(S.mode); return; }
+  S.agents.forEach((a) => {
+    if (!a.cur) { a.cur = a.q.shift() || null; if (a.cur) a.cur.el = 0; }
+    const c = a.cur;
+    if (c) {
+      if (c.type === 'go') {
+        if (!c.pts) { c.pts = this.route(a.loc, c.to); a.seated = false; }
+        a.walking = true; a.say = ''; a.at = null; a.fx = null;
+        const tp = c.pts[0], sx = this.X(a.u, a.y), tx = this.X(tp[0], tp[1]), dx = tx - sx, dy = tp[1] - a.y, d = Math.sqrt(dx * dx + dy * dy);
+        const sp = (c.run ? 70 : 46) * this.sc(a.y) * dt;
+        if (d > 0.01) a.face = Math.abs(dy) > Math.abs(dx) * 0.6 ? (dy > 0 ? 'front' : 'back') : (dx > 0 ? 'right' : 'left');
+        if (d <= sp) {
+          a.u = tp[0]; a.y = tp[1]; c.pts.shift();
+          if (!c.pts.length) {
+            a.cur = null; a.walking = false; a.loc = c.to; const L = this.LOC[c.to]; a.face = L.face; a.seated = !!L.sit;
+            this.burst(this.X(a.u, a.y), a.y - 1, 4, ['#4A3A30', '#3A2A20'], 30, 18, a.y);
+          }
+        } else { const nx = sx + (dx / d) * sp, ny = a.y + (dy / d) * sp; a.y = ny; a.u = (nx - 360) / this.hw(ny); }
+      } else if (c.type === 'work' || c.type === 'until') {
+        a.walking = false; a.anim = c.anim || 'type'; a.say = c.say || ''; a.at = c.at || null; a.fx = c.fx || null; c.el += dt;
+        if (c.type === 'work' ? c.el >= c.secs : S.prOrder.length >= c.n) { a.cur = null; a.say = ''; a.at = null; a.fx = null; }
+      } else if (c.type === 'emote') {
+        if (c.el === 0) a.emote = { e: c.e, from: S.t, until: S.t + c.secs };
+        a.walking = false; a.anim = 'idle'; a.say = ''; c.el += dt; if (c.el >= c.secs) a.cur = null;
+      } else if (c.type === 'carry') { a.carry = c.c; a.cur = null; }
+      else if (c.type === 'ev') { a.cur = null; this.fire(c.ev, a); }
+    }
+    if (a.say !== a.prevSay) { a.prevSay = a.say; a.sayAt = S.t; }
+    if (a.fx === 'spark' && Math.floor(S.t * 8) % 4 === 2 && Math.random() < 0.7) {
+      const s = this.sc(a.y), x = this.X(a.u, a.y) + 9 * s, y = a.y - 13 * s;
+      for (let n = 0; n < 3; n++) S.parts.push({ x: x, y: y, vx: (Math.random() - 0.3) * 70, vy: -20 - Math.random() * 50, g: 220, life: 0.3 + Math.random() * 0.3, c: n ? '#FFD27A' : '#FFFFFF', s: 1, floor: a.y });
+    }
+  });
+  S.parts = S.parts.filter((p) => (p.life -= dt) > 0).slice(-320);
+  S.parts.forEach((p) => { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += p.g * dt; if (p.y > p.floor) { p.y = p.floor; p.vy *= -0.3; p.vx *= 0.6; } });
+  S.beams = S.beams.filter((b) => S.t - b.t0 < 1.2);
+}
+
+fig(g, id, x, y, s, view, pose, T, o) {
+  o = o || {};
+  const A = this.CREW[id], SUIT = '#1C1E27', SUITD = '#111218', SUITL = '#2E3140', PANTS = '#15161D', SHOE = '#07070B', SHIRT = '#ECECF2', GL = '#06060B';
+  const side = view === 'left' || view === 'right';
+  const R = (ux, uy, uw, uh, c) => {
+    g.fillStyle = c; const X0 = view === 'left' ? x - (ux + uw) * s : x + ux * s;
+    const px = Math.round(X0), py = Math.round(y + uy * s);
+    g.fillRect(px, py, Math.max(1, Math.round(X0 + uw * s) - px), Math.max(1, Math.round(y + (uy + uh) * s) - py));
+  };
+  const f = Math.floor(T * 8 + (o.off || 0) * 3) % 4, walk = pose === 'walk';
+  const seated = /^sit|^sleep/.test(pose), sleeping = /^sleep/.test(pose), frontSeat = pose === 'sitFront' || pose === 'sleepFront';
+  const dy = seated ? 7 : 0;
+  let L = 0;
+  if (walk) L = (f % 2) * 0.6;
+  if (pose === 'cheer') L = Math.abs(Math.sin((T * 2.4 + (o.off || 0)) * Math.PI)) * 5;
+  const breathe = (pose === 'idle' || pose === 'sit' || sleeping) ? (Math.floor(T * 1.2 + (o.off || 0)) % 2) * 0.4 : 0;
+  if (!seated) R(-6.5, -0.6, 13, 1.2, 'rgba(0,0,0,0.38)');
+  if (frontSeat) {
+    R(-6.5, -23, 13, 14, '#2A1C14'); R(-6.5, -23, 13, 0.8, '#FF9B3D'); R(-6.5, -23, 0.8, 14, '#3A2A1E'); R(-7, -9, 14, 2, '#1E140E');
+    R(-0.6, -7, 1.2, 4, '#3A3F4C'); R(-5, -2.5, 10, 1, '#2A2E38');
+  }
+  const U = (ux, uy, uw, uh, c) => R(ux, uy + dy - L, uw, uh, c);
+  if (!seated) {
+    if (side) {
+      const sw = walk ? [1.6, 0.5, -1.6, 0.5][f] : 0;
+      U(-1.6 - sw, -10, 3, 8.6, '#0F1016'); U(-1.6 + sw, -10, 3, 8.6, PANTS);
+      U(-1.6 - sw, -1.5, 4.2, 1.5, SHOE); U(-1.6 + sw, -1.5, 4.2, 1.5, SHOE); U(1.2 + sw, -1.5, 1, 0.5, '#3A3F4C');
+    } else {
+      const ll = walk && f === 1 ? 0.9 : 0, rl = walk && f === 3 ? 0.9 : 0;
+      U(-4, -10 - ll, 3, 8.6, PANTS); U(1, -10 - rl, 3, 8.6, PANTS); U(-2.6, -10 - ll, 0.5, 8, '#20212B'); U(2.4, -10 - rl, 0.5, 8, '#20212B');
+      U(-4.6, -1.5 - ll, 3.8, 1.5, SHOE); U(0.8, -1.5 - rl, 3.8, 1.5, SHOE); U(-4, -1.5 - ll, 1, 0.5, '#3A3F4C'); U(1.4, -1.5 - rl, 1, 0.5, '#3A3F4C');
+    }
+  } else if (frontSeat) {
+    R(-4.2, -8.5, 3.2, 3, PANTS); R(1, -8.5, 3.2, 3, PANTS); R(-4.2, -5.5, 3.2, 4.5, '#111218'); R(1, -5.5, 3.2, 4.5, '#111218');
+    R(-4.8, -1.5, 3.8, 1.5, SHOE); R(0.8, -1.5, 3.8, 1.5, SHOE);
+  }
+  if (A.coat && !seated && !side) { U(-6.3, -12, 12.6, 4, SUIT); U(-0.3, -12, 0.6, 4, SUITD); }
+  if (side) {
+    U(-3.6, -20, 7.2, 10.6, SUIT); U(-3.6, -20, 1, 10.6, SUITD); U(2.6, -20, 1, 4.6, SHIRT); U(3.0, -19.3, 0.7, 6.5, A.tie); U(-3.6, -10, 7.2, 0.6, SUITD);
+    if (A.coat) U(-4, -12, 8, 3.5, SUIT);
+  } else if (view === 'back' && !frontSeat) {
+    U(-5.6, -20, 11.2, 10.6, SUIT); U(-0.25, -20, 0.5, 10.6, SUITD); U(-5.6, -20, 1, 10.6, SUITL); U(4.6, -20, 1, 10.6, SUITD); U(-1.6, -20.6, 3.2, 0.7, SHIRT);
+  } else {
+    U(-5.6, -20, 11.2, 10.6, SUIT); U(3.6, -20, 2, 10.6, SUITD); U(-5.6, -20, 1, 10.6, SUITL);
+    U(-1.6, -20, 3.2, 4.6, SHIRT); U(-1, -15.4, 2, 1.4, SHIRT); U(-2.7, -20, 1.1, 5.6, SUITL); U(1.6, -20, 1.1, 5.6, SUITL);
+    U(-0.5, -19.3, 1, 7.4, A.tie); U(-0.7, -19.8, 1.4, 1, A.tieD); U(-0.3, -11.8, 0.6, 0.6, '#3A3D4A'); U(-0.3, -13.6, 0.6, 0.6, '#3A3D4A');
+    if (A.pocket) U(2.3, -18.2, 1.5, 0.9, A.pocket);
+  }
+  const arm = (ux, uy, uw, uh, hand) => { U(ux, uy, uw, uh, SUIT); U(ux, uy, Math.min(uw, 0.6), uh, SUITL); if (hand) U(ux, uy + uh - 0.2, uw, 1.6, A.skin); };
+  const sw = walk ? (f < 2 ? 0.9 : -0.9) : 0;
+  if (side) {
+    if (pose === 'hammer') {
+      if (f < 2) { arm(0.2, -27, 2.2, 8, false); U(0.2, -28.6, 2.2, 1.6, A.skin); U(-1.4, -31.4, 5.4, 2.6, '#9AA3B5'); U(0.8, -29, 1, 1.2, '#6B4A3A'); }
+      else { arm(0, -18.4, 6.4, 2.2, false); U(6.2, -18.6, 1.6, 2.4, A.skin); U(7, -22, 2.6, 5.6, '#9AA3B5'); }
+    } else if (pose === 'scan') { arm(0, -17.6, 5.4, 2.2, false); U(5.2, -17.8, 1.4, 2.2, A.skin); U(5.8, -20.6, 2.6, 4.4, '#0E2A2C'); U(6.2, -20, 1.8, 3.2, Math.floor(T * 4) % 2 ? '#5CE1E6' : '#2A8A8E'); }
+    else arm(-1 + sw * 1.4, -19.6, 2.3, 9.2, true);
+  } else if (pose === 'pin') { arm(-7.6, -19.6, 2, 9.6, true); arm(5.6, -29, 2, 9.4, false); U(5.6, -30.4, 2, 1.6, A.skin); }
+  else if (pose === 'cheer') { arm(-8.6, -29, 2, 9.4, false); arm(6.6, -29, 2, 9.4, false); U(-8.6, -30.4, 2, 1.6, A.skin); U(6.6, -30.4, 2, 1.6, A.skin); }
+  else if (pose === 'stretch' || pose === 'sitStretch') { arm(-9.4, -30, 2, 10.6, false); arm(7.4, -30, 2, 10.6, false); U(-9.4, -31.4, 2, 1.6, A.skin); U(7.4, -31.4, 2, 1.6, A.skin); }
+  else if (pose === 'sit') { const k = Math.floor(T * 6 + (o.off || 0)) % 2 * 0.5; arm(-7.8, -19.4 + k, 2.2, 6, true); arm(5.6, -19.4 + (0.5 - k), 2.2, 6, true); }
+  else if (sleeping && !frontSeat) { arm(-7.4, -18.6, 2, 7, true); arm(5.4, -18.6, 2, 7, true); }
+  else { arm(-7.6, -19.6 + sw, 2, 9.6, true); arm(5.6, -19.6 - sw, 2, 9.6, true); }
+  if (o.carry && (walk || pose === 'idle')) {
+    const cc = o.carry === 'issue' ? '#D9B26A' : '#0E2A2C', cx = side ? 1.2 : 5.2;
+    U(cx, -14.6, 4.6, 5.8, cc); U(cx + 0.4, -14, 3.8, 0.6, o.carry === 'issue' ? '#B8862E' : '#5CE1E6');
+    U(cx + 0.8, -12.4, 2.6, 1.2, o.carry === 'issue' ? '#FF4D5E' : '#5CE1E6');
+  }
+  const hx = sleeping && !frontSeat ? 1.4 : sleeping ? 0.8 : 0, hy = dy - L + breathe + (sleeping && !frontSeat ? 1.4 : 0);
+  const H = (ux, uy, uw, uh, c) => R(ux + hx, uy + hy, uw, uh, c);
+  H(-1.6, -21.8, 3.2, 1.8, A.skinD);
+  if (side) {
+    H(-3.6, -29, 7.2, 8, A.skin); H(3.4, -25.6, 0.9, 1.6, A.skin); H(-1.3, -26.2, 1.3, 2.2, A.skinD); H(-3.6, -21.6, 6, 0.8, A.skin);
+    H(1, -26.6, 3.2, 2, GL); H(-1.1, -26.1, 2.2, 0.6, GL); H(2.6, -26.4, 0.7, 0.5, Math.floor(T * 1.5 + (o.off || 0)) % 2 ? '#FFD27A' : '#5CE1E6');
+    H(2.4, -23.1, 1.1, 0.5, '#7A3A30'); H(-1.6, -25.2, 0.5, 3.6, '#BFE6EA');
+  } else if (view === 'back' && !frontSeat) {
+    H(-4, -29, 8, 8, A.skin); H(-4.7, -26.2, 0.8, 2.2, A.skinD); H(3.9, -26.2, 0.8, 2.2, A.skinD);
+    H(-4.4, -26.2, 0.5, 0.6, GL); H(3.9, -26.2, 0.5, 0.6, GL); H(4.1, -25, 0.5, 4.6, '#BFE6EA');
+  } else {
+    H(-4, -29, 8, 8, A.skin); H(-3.6, -21.6, 7.2, 0.8, A.skin); H(2.6, -28.6, 1.4, 7.2, A.skinD); H(-4.7, -26.2, 0.8, 2.2, A.skinD); H(3.9, -26.2, 0.8, 2.2, A.skinD);
+    const gy = sleeping ? -25.6 : -26.6;
+    H(-3.9, gy, 3.5, 2.1, GL); H(0.4, gy, 3.5, 2.1, GL); H(-0.4, gy + 0.4, 0.8, 0.5, GL); H(-4.4, gy + 0.4, 0.6, 0.5, GL); H(3.8, gy + 0.4, 0.6, 0.5, GL);
+    const gl = (T * 0.7 + (o.off || 0)) % 3;
+    if (gl < 1.2) { H(-3.4 + gl * 2, gy + 0.3, 0.8, 0.5, '#FFD27A'); H(0.9 + gl * 2, gy + 0.3, 0.6, 0.4, '#5CE1E6'); }
+    if (sleeping) H(-0.6, -23.4, 1.2, 1, '#5A2A24');
+    else if (pose === 'cheer') H(-1.4, -23.6, 2.8, 1.2, '#5A2A24');
+    else H(-1.1, -23.1, 2.2, 0.5, '#7A3A30');
+    if (id === 'lead') H(-1.8, -23.9, 3.6, 0.8, A.hair);
+    H(4.2, -25.6, 0.5, 3.6, '#BFE6EA');
+    if (A.mic) { H(-4.9, -24.6, 0.5, 2.2, '#41D6C3'); H(-4.9, -22.8, 2.8, 0.5, '#41D6C3'); }
+  }
+  const c = A.hair, hl = A.hl;
+  if (id === 'lead') {
+    if (side) { H(-3.8, -29.6, 6.4, 2.4, c); H(-3.8, -27.2, 2.6, 4.4, c); H(-0.6, -29.6, 2.6, 0.6, hl); }
+    else if (view === 'back' && !frontSeat) { H(-4.3, -29.6, 8.6, 6.4, c); H(-3.6, -23.4, 7.2, 0.8, c); H(-1.2, -29.2, 2.4, 3, hl); }
+    else { H(-4.3, -29.6, 8.6, 2.4, c); H(-4.3, -27.4, 0.9, 2.8, c); H(3.4, -27.4, 0.9, 2.8, c); H(-2.6, -29.6, 3, 0.6, hl); }
+  }
+  if (id === 'build') {
+    if (side) { H(-3.6, -29.4, 6.2, 1.6, c); H(-3.6, -27.8, 2.2, 3, c); }
+    else if (view === 'back' && !frontSeat) H(-4, -29.4, 8, 4.8, c);
+    else { H(-4, -29.4, 8, 1.6, c); H(-4, -28, 0.6, 1.6, c); H(3.4, -28, 0.6, 1.6, c); }
+  }
+  if (id === 'teach') {
+    if (side) { H(-4.1, -29.8, 6.9, 2.7, c); H(-4.1, -27.2, 3.4, 6.4, c); H(1.4, -27.4, 1.8, 1.2, c); }
+    else if (view === 'back' && !frontSeat) { H(-4.8, -29.8, 9.6, 8.8, c); H(-2, -29.2, 4, 0.6, hl); }
+    else { H(-4.8, -29.8, 9.6, 2.9, c); H(-4.8, -27, 1.5, 6.2, c); H(3.3, -27, 1.5, 6.2, c); H(-3.8, -27.2, 3.2, 1, c); H(-3, -29.8, 3, 0.6, hl); }
+    H(-4.6, -30.4, 9.2, 0.7, '#2A3A44');
+  }
+  if (id === 'out') {
+    if (side) { H(-3.6, -30.4, 6.8, 2.6, c); H(0.4, -32.2, 4.2, 2, c); H(-3.6, -28, 2.2, 3, c); H(1, -32.2, 2, 0.6, hl); }
+    else if (view === 'back' && !frontSeat) { H(-4, -30.4, 8, 5.6, c); H(-1.6, -32.2, 5, 2, c); }
+    else { H(-4, -30.4, 8, 2.6, c); H(-1.6, -32.2, 5, 2, c); H(-1, -32.2, 2.2, 0.6, hl); H(-4, -28, 0.7, 1.6, c); H(3.3, -28, 0.7, 1.6, c); }
+  }
+}
+
+chair(g, x, y, s, lead) {
+  const k = lead ? 1.18 : 1, R = (ux, uy, uw, uh, c) => this.rect(g, x + ux * s * k, y + uy * s * k, uw * s * k, uh * s * k, c);
+  R(-6.4, -15.4, 12.8, 11.4, '#2A1C14'); R(-6.4, -15.4, 12.8, 0.8, lead ? '#FFD27A' : '#FF9B3D'); R(-6.4, -15.4, 0.8, 11.4, '#3A2A1E'); R(5.6, -15.4, 0.8, 11.4, '#1A120C');
+  R(-4, -12, 8, 0.5, '#3A2A1E'); R(-4, -9, 8, 0.5, '#3A2A1E');
+  R(-6.8, -5, 13.6, 1.6, '#1E140E'); R(-0.6, -3.6, 1.2, 2.6, '#3A3F4C'); R(-5.4, -1.2, 10.8, 1, '#2A2E38'); R(-5.6, -0.6, 1.2, 0.8, '#0B0B10'); R(4.4, -0.6, 1.2, 0.8, '#0B0B10');
+}
+
+mon(g, x, y, w, h, kind, on, T, offline, seed) {
+  x = Math.round(x); y = Math.round(y); w = Math.max(4, Math.round(w)); h = Math.max(4, Math.round(h));
+  g.fillStyle = '#0A0706'; g.fillRect(x - 1, y - 1, w + 2, h + 2);
+  g.fillStyle = offline ? '#05060A' : on ? '#2C180A' : '#170E08'; g.fillRect(x, y, w, h);
+  if (offline) {
+    if (seed % 2 === 0) { const ph = Math.floor(T * 0.6), px = x + 1 + Math.floor(this.hs(ph + seed) * (w - 4)), py = y + 1 + Math.floor(this.hs(ph + seed + 9) * (h - 3)); g.fillStyle = '#24476E'; g.fillRect(px, py, 3, 1); }
+    return;
+  }
+  const al = on ? 1 : 0.42, col = (r, gg, b) => 'rgba(' + r + ',' + gg + ',' + b + ',' + al + ')';
+  const O1 = col(255, 155, 61), O2 = col(255, 210, 122), CY = col(92, 225, 230), RD = col(255, 77, 94), DM = col(122, 74, 32);
+  const t = T * (on ? 1 : 0.2), R = (xx, yy, ww, hh, cc) => { g.fillStyle = cc; g.fillRect(Math.round(xx), Math.round(yy), Math.max(1, Math.round(ww)), Math.max(1, Math.round(hh))); };
+  const rows = Math.floor((h - 2) / 2);
+  if (kind === 'code') { const off = Math.floor(t * 6); for (let r = 0; r < rows; r++) { const n = off + r + seed * 13, ind = Math.floor(this.hs(n * 3) * 3) * 2; R(x + 2 + ind, y + 1 + r * 2, 2 + this.hs(n) * (w - 8 - ind), 1, n % 5 === 0 ? CY : n % 3 ? O1 : O2); } }
+  if (kind === 'tree') { const cx = x + w / 2; R(cx - 1, y + 2, 3, 2, O2); R(x + w * 0.2, y + h * 0.45, w * 0.6, 1, DM); [0.2, 0.5, 0.8].forEach((p, i) => { R(x + w * p, y + 4, 1, h * 0.45 - 4 + 1, DM); R(x + w * p - 1, y + h * 0.5, 3, 2, i === Math.floor(t * 1.5) % 3 ? CY : O1); R(x + w * p, y + h * 0.5 + 2, 1, h * 0.2, DM); R(x + w * p - 2, y + h * 0.75, 5, 2, O1); }); }
+  if (kind === 'gantt') { for (let r = 0; r < Math.floor((h - 2) / 3); r++) { const s0 = this.hs(r + seed) * w * 0.45, ln = w * (0.25 + this.hs(r * 7 + seed) * 0.3), p = (t * 0.15 + r * 0.17) % 1; R(x + 2 + s0, y + 2 + r * 3, ln, 2, DM); R(x + 2 + s0, y + 2 + r * 3, ln * p, 2, r % 3 ? O1 : O2); } }
+  if (kind === 'list') { for (let r = 0; r < Math.floor((h - 2) / 3); r++) { const n = r + Math.floor(t * 0.8) + seed; R(x + 2, y + 2 + r * 3, 2, 2, this.hs(n) > 0.75 ? RD : this.hs(n) > 0.4 ? CY : O2); R(x + 6, y + 2 + r * 3, 4 + this.hs(n * 5) * (w - 12), 1, DM); } }
+  if (kind === 'quiz') { for (let r = 0; r < Math.floor((h - 2) / 3); r++) { const n = r + Math.floor(t) + seed; R(x + 2, y + 2 + r * 3, 2, 2, this.hs(n) > 0.4 ? O2 : DM); R(x + 6, y + 2 + r * 3, 6 + this.hs(n * 3) * (w - 14), 1, O1); } }
+  if (kind === 'bars') { const n = Math.floor((w - 2) / 4); for (let i = 0; i < n; i++) { const hh = (0.25 + 0.7 * Math.abs(Math.sin(t * 2 + i * 0.7 + seed))) * (h - 3); R(x + 2 + i * 4, y + h - 1 - hh, 3, hh, i % 3 ? O1 : O2); } }
+  if (kind === 'wave') { for (let xx = 1; xx < w - 1; xx++) { const yy = y + h / 2 + Math.sin(xx * 0.45 + t * 7) * (h / 3) * (0.4 + 0.6 * Math.abs(Math.sin(t * 1.3 + xx * 0.04))); R(x + xx, yy, 1, 1, CY); } R(x + 1, y + h / 2, w - 2, 1, DM); }
+  if (kind === 'chat') { const off = Math.floor(t * 2); for (let r = 0; r < Math.floor((h - 2) / 4); r++) { const n = off + r + seed, left = n % 2 === 0, ln = 6 + this.hs(n) * (w * 0.5); R(left ? x + 2 : x + w - 2 - ln, y + 2 + r * 4, ln, 2, left ? O1 : CY); } }
+  if (kind === 'slide') {
+    const idx = on ? Math.floor(t / 1.1) % 3 : 0; R(x + 2, y + 2, w - 4, 2, O1);
+    if (idx === 0) { R(x + 2, y + 6, w * 0.35, h - 9, DM); for (let r = 0; r < 3; r++) R(x + w * 0.45, y + 6 + r * 3, w * 0.45, 1, O2); }
+    if (idx === 1) { for (let i = 0; i < 4; i++) { const hh = (0.3 + i * 0.18) * (h - 8); R(x + 3 + i * (w - 6) / 4, y + h - 2 - hh, (w - 6) / 4 - 2, hh, i === 2 ? RD : O1); } }
+    if (idx === 2) { R(x + 3, y + 7, w - 6, 3, O2); R(x + 3, y + 12, w * 0.6, 1, DM); if (on && Math.floor(T * 4) % 2) { R(x + 2, y + 6, w - 4, 1, RD); R(x + 2, y + 11, w - 4, 1, RD); } }
+  }
+  if (kind === 'thumbs') { const hi = Math.floor(t * 2) % 6; for (let i = 0; i < 6; i++) { const cx = x + 2 + (i % 3) * ((w - 4) / 3), cy = y + 2 + Math.floor(i / 3) * ((h - 4) / 2); R(cx, cy, (w - 4) / 3 - 2, (h - 4) / 2 - 2, i === hi ? O2 : DM); } }
+  if (kind === 'chart') { for (let xx = 1; xx < w - 1; xx++) { const v = 0.5 + 0.3 * Math.sin(xx * 0.18 + t * 2 + seed) + 0.12 * Math.sin(xx * 0.7 + t * 3); R(x + xx, y + h - 2 - v * (h - 4), 1, 1, xx > w * 0.7 ? CY : O2); } }
+  if (kind === 'radar') {
+    const cx = x + w / 2, cy = y + h / 2, r = Math.min(w, h) / 2 - 2;
+    for (let i = 0; i < 24; i++) { const an = i / 24 * Math.PI * 2; R(cx + Math.cos(an) * r, cy + Math.sin(an) * r, 1, 1, DM); }
+    const an = t * 3; for (let k = 0; k < r; k++) R(cx + Math.cos(an) * k, cy + Math.sin(an) * k, 1, 1, O2);
+    for (let i = 0; i < 3; i++) { const ba = this.hs(i + seed) * 6.28, br = this.hs(i * 3 + seed) * r * 0.8, d = ((an - ba) % 6.28 + 6.28) % 6.28; if (d < 2) R(cx + Math.cos(ba) * br, cy + Math.sin(ba) * br, 2, 2, RD); }
+  }
+  if (kind === 'map') { for (let yy = 2; yy < h - 1; yy += 3) for (let xx = 2; xx < w - 1; xx += 3) if (this.hs(xx * 0.31 + yy * 1.7 + seed) > 0.55) R(x + xx, y + yy, 1, 1, DM); for (let i = 0; i < 3; i++) if (Math.floor(t * 2 + i) % 3 === 0) R(x + 3 + this.hs(i + seed * 2) * (w - 6), y + 3 + this.hs(i * 5 + seed) * (h - 6), 2, 2, i ? O2 : CY); }
+  if (kind === 'globe') { const cx = x + w / 2, cy = y + h / 2, r = Math.min(w, h) / 2 - 2; for (let la = -60; la <= 60; la += 30) for (let lo = 0; lo < 360; lo += 30) { const a1 = la * Math.PI / 180, a2 = lo * Math.PI / 180 + t; if (Math.cos(a2) < 0) continue; R(cx + r * Math.cos(a1) * Math.sin(a2), cy - r * Math.sin(a1), 1, 1, O2); } }
+  g.fillStyle = 'rgba(255,255,255,0.04)'; g.fillRect(x, y, w, 1);
+}
+
+drawRoom(g, T, offline, alarm, act) {
+  const S = this.sim;
+  this.poly(g, [[0, 0], [720, 0], [620, 22], [100, 22]], '#0C0806');
+  [-0.62, 0, 0.62].forEach((k) => {
+    const xa = (y, u) => 360 + u * 260 * (60 - y) / 38;
+    for (let seg = 0; seg < 4; seg++) {
+      const y0 = seg * 5.5 + 0.5, y1 = y0 + 3.5;
+      this.poly(g, [[xa(y0, k - 0.07), y0], [xa(y0, k + 0.07), y0], [xa(y1, k + 0.07), y1], [xa(y1, k - 0.07), y1]], offline ? '#2A2622' : '#FFE9C8');
+    }
+  });
+  this.poly(g, [[0, 7], [100, 22], [100, 200], [0, 254]], '#1A110B');
+  this.poly(g, [[720, 7], [620, 22], [620, 200], [720, 254]], '#1D140D');
+  for (let i = 0; i < 3; i++) {
+    const xa = 6 + i * 31, xb = xa + 25;
+    this.poly(g, [[xa, this.yt(xa) + 10], [xb, this.yt(xb) + 10], [xb, this.yb(xb) - 6], [xa, this.yb(xa) - 6]], '#0E0F14');
+    for (let r = 0; r < 12; r++) for (let c = 0; c < 4; c++) {
+      const fx = xa + 4 + c * 5.5, top = this.yt(fx) + 16, bot = this.yb(fx) - 14, yy = top + (bot - top) * r / 11;
+      const on = (Math.floor(T * 2.2 + r * 1.3 + c * 2.1 + i) % 5) === 0;
+      g.fillStyle = on ? (c % 2 ? '#FF9B3D' : '#5BD68A') : '#1E2A22'; g.fillRect(Math.round(fx), Math.round(yy), 2, 1);
+    }
+  }
+  this.texts.push({ t: 'SERVERS', x: 16, y: 44, size: 11, color: offline ? '#4A5266' : '#7A8CA8' });
+  for (let i = 0; i < 2; i++) {
+    const xa = 626 + i * 26, xb = xa + 22;
+    this.poly(g, [[xa, this.yt(xa) + 18], [xb, this.yt(xb) + 18], [xb, this.yb(xb) - 40], [xa, this.yb(xa) - 40]], '#2A2E38');
+    const mid = (this.yt(xa) + this.yb(xa)) / 2;
+    this.poly(g, [[xa, mid - 4], [xb, mid - 7], [xb, mid - 3], [xa, mid]], '#E8B020');
+    g.fillStyle = '#14100C'; g.fillRect(xa + 3, Math.round(mid - 3), 2, 1);
+  }
+  this.poly(g, [[680, this.yt(680) + 30], [716, this.yt(716) + 30], [716, this.yb(716) - 70], [680, this.yb(680) - 70]], '#2A1E14');
+  for (let i = 0; i < 6; i++) { const xx = 684 + (i % 3) * 11, yy = this.yt(xx) + 38 + Math.floor(i / 3) * 18; g.fillStyle = '#9AA3B5'; g.fillRect(xx, yy, 6, 2); g.fillRect(xx + 2, yy, 2, 8); }
+  this.texts.push({ t: 'REPAIR', x: 652, y: 44, size: 12, color: offline ? '#4A5266' : '#FFB45E', glow: !offline });
+  this.texts.push({ t: 'ARCHIVE', x: 628, y: 66, size: 11, color: '#8A6A50' });
+  g.fillStyle = '#17100B'; g.fillRect(100, 22, 520, 178);
+  g.fillStyle = '#0B0807'; g.fillRect(104, 24, 512, 11);
+  g.fillStyle = '#1E140E'; g.fillRect(104, 24, 70, 11); g.fillRect(546, 24, 70, 11);
+  const tt = Math.floor(S.t), mm = String(Math.floor(tt / 60)).padStart(2, '0'), ss = String(tt % 60).padStart(2, '0');
+  this.texts.push({ t: offline ? 'T+ --:--' : 'T+ ' + mm + ':' + ss, x: 108, y: 33, size: 11, color: offline ? '#4A5266' : '#FFD27A' });
+  const awake = S.agents.filter((a) => a.anim !== 'sleep').length;
+  this.texts.push({ t: awake + '/4 ON DUTY', x: 550, y: 33, size: 11, color: awake ? '#5CE1E6' : '#4A5266' });
+  this.texts.push({ t: 'CLASSIFIED // OPERATION AUDIT // EYES ONLY // ' + (offline ? 'BAY DARK, AGENTS RESTING // ' : alarm ? 'INTEL PINNED, SIREN ACTIVE // ' : 'SWEEP IN PROGRESS // ') + 'VCPG CONTROL //', x: 540 - ((T * 26) % 720), y: 33, size: 11, color: alarm ? '#FF7A84' : '#BFA58F', clip: [180, 24, 362, 12] });
+  [254, 458].forEach((px) => { g.fillStyle = '#22170F'; g.fillRect(px, 36, 8, 162); g.fillStyle = offline ? '#2A1C10' : (Math.floor(T * 3 + px) % 4 === 0 ? '#FFD27A' : '#7A4A20'); g.fillRect(px + 3, 40, 2, 154); });
+  this.drawIssueBoard(g, T, alarm, offline);
+  this.drawPrBoard(g, T, offline);
+  this.drawGlobe(g, T, alarm, offline, act);
+  [['radar', 'comms'], ['code', 'code'], ['wave', 'interviews'], ['slide', 'slides'], ['bars', 'test'], ['gantt', 'plans']].forEach((p, i) => {
+    this.mon(g, 106 + i * 86, 158, 80, 34, p[0], !!act[p[1]], T, offline, i + 3);
+    if (!offline) this.glows.push([146 + i * 86, 175, 50, act[p[1]] ? 0.16 : 0.05, '255,155,61']);
+  });
+  g.fillStyle = '#22170F'; g.fillRect(100, 196, 520, 4);
+  this.poly(g, [[100, 200], [620, 200], [720, 254], [720, 405], [0, 405], [0, 254]], '#120C09');
+  g.strokeStyle = 'rgba(255,155,61,0.07)'; g.lineWidth = 1; g.beginPath();
+  for (let u = -1; u <= 1.001; u += 0.125) { g.moveTo(this.X(u, 200), 200); g.lineTo(this.X(u, 405), 405); }
+  [208, 218, 230, 245, 262, 282, 306, 335, 370].forEach((yy) => { g.moveTo(0, yy); g.lineTo(720, yy); });
+  g.stroke();
+  g.globalCompositeOperation = 'lighter';
+  const refl = [[110, 252, offline ? '60,90,140' : alarm ? '255,60,70' : '255,77,94'], [264, 456, offline ? '60,90,140' : '255,160,70'], [468, 610, '92,225,230']];
+  refl.forEach((r) => { const gr = g.createLinearGradient(0, 200, 0, 262); gr.addColorStop(0, 'rgba(' + r[2] + ',0.10)'); gr.addColorStop(1, 'rgba(' + r[2] + ',0)'); g.fillStyle = gr; g.fillRect(r[0], 200, r[1] - r[0], 62); });
+  [-0.11, 0.11].forEach((u) => {
+    [212, 228, 248, 272, 300, 332, 368].forEach((yy, i) => {
+      const ph = (T * 1.6 - i * 0.18) % 1, on = ph < 0.25 && !offline, s = this.sc(yy);
+      g.fillStyle = on ? 'rgba(255,190,90,0.9)' : offline ? 'rgba(255,120,40,0.15)' : 'rgba(255,155,61,0.3)';
+      g.fillRect(Math.round(this.X(u, yy) - s), Math.round(yy), Math.max(1, Math.round(2 * s)), 1);
+    });
+  });
+  if (!offline) [-0.62, 0, 0.62].forEach((k) => { const x0 = 360 + k * 260; this.poly(g, [[x0 - 14, 22], [x0 + 14, 22], [x0 + 70, 200], [x0 - 70, 200]], 'rgba(255,230,190,0.025)'); });
+  g.globalCompositeOperation = 'source-over';
+}
+
+drawIssueBoard(g, T, alarm, offline) {
+  const S = this.sim, x0 = 110, y0 = 40, w = 142, h = 112;
+  this.rect(g, x0 - 2, y0 - 2, w + 4, h + 4, '#0A0706'); this.rect(g, x0, y0, w, h, offline ? '#0C0809' : '#1A0C0C');
+  this.rect(g, x0, y0, w, 13, alarm ? (Math.floor(T * 4) % 2 ? '#9A1E2A' : '#5A141C') : offline ? '#2A1416' : '#4A1A1E');
+  this.texts.push({ t: 'INTEL // ISSUES', x: x0 + 5, y: y0 + 10, size: 12, color: '#FFD0D4' });
+  S.issueOrder.forEach((k, i) => {
+    const st = S.issues[k], since = S.t - (S.cardT[k] || -10), slam = since < 0.2 ? 1 - since / 0.2 : 0;
+    const cx = x0 + 5 - slam * 8, cy = y0 + 17 + i * 31 - slam * 3, cw = w - 10 + slam * 16, ch = 27 + slam * 6;
+    const fill = st === 'open' ? '#4A1218' : st === 'repair' ? '#2E200E' : '#122018';
+    const acc = st === 'open' ? (Math.floor(T * 5) % 2 ? '#FF4D5E' : '#8A1E28') : st === 'repair' ? '#FFD27A' : '#5BD68A';
+    if (st === 'open') this.rect(g, cx - 1, cy - 1, cw + 2, ch + 2, acc);
+    this.rect(g, cx, cy, cw, ch, offline ? '#0E1210' : fill); this.rect(g, cx, cy, 3, ch, acc);
+    this.rect(g, cx + cw - 7, cy + 4, 3, 3, st === 'open' ? (Math.floor(T * 6) % 2 ? '#FFFFFF' : '#FF4D5E') : acc);
+    const I = this.ISSUES[k], col = st === 'open' ? '#FFD0D4' : st === 'repair' ? '#FFE3A8' : '#9FD8AE';
+    this.texts.push({ t: I.id + ' ' + I.tag, x: cx + 7, y: cy + 11, size: 12, color: offline ? '#5E7A66' : col });
+    this.texts.push({ t: st === 'open' ? 'OPEN' : st === 'repair' ? 'IN REPAIR' : 'FIXED', x: cx + 7, y: cy + 22, size: 11, color: offline ? '#4A5E50' : col });
+  });
+  if (!S.issueOrder.length) this.texts.push({ t: 'NO INTEL PINNED', x: x0 + w / 2, y: y0 + 64, size: 11, color: '#7A4A4E', align: 'center' });
+  [x0 + 10, x0 + w - 10].forEach((bx, i) => {
+    this.rect(g, bx - 4, y0 - 5, 8, 3, '#2A1C14');
+    const on = alarm && Math.floor(T * 6 + i) % 2;
+    this.rect(g, bx - 3, y0 - 9, 6, 4, alarm ? (on ? '#FF4D5E' : '#FF9AA2') : '#3A2A26'); this.rect(g, bx - 2, y0 - 10, 4, 1, alarm ? '#FFD0D4' : '#4A3A30');
+  });
+  if (!offline) this.glows.push([x0 + w / 2, y0 + h / 2, 90, alarm ? 0.3 : 0.1, '255,60,70']);
+}
+
+drawPrBoard(g, T, offline) {
+  const S = this.sim, x0 = 468, y0 = 40, w = 142, h = 112;
+  this.rect(g, x0 - 2, y0 - 2, w + 4, h + 4, '#0A0706'); this.rect(g, x0, y0, w, h, offline ? '#080B0C' : '#0A1414');
+  this.rect(g, x0, y0, w, 13, offline ? '#0E2224' : '#0F3438');
+  this.texts.push({ t: 'CLEARED // PULL REQUESTS', x: x0 + 5, y: y0 + 10, size: 12, color: '#BFF6F8' });
+  S.prOrder.forEach((k, i) => {
+    const st = S.prs[k], since = S.t - (S.prT[k] || -10), slam = since < 0.2 ? 1 - since / 0.2 : 0;
+    const cx = x0 + 5 - slam * 8, cy = y0 + 17 + i * 31 - slam * 3, cw = w - 10 + slam * 16, ch = 27 + slam * 6;
+    const fill = st === 'tests' ? '#0E2A2C' : st === 'ready' ? '#3A2C0E' : '#1A1D22', acc = st === 'tests' ? '#5CE1E6' : st === 'ready' ? '#FFD27A' : '#6B7480';
+    if (st === 'ready') this.rect(g, cx - 1, cy - 1, cw + 2, ch + 2, Math.floor(T * 3) % 2 ? '#FFD27A' : '#B8862E');
+    this.rect(g, cx, cy, cw, ch, fill); this.rect(g, cx, cy, 3, ch, acc); this.rect(g, cx + cw - 7, cy + 4, 3, 3, acc);
+    const I = this.ISSUES[k], col = st === 'tests' ? '#BFF6F8' : st === 'ready' ? '#FFE3A8' : '#9AA3AE';
+    this.texts.push({ t: I.pr + ' ' + I.prTag, x: cx + 7, y: cy + 11, size: 12, color: col });
+    this.texts.push({ t: st === 'tests' ? 'TESTS PASSING' : st === 'ready' ? 'READY TO REVIEW' : 'MERGED', x: cx + 7, y: cy + 22, size: 11, color: col });
+    if (st === 'ready' || st === 'merged') {
+      const rs = S.t - S.readyAt, sl = st === 'ready' && rs < 0.25 ? 1 + (1 - rs / 0.25) * 1.4 : 1;
+      this.texts.push({ t: st === 'ready' ? 'APPROVED' : 'MERGED', x: cx + cw - 30, y: cy + 17, size: 12 * sl, color: st === 'ready' ? '#FF4D5E' : '#5E6670', rot: -0.22, box: true, align: 'center' });
+    }
+  });
+  if (!S.prOrder.length) this.texts.push({ t: 'NOTHING CLEARED YET', x: x0 + w / 2, y: y0 + 64, size: 11, color: '#3A6A6E', align: 'center' });
+  if (!offline) this.glows.push([x0 + w / 2, y0 + h / 2, 90, 0.12, '92,225,230']);
+}
+
+drawGlobe(g, T, alarm, offline, act) {
+  const cx = 360, cy = 94, r = 44, busy = Object.keys(act).length > 0;
+  this.rect(g, 264, 36, 192, 118, '#0A0706'); this.rect(g, 266, 38, 188, 114, offline ? '#05060A' : '#100905');
+  const base = offline ? '90,130,200' : alarm ? '255,80,90' : '255,170,80';
+  for (let i = 0; i < 72; i++) {
+    const an = i / 72 * Math.PI * 2 + T * (offline ? 0.05 : 0.25);
+    if (i % 3 !== 2) { g.fillStyle = 'rgba(' + base + ',0.55)'; g.fillRect(Math.round(cx + Math.cos(an) * (r + 9)), Math.round(cy + Math.sin(an) * (r + 9)), 1, 1); }
+    const an2 = -i / 72 * Math.PI * 2 + T * (offline ? 0.04 : 0.4);
+    if (i % 6 < 4) { g.fillStyle = 'rgba(' + base + ',0.35)'; g.fillRect(Math.round(cx + Math.cos(an2) * (r + 15)), Math.round(cy + Math.sin(an2) * (r + 15) * 0.98), 1, 1); }
+  }
+  const rot = T * (offline ? 0.08 : busy ? 0.45 : 0.25);
+  for (let la = -78; la <= 78; la += 6) {
+    const a1 = la * Math.PI / 180, cl = Math.cos(a1), ring = Math.max(6, Math.round(64 * cl));
+    for (let j = 0; j < ring; j++) {
+      const lo = j / ring * Math.PI * 2, a2 = lo + rot, z = cl * Math.cos(a2);
+      if (z < -0.05) continue;
+      const land = this.land(la, lo), px = cx + r * cl * Math.sin(a2), py = cy - r * Math.sin(a1) * 0.98;
+      if (!land && (j + la) % 3) continue;
+      g.fillStyle = 'rgba(' + base + ',' + ((0.15 + 0.85 * z) * (land ? 1 : 0.35)).toFixed(3) + ')';
+      g.fillRect(Math.round(px), Math.round(py), land && z > 0.5 ? 2 : 1, 1);
+    }
+  }
+  for (let k = 0; k < 3; k++) {
+    const an = T * (0.8 + k * 0.3) + k * 2.1, px = cx + Math.cos(an) * (r + 20 + k * 3), py = cy + Math.sin(an) * (r * 0.35 + k * 4) - k * 6;
+    g.fillStyle = k === 0 ? '#5CE1E6' : '#FFD27A'; g.fillRect(Math.round(px), Math.round(py), 2, 2);
+  }
+  this.texts.push({ t: offline ? 'AUDIT CORE / STANDBY' : 'AUDIT CORE', x: cx, y: 150, size: 11, color: offline ? '#4A6A9A' : alarm ? '#FF7A84' : '#FFD27A', align: 'center' });
+  this.glows.push([cx, cy, 80, offline ? 0.12 : 0.22, base]);
+}
+
+land(la, lo) { const v = Math.sin(la * 0.09 + 1.3) * Math.cos(lo * 2.1) + Math.sin(lo * 3.3 + la * 0.05) * 0.6 + Math.cos(la * 0.17 - lo * 1.2) * 0.5; return v > 0.45; }
+
+drawDesk(g, d, act, offline, T) {
+  const s = this.sc(d.yF), yB = d.yF - 8 * s, fh = 12 * s;
+  const xLF = this.X(d.u0, d.yF), xRF = this.X(d.u1, d.yF), xLB = this.X(d.u0, yB), xRB = this.X(d.u1, yB);
+  this.poly(g, [[xLB, yB], [xRB, yB], [xRF, d.yF], [xLF, d.yF]], '#3A2A1E');
+  this.poly(g, [[xLB, yB], [xRB, yB], [xRB, yB + 1], [xLB, yB + 1]], '#4A3424');
+  d.st.forEach((st, si) => {
+    const on = !!act[st[0]], kinds = st[3], n = kinds.length;
+    kinds.forEach((kd, i) => {
+      const ua = st[1] + (i + 0.07) * (st[2] - st[1]) / n, ub = st[1] + (i + 0.93) * (st[2] - st[1]) / n;
+      const x0 = this.X(ua, yB), x1 = this.X(ub, yB), mh = 15 * s, my = yB - mh - 2.4 * s;
+      this.rect(g, (x0 + x1) / 2 - s, yB - 2.6 * s, 2 * s, 2.6 * s, '#14100C');
+      this.mon(g, x0, my, x1 - x0, mh, kd, on, T, offline, i * 7 + si * 3 + Math.round(d.yF));
+      if (!offline) this.glows.push([(x0 + x1) / 2, my + mh / 2, (x1 - x0) * 0.9, on ? 0.2 : 0.06, '255,155,61']);
+    });
+    const um = (st[1] + st[2]) / 2, yk = d.yF - 3.4 * s, kx0 = this.X(um - 0.06, yk), kx1 = this.X(um + 0.06, yk);
+    this.rect(g, kx0, yk - s, kx1 - kx0, 1.6 * s, '#1A120C');
+    if (on) this.rect(g, kx0 + 1 + (Math.floor(T * 12) % 4) * 2, yk - s, 2, 1, '#FF9B3D');
+    if ((si + d.yF) % 2 === 0) {
+      const mx = this.X(st[2] - 0.05, yk), my2 = yk - 2.4 * s;
+      this.rect(g, mx, my2, 2.2 * s, 2.6 * s, '#E8E2D6'); this.rect(g, mx + 2.2 * s, my2 + 0.6 * s, 0.8 * s, 1.2 * s, '#E8E2D6');
+      if (!offline && Math.random() < 0.03) this.sim.parts.push({ x: mx + s, y: my2 - 1, vx: (Math.random() - 0.5) * 4, vy: -8, g: -2, life: 1.2, c: 'rgba(255,240,220,0.35)', s: 1, floor: 999 });
+    }
+    if (st[0] === 'slides' || st[0] === 'plans') { const px = this.X(st[1] + 0.03, yk); this.rect(g, px, yk - 1.6 * s, 4 * s, 1.2 * s, '#D9B26A'); this.rect(g, px + s, yk - 1.6 * s, 1.4 * s, 0.6 * s, '#FF4D5E'); }
+    const lab = this.LABEL[st[0]];
+    this.texts.push({ t: lab, x: this.X(um, d.yF), y: d.yF + 8 * s, size: 11, color: offline ? '#3A3A44' : on ? '#FFD27A' : '#8A6A50', align: 'center' });
+  });
+  this.rect(g, xLF, d.yF, xRF - xLF, fh, '#1E150F');
+  this.rect(g, xLF, d.yF, xRF - xLF, 1, offline ? '#3A2414' : '#FF9B3D');
+  this.rect(g, xLF, d.yF + fh - 2 * s, xRF - xLF, 2 * s, '#120C08');
+  const n = Math.max(3, Math.floor((xRF - xLF) / 14));
+  for (let i = 0; i < n; i++) { const lx = xLF + 6 + i * ((xRF - xLF - 12) / n); this.rect(g, lx, d.yF + 3 * s, 1.4 * s, 0.9 * s, Math.floor(T * 2 + i * 0.7 + d.yF) % 5 === 0 ? (offline ? '#3A1A1E' : '#5BD68A') : '#2A1E16'); }
+}
+
+drawBench(g, T, offline, act) {
+  const S = this.sim, u0 = 0.865, y0 = 222, y1 = 262, s0 = this.sc(y0), s1 = this.sc(y1), h0 = 13 * s0, h1 = 13 * s1;
+  const a = [this.X(u0, y0), y0], b = [this.X(u0, y1), y1], c = [this.X(1.0, y1), y1], d = [this.X(1.0, y0), y0];
+  this.poly(g, [[a[0], a[1] - h0], [d[0], d[1] - h0], [c[0], c[1] - h1], [b[0], b[1] - h1]], '#5A4636');
+  this.poly(g, [[a[0], a[1] - h0], [b[0], b[1] - h1], [b[0], b[1]], [a[0], a[1]]], '#2E2218');
+  this.rect(g, b[0], b[1] - h1, c[0] - b[0], h1, '#3A2A1E');
+  this.poly(g, [[a[0], a[1] - h0], [b[0], b[1] - h1], [b[0], b[1] - h1 + 1], [a[0], a[1] - h0 + 1]], offline ? '#3A2414' : '#FF9B3D');
+  const vx = this.X(0.9, 232), vy = 232 - 13 * this.sc(232);
+  this.rect(g, vx, vy - 4, 8, 4, '#6B7480'); this.rect(g, vx + 2, vy - 6, 4, 2, '#9AA3B5');
+  const tx = this.X(0.93, 255), ty = 255 - 13 * this.sc(255);
+  this.rect(g, tx, ty - 5, 12, 5, '#B8303C'); this.rect(g, tx + 4, ty - 7, 4, 2, '#8A1E28');
+  this.rect(g, this.X(0.96, 228), 160, 1, 228 - 13 * this.sc(228) - 160, '#3A3F4C');
+  this.rect(g, this.X(0.96, 228) - 5, 158, 8, 3, '#4A4F5E'); if (!offline) this.glows.push([this.X(0.96, 228) - 2, 175, 30, 0.2, '255,210,150']);
+  S.agents.forEach((ag) => {
+    if (ag.at !== 'bench') return;
+    const yy = ag.y, ss = this.sc(yy), xx = this.X(0.89, yy), top = yy - 13 * ss;
+    this.rect(g, xx, top - 1.5 * ss, 6 * ss, 1.5 * ss, Math.floor(T * 4) % 2 ? '#FFD27A' : '#D9B26A');
+    this.glows.push([xx + 3 * ss, top, 26, 0.35 + 0.15 * Math.sin(T * 14), '255,190,90']);
+  });
+}
+
+drawTest(g, T, offline, act) {
+  const yb = 252, xa = this.X(-0.985, yb), xb = this.X(-0.875, yb), w = xb - xa, on = act.test;
+  this.rect(g, xa - 3, yb - 6, w + 6, 6, '#2A2E38'); this.rect(g, xa - 3, yb - 6, w + 6, 1, '#4A4F5E');
+  g.globalCompositeOperation = 'lighter';
+  this.rect(g, xa, 150, w, yb - 156, on ? 'rgba(92,225,230,0.12)' : 'rgba(92,225,230,0.05)');
+  this.rect(g, xa, 150, 1, yb - 156, 'rgba(92,225,230,0.55)'); this.rect(g, xb - 1, 150, 1, yb - 156, 'rgba(92,225,230,0.55)');
+  this.rect(g, xa + 3, 152, 2, yb - 160, 'rgba(255,255,255,0.10)');
+  if (on) {
+    const sy = 156 + ((T * 50) % (yb - 166));
+    this.rect(g, xa, sy, w, 2, '#5CE1E6');
+    const fy = 190 + Math.sin(T * 3) * 4; this.rect(g, xa + w / 2 - 6, fy, 12, 9, '#0E2A2C'); this.rect(g, xa + w / 2 - 5, fy + 1, 10, 7, Math.floor(T * 4) % 2 ? '#5CE1E6' : '#2A8A8E');
+  }
+  g.globalCompositeOperation = 'source-over';
+  this.rect(g, xa - 3, 145, w + 6, 6, '#3A3F4C'); this.rect(g, xa - 3, 150, w + 6, 1, '#5CE1E6');
+  this.texts.push({ t: 'TEST BAY', x: xa + w / 2, y: 140, size: 11, color: on ? '#BFF6F8' : offline ? '#3A4A5A' : '#6A9A9E', align: 'center', glow: on });
+  this.glows.push([xa + w / 2, 200, 50, on ? 0.3 : 0.08, '92,225,230']);
+}
+
+poseOf(a) {
+  const S = this.sim, poked = S.t - a.poke < 1.4;
+  if (a.walking) return ['walk', a.face];
+  if (a.seated) {
+    if (a.anim === 'sleep' && !poked) return [a.front ? 'sleepFront' : 'sleepSit', a.front ? 'front' : 'back'];
+    if (a.anim === 'sleep' && poked) return [a.front ? 'sitFront' : 'sit', a.front ? 'front' : 'back'];
+    if (a.anim === 'stretch') return ['sitStretch', 'back'];
+    if (a.anim === 'cheer') return ['cheer', 'front'];
+    return ['sit', 'back'];
+  }
+  if (a.anim === 'cheer') return ['cheer', 'front'];
+  if (a.anim === 'hammer') return ['hammer', 'right'];
+  if (a.anim === 'scan') return ['scan', 'left'];
+  if (a.anim === 'pin') return ['pin', 'back'];
+  if (a.anim === 'stretch') return ['stretch', 'front'];
+  return ['idle', a.face];
+}
+
+drawAgent(g, a, T) {
+  const S = this.sim, s = this.sc(a.y), x = this.X(a.u, a.y), pv = this.poseOf(a);
+  this.fig(g, a.id, Math.round(x), Math.round(a.y), s, pv[1], pv[0], T, { off: a.off, carry: a.carry });
+  const seated = /^sit|^sleep/.test(pv[0]), top = a.y + (seated ? -24 : -33) * s;
+  const poked = S.t - a.poke < 1.4;
+  this.post.push((gg) => {
+    if (pv[0] === 'sleepSit' || pv[0] === 'sleepFront') {
+      for (let i = 0; i < 3; i++) {
+        const ph = ((T * 0.45) + i / 3 + a.off) % 1, zx = x + 5 * s + ph * 10 * s, zy = top - ph * 16, al = (1 - ph).toFixed(2), z = Math.max(3, Math.round(2.4 * s));
+        gg.fillStyle = 'rgba(159,190,232,' + al + ')';
+        gg.fillRect(Math.round(zx), Math.round(zy), z, 1); gg.fillRect(Math.round(zx + z - 2), Math.round(zy + 1), 1, 1); gg.fillRect(Math.round(zx + 1), Math.round(zy + 2), 1, 1); gg.fillRect(Math.round(zx), Math.round(zy + 3), z, 1);
+      }
+    }
+    if (pv[0] === 'hammer' && Math.floor(T * 3) % 2) { gg.fillStyle = '#9FE8F0'; gg.fillRect(Math.round(x - 4 * s), Math.round(top + 2 * s), 1, 2); }
+    const em = a.emote && S.t < a.emote.until ? a.emote.e : poked ? '?' : null;
+    if (em) {
+      const ex = Math.round(x), ey = Math.round(top - 6 - (a.emote && S.t - a.emote.from < 0.12 ? 2 : 0)), P = (dx, dy, w, h, c) => { gg.fillStyle = c; gg.fillRect(ex + dx, ey + dy, w, h); };
+      P(-5, -11, 11, 11, '#FFFFFF'); P(-1, 0, 3, 2, '#FFFFFF'); P(-5, -11, 11, 1, '#E8E2D6');
+      if (em === '!') { P(0, -9, 1, 5, '#FF4D5E'); P(0, -3, 1, 1, '#FF4D5E'); }
+      if (em === '?') { P(-1, -9, 3, 1, '#2B3A66'); P(1, -8, 1, 2, '#2B3A66'); P(0, -6, 1, 1, '#2B3A66'); P(0, -3, 1, 1, '#2B3A66'); }
+      if (em === 'ok') { P(-2, -6, 5, 1, '#E8A51A'); P(0, -8, 1, 5, '#E8A51A'); P(2, -10, 1, 1, '#E8A51A'); }
+      if (em === 'heart') { P(-3, -9, 2, 1, '#FF5F8F'); P(1, -9, 2, 1, '#FF5F8F'); P(-4, -8, 8, 2, '#FF5F8F'); P(-3, -6, 6, 1, '#FF5F8F'); P(-2, -5, 4, 1, '#FF5F8F'); P(-1, -4, 2, 1, '#FF5F8F'); }
+    }
+  });
+}
+
+drawTexts(ctx, k, T, ox, oy) {
+  this.texts.forEach((t) => {
+    ctx.save();
+    if (t.clip) { ctx.beginPath(); ctx.rect(t.clip[0] * k + ox, t.clip[1] * k + oy, t.clip[2] * k, t.clip[3] * k); ctx.clip(); }
+    ctx.translate(t.x * k + ox, t.y * k + oy); if (t.rot) ctx.rotate(t.rot);
+    const fs = Math.round(t.size * k / 2);
+    ctx.font = fs + 'px Silkscreen, monospace'; ctx.textAlign = t.align || 'left';
+    if (t.box) { const w = ctx.measureText(t.t).width + 10; ctx.strokeStyle = t.color; ctx.lineWidth = 2; ctx.strokeRect(-w / 2, -fs, w, fs + 6); }
+    if (t.glow) { ctx.shadowColor = t.color; ctx.shadowBlur = 10; }
+    ctx.fillStyle = t.color; ctx.fillText(t.t, 0, 0); ctx.restore();
+  });
+  const S = this.sim, fs = Math.round(13 * k / 2);
+  ctx.font = fs + 'px Silkscreen, monospace'; ctx.textAlign = 'center';
+  S.agents.forEach((a) => {
+    if (!a.say) return;
+    const s = this.sc(a.y), seated = a.seated, sx = this.X(a.u, a.y) * k + ox, sy = (a.y + (seated ? -27 : -37) * s) * k + oy - 22;
+    const txt = /ING$/.test(a.say) ? a.say + '.'.repeat(1 + (Math.floor(T * 2.5) % 3)) : a.say;
+    const w = Math.ceil(ctx.measureText(a.say + '...').width) + 22, pk = Math.min(1, (S.t - a.sayAt) / 0.15), scl = 0.7 + 0.3 * pk + (pk < 1 ? 0.08 : 0);
+    const hot = /PINNING/.test(a.say), ok = /APPROVAL|COMPLETE/.test(a.say), W = 720 * k;
+    ctx.save(); ctx.translate(Math.max(w / 2 + 6, Math.min(W - w / 2 - 6, sx)), sy); ctx.scale(scl, scl);
+    ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(-w / 2 + 3, -fs - 4, w, fs + 14);
+    ctx.fillStyle = hot ? '#FF4D5E' : ok ? '#FFD27A' : '#F7EBDD'; ctx.fillRect(-w / 2, -fs - 7, w, fs + 14);
+    ctx.beginPath(); ctx.moveTo(-6, 7); ctx.lineTo(6, 7); ctx.lineTo(0, 14); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = hot ? '#FFFFFF' : '#1A0E06'; ctx.fillText(txt, 0, 1); ctx.restore();
+  });
+  const hv = S.agents.find((a) => a.id === this.hover);
+  if (hv) {
+    const C = this.CREW[hv.id], s = this.sc(hv.y), ax = this.X(hv.u, hv.y) * k + ox, ay = hv.y * k + oy;
+    const bw = 320, bh = 150, bx = Math.max(8, Math.min(720 * k - bw - 8, ax + 30)), by = Math.max(70, Math.min(405 * k - bh - 70, ay - bh - 20 * s));
+    ctx.fillStyle = 'rgba(8,5,3,0.94)'; ctx.fillRect(bx, by, bw, bh); ctx.strokeStyle = C.tie; ctx.lineWidth = 2; ctx.strokeRect(bx + 1, by + 1, bw - 2, bh - 2);
+    ctx.fillStyle = '#1A120C'; ctx.fillRect(bx + 10, by + 10, 96, bh - 20);
+    ctx.fillStyle = 'rgba(255,155,61,0.12)'; for (let i = 0; i < 6; i++) ctx.fillRect(bx + 10, by + 14 + i * 22, 96, 1);
+    this.fig(ctx, hv.id, bx + 58, by + bh - 14, 3.6, 'front', 'idle', T, { off: hv.off });
+    const st = hv.anim === 'sleep' ? 'ASLEEP AT STATION' : hv.say ? hv.say : hv.walking ? 'ON THE MOVE' : 'STANDING BY';
+    ctx.textAlign = 'left'; ctx.font = '16px Silkscreen, monospace'; ctx.fillStyle = C.tie; ctx.fillText(C.name, bx + 120, by + 32);
+    ctx.font = '12px Silkscreen, monospace'; ctx.fillStyle = '#F7EBDD'; ctx.fillText(C.role, bx + 120, by + 54);
+    ctx.fillStyle = '#BFA58F'; ctx.fillText(C.code + ' / CLEARANCE OMEGA', bx + 120, by + 74);
+    ctx.fillStyle = '#FFD27A'; ctx.fillText(st, bx + 120, by + 100);
+    ctx.strokeStyle = '#FF4D5E'; ctx.lineWidth = 2; ctx.save(); ctx.translate(bx + 250, by + 128); ctx.rotate(-0.15); ctx.strokeRect(-48, -14, 96, 22); ctx.fillStyle = '#FF4D5E'; ctx.textAlign = 'center'; ctx.fillText('TOP SECRET', 0, 2); ctx.restore();
+  }
+}
+
+draw(T) {
+  const S = this.sim, g = this.buf.getContext('2d');
+  g.setTransform(1, 0, 0, 1, 0, 0); g.imageSmoothingEnabled = false; g.globalCompositeOperation = 'source-over';
+  this.texts = []; this.post = []; this.glows = [];
+  const offline = S.mode === 'offline', alarm = Object.keys(S.issues).some((k) => S.issues[k] === 'open' || S.issues[k] === 'repair');
+  const act = {}; S.agents.forEach((a) => { if (a.at) act[a.at] = true; });
+  g.fillStyle = '#050302'; g.fillRect(0, 0, 720, 405);
+  this.drawRoom(g, T, offline, alarm, act);
+  const list = [];
+  this.DESKS.forEach((d) => list.push({ k: d.yF, d: () => this.drawDesk(g, d, act, offline, T) }));
+  this.CHAIRS.forEach((c) => {
+    const occ = S.agents.find((a) => a.loc === c[0] && a.seated && a.front && !a.walking);
+    if (occ) return;
+    list.push({ k: c[2] + 0.6, d: () => { const busy = S.agents.find((a) => a.loc === c[0] && a.seated && !a.walking); this.chair(g, this.X(c[1], c[2]), c[2] + (busy ? 0 : 0), this.sc(c[2]), c[0] === 'seat_lead'); } });
+  });
+  S.agents.forEach((a) => list.push({ k: a.y + (a.seated ? 0 : 0.3), d: () => this.drawAgent(g, a, T) }));
+  list.push({ k: 262.5, d: () => this.drawBench(g, T, offline, act) });
+  list.push({ k: 252.5, d: () => this.drawTest(g, T, offline, act) });
+  list.sort((p, q) => p.k - q.k).forEach((o) => o.d());
+  this.rect(g, 0, 393, 720, 12, '#0A0605'); this.rect(g, 0, 393, 720, 1, offline ? '#3A2414' : '#FF9B3D');
+  for (let i = 0; i < 18; i++) this.rect(g, 18 + i * 40, 398, 3, 2, Math.floor(T * 3 + i) % 6 === 0 ? '#FFD27A' : '#3A2414');
+  g.globalCompositeOperation = 'lighter';
+  S.beams.forEach((b) => {
+    const p = (S.t - b.t0) / 1.2, al = (1 - p) * 0.8;
+    g.strokeStyle = 'rgba(' + b.c + ',' + al.toFixed(3) + ')'; g.lineWidth = 2; g.beginPath(); g.moveTo(b.x0, b.y0); g.lineTo(b.x1, b.y1); g.stroke();
+    const q = Math.min(1, p * 2.5); g.fillStyle = 'rgba(255,255,255,' + al.toFixed(3) + ')'; g.fillRect(Math.round(b.x0 + (b.x1 - b.x0) * q) - 1, Math.round(b.y0 + (b.y1 - b.y0) * q) - 1, 3, 3);
+  });
+  if (act.holo) { g.strokeStyle = 'rgba(255,190,90,' + (0.25 + 0.15 * Math.sin(T * 6)).toFixed(3) + ')'; g.lineWidth = 1; g.beginPath(); g.moveTo(360, 330); g.lineTo(360, 140); g.stroke(); }
+  if (alarm) {
+    [120, 242].forEach((bx, i) => {
+      const an = T * 4.2 + i * Math.PI;
+      g.fillStyle = 'rgba(255,50,60,0.10)'; g.beginPath(); g.moveTo(bx, 32); g.lineTo(bx + Math.cos(an - 0.2) * 700, 32 + Math.abs(Math.sin(an - 0.2)) * 520); g.lineTo(bx + Math.cos(an + 0.2) * 700, 32 + Math.abs(Math.sin(an + 0.2)) * 520); g.closePath(); g.fill();
+    });
+  }
+  g.globalCompositeOperation = 'source-over';
+  S.parts.forEach((p) => { g.fillStyle = p.c; g.fillRect(Math.round(p.x), Math.round(p.y), p.s, p.s); });
+  if (offline) { g.fillStyle = 'rgba(4,8,24,0.58)'; g.fillRect(0, 0, 720, 405); }
+  if (alarm) { const since = S.t - S.alarmAt, fl = since < 1.4 ? 0.2 * (1 - since / 1.4) : 0; g.fillStyle = 'rgba(255,30,40,' + (0.04 + 0.04 * (0.5 + 0.5 * Math.sin(T * 6)) + fl).toFixed(3) + ')'; g.fillRect(0, 0, 720, 405); }
+  if (S.t - S.readyAt < 0.5) { g.fillStyle = 'rgba(255,210,122,' + (0.25 * (1 - (S.t - S.readyAt) / 0.5)).toFixed(3) + ')'; g.fillRect(0, 0, 720, 405); }
+  g.globalCompositeOperation = 'lighter';
+  this.glows.forEach((gl) => { const rg = g.createRadialGradient(gl[0], gl[1], 0, gl[0], gl[1], gl[2]); rg.addColorStop(0, 'rgba(' + gl[4] + ',' + gl[3] + ')'); rg.addColorStop(1, 'rgba(' + gl[4] + ',0)'); g.fillStyle = rg; g.fillRect(gl[0] - gl[2], gl[1] - gl[2], gl[2] * 2, gl[2] * 2); });
+  g.globalCompositeOperation = 'source-over';
+  this.post.forEach((fn) => fn(g));
+  const vg = g.createRadialGradient(360, 200, 180, 360, 200, 470); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.55)'); g.fillStyle = vg; g.fillRect(0, 0, 720, 405);
+  const c = this.view, cw = c.clientWidth || 1440, ch = Math.round(cw * 9 / 16), dpr = Math.min(window.devicePixelRatio || 1, 2);
+  if (c.width !== Math.round(cw * dpr) || c.height !== Math.round(ch * dpr)) { c.width = Math.round(cw * dpr); c.height = Math.round(ch * dpr); }
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.imageSmoothingEnabled = false;
+  const k = cw / 720, sh = S.shake > 0 ? 3 + S.shake * 8 : 0, ox = sh ? Math.round((Math.random() - 0.5) * sh) : 0, oy = sh ? Math.round((Math.random() - 0.5) * sh) : 0;
+  ctx.fillStyle = '#050302'; ctx.fillRect(0, 0, cw, ch);
+  ctx.drawImage(this.buf, 0, 0, 720, 405, ox, oy, cw, ch);
+  this.drawTexts(ctx, k, T, ox, oy);
+  ctx.fillStyle = 'rgba(0,0,0,0.07)'; for (let yy = 0; yy < ch; yy += 3) ctx.fillRect(0, yy, cw, 1);
+}
+
+frame = (now) => {
+  this.raf = requestAnimationFrame(this.frame);
+  const dt = Math.min(0.05, (now - (this.prev || now)) / 1000); this.prev = now;
+  if (!this.sim || !this.view) return;
+  this.step(this.still ? 0 : dt);
+  this.draw(this.still ? 0 : now / 1000);
+};
+
+hit(e) {
+  const r = this.view.getBoundingClientRect(), bx = (e.clientX - r.left) * (720 / r.width), by = (e.clientY - r.top) * (405 / r.height);
+  let best = null, bd = 1e9;
+  this.sim.agents.forEach((a) => {
+    const s = this.sc(a.y), x = this.X(a.u, a.y), d = Math.abs(bx - x), top = a.y - (a.seated ? 24 : 33) * s;
+    if (d < 8 * s && by > top && by < a.y + 2 && d < bd) { bd = d; best = a; }
+  });
+  return best;
+}
+onCanvasMove = (e) => { if (!this.sim || !this.view) return; const a = this.hit(e); this.hover = a ? a.id : null; };
+onCanvasLeave = () => { this.hover = null; };
+onCanvasClick = (e) => {
+  if (!this.sim || !this.view) return;
+  const a = this.hit(e); if (!a) return;
+  if (a.anim === 'sleep') a.poke = this.sim.t; else a.emote = { e: 'heart', from: this.sim.t, until: this.sim.t + 1.2 };
+};
+
+componentDidMount() {
+  this.still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  this.buf = document.createElement('canvas'); this.buf.width = 720; this.buf.height = 405;
+  this.texts = []; this.post = []; this.glows = [];
+  this.reset(this.mode());
+  this.raf = requestAnimationFrame(this.frame);
+}
+componentDidUpdate() { if (this.sim && this.sim.mode !== this.mode()) this.reset(this.mode()); }
+componentWillUnmount() { cancelAnimationFrame(this.raf); }
+
+renderVals() {
+  const mode = this.mode();
+  return {
+    setView: this.setView, onCanvasMove: this.onCanvasMove, onCanvasLeave: this.onCanvasLeave, onCanvasClick: this.onCanvasClick,
+    modes: [['offline', 'Offline'], ['quick', 'After project'], ['deep', 'Biweekly deep scan']].map((m) => ({ label: m[1], on: mode === m[0], cls: mode === m[0] ? 'on' : '', pick: () => this.setState({ mode: m[0] }) })),
+    status: this.state.line, statusColor: mode === 'offline' ? '#8FA2C4' : /COMPLETE/.test(this.state.line) ? '#5CE1E6' : '#FFB45E',
+    log: this.state.log
+  };
+}
+}
+</script>
+</body>
+</html>

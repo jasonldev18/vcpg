@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VCPG: project archive and mock interview</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=Silkscreen:wght@400;700&display=swap">
+<style>
+body{margin:0;background:#0D0A08}
+a{color:#FF9B3D}a:hover{color:#FFD27A}
+.ar{font-family:'IBM Plex Sans',sans-serif;color:#F7EBDD}
+.disp{font-family:'Oxanium',sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.pix{font-family:'Silkscreen',monospace;letter-spacing:.04em}
+.mono{font-family:'IBM Plex Mono',monospace}
+.panel{position:relative;background:linear-gradient(160deg,rgba(255,155,61,.08),transparent 45%),rgba(30,20,14,.85);border:1px solid rgba(255,155,61,.3)}
+.panel::before{content:"";position:absolute;left:-1px;top:-1px;height:2px;width:55%;background:linear-gradient(90deg,#FF9B3D,#FF4D5E,#FFD27A,transparent)}
+.btn{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;background:transparent;border:1px solid #FF9B3D;color:#FF9B3D;cursor:pointer;font:600 12px 'Oxanium',sans-serif;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;box-sizing:border-box}
+.btn:hover{background:rgba(255,155,61,.16);color:#FF9B3D}
+.btn.go{background:linear-gradient(90deg,#FF9B3D,#FFD27A);color:#1A0E06;border-color:transparent}
+.card{display:flex;flex-direction:column;gap:8px;width:100%;padding:16px;text-align:left;background:rgba(20,13,9,.8);border:1px solid rgba(255,155,61,.22);color:#F7EBDD;cursor:pointer;font:inherit;transition:border-color .2s,transform .2s}
+.card:hover{border-color:#FF9B3D;transform:translateX(3px)}
+.card.on{border-color:#FFD27A;box-shadow:0 0 0 1px #FFD27A inset}
+.tab{min-height:44px;padding:0 16px;background:transparent;border:1px solid rgba(255,155,61,.3);color:#BFA58F;cursor:pointer;font:600 12px 'Oxanium',sans-serif;letter-spacing:.1em;text-transform:uppercase}
+.tab.on{color:#1A0E06;background:linear-gradient(90deg,#FF9B3D,#FFD27A);border-color:transparent}
+.chip{min-height:44px;padding:0 14px;background:transparent;border:1px solid rgba(255,155,61,.3);color:#BFA58F;cursor:pointer;font:14px 'IBM Plex Sans',sans-serif}
+.chip.on{border-color:#FFD27A;color:#FFD27A;background:rgba(255,210,122,.1)}
+.msg{max-width:84%;padding:12px 14px;font-size:15px;line-height:1.5}
+textarea{width:100%;box-sizing:border-box;min-height:70px;padding:12px;background:rgba(0,0,0,.45);border:1px solid #5CE1E6;color:#F7EBDD;font:15px 'IBM Plex Sans',sans-serif;resize:vertical}
+.spr{position:relative;width:36px;height:36px;flex:none;animation:bob 2.4s steps(2) infinite}
+.px{position:absolute;left:-3px;top:-3px;width:3px;height:3px}
+@keyframes bob{50%{transform:translateY(-2px)}}
+@keyframes blink{50%{opacity:.3}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</helmet>
+<div class="ar" style="min-height: 100vh; box-sizing: border-box; padding: 24px; background: radial-gradient(900px circle at 15% 10%, rgba(255,155,61,.10), transparent 60%), #0D0A08; display: flex; flex-direction: column; gap: 18px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px">
+<span class="pix" style="font-size: 22px; font-weight: 700; color: #FFD27A">ARCHIVE</span>
+<span class="disp" style="font-size: 13px; color: #BFA58F">Finished projects, their dossiers, and mock interviews</span>
+<div style="flex: 1 1 0"></div>
+<a class="btn" href="MissionControl.dc.html">Mission control</a>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start">
+
+<section class="panel" style="flex: 1 1 340px; max-width: 420px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+<h2 class="disp" style="margin: 0; font-size: 14px; font-weight: 700; color: #FF9B3D">Projects</h2>
+<sc-for list="{{ projects }}" as="p" hint-placeholder-count="3">
+<button class="card {{ p.cls }}" aria-pressed="{{ p.on }}" onClick="{{ p.pick }}">
+<span style="display: flex; justify-content: space-between; gap: 10px; align-items: baseline"><span class="disp" style="font-size: 16px; font-weight: 700; letter-spacing: .04em; text-transform: none">{{ p.name }}</span><span class="pix" style="font-size: 11px; color: {{ p.stColor }}">{{ p.status }}</span></span>
+<span style="font-size: 14px; color: #BFA58F">{{ p.stack }}</span>
+<span class="mono" style="display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: #FFD27A"><span>{{ p.steps }}</span><span>{{ p.deck }}</span><span>{{ p.mock }}</span></span>
+</button>
+</sc-for>
+<span style="font-size: 13px; line-height: 1.5; color: #BFA58F">Each finished project is compressed into a short dossier: the mission, architecture, decisions, failure modes, eval numbers and the gate questions you struggled with. The repo stays on GitHub; the dossier is all the interviewer needs.</span>
+</section>
+
+<section class="panel" style="flex: 3 1 620px; min-width: 0; padding: 22px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center">
+<h1 class="disp" style="margin: 0; font-size: 24px; font-weight: 700; letter-spacing: .04em; text-transform: none">{{ sel.name }}</h1>
+<div style="flex: 1 1 0"></div>
+<sc-for list="{{ tabs }}" as="t" hint-placeholder-count="2"><button class="tab {{ t.cls }}" aria-pressed="{{ t.on }}" onClick="{{ t.pick }}">{{ t.label }}</button></sc-for>
+</div>
+
+<sc-if value="{{ isDossier }}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+<span class="mono" style="font-size: 13px; padding: 6px 12px; border: 1px solid rgba(255,210,122,.35); color: #FFD27A">{{ sel.file }}</span>
+<span class="mono" style="font-size: 12px; color: #BFA58F">{{ sel.size }}</span>
+<div style="flex: 1 1 0"></div>
+<a class="btn" href="Deck.dc.html">Open deck</a>
+<a class="btn" href="Readme.dc.html">Open README</a>
+</div>
+<pre class="mono" style="margin: 0; padding: 18px; background: #0A0705; border: 1px solid rgba(255,210,122,.2); font-size: 14px; line-height: 1.7; color: #FFE9C7; white-space: pre-wrap">{{ sel.dossier }}</pre>
+</div>
+</sc-if>
+
+<sc-if value="{{ isMock }}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<sc-if value="{{ locked }}" hint-placeholder-val="{{ false }}">
+<div style="padding: 18px; border: 1px dashed rgba(255,155,61,.4); font-size: 15px; line-height: 1.5; color: #BFA58F">The mock interview unlocks when this project is finished and its README passes review.</div>
+</sc-if>
+<sc-if value="{{ setup }}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div style="font-size: 16px; line-height: 1.55; max-width: 720px">The interviewer reads only this project's dossier and your repo, then runs a full deep dive the way a hiring loop would. No hints this time. You get a scorecard at the end.</div>
+<div style="display: flex; flex-direction: column; gap: 8px"><span class="disp" style="font-size: 12px; color: #FF9B3D">Length</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap"><sc-for list="{{ lengths }}" as="o" hint-placeholder-count="3"><button class="chip {{ o.cls }}" aria-pressed="{{ o.on }}" onClick="{{ o.pick }}">{{ o.label }}</button></sc-for></div></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><span class="disp" style="font-size: 12px; color: #FF9B3D">Focus</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap"><sc-for list="{{ focuses }}" as="o" hint-placeholder-count="3"><button class="chip {{ o.cls }}" aria-pressed="{{ o.on }}" onClick="{{ o.pick }}">{{ o.label }}</button></sc-for></div></div>
+<div><button class="btn go" onClick="{{ start }}">Start mock interview</button></div>
+</div>
+</sc-if>
+<sc-if value="{{ running }}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start">
+<div style="flex: 3 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; gap: 12px">
+<div class="spr"><div class="px" style="box-shadow: {{ sprite }}"></div></div>
+<span class="disp" style="font-size: 13px; color: #FF7EB6">Interviewer</span>
+<span class="mono" style="font-size: 12px; color: #BFA58F">question 4 of 9 / 12:40 left</span>
+<span style="width: 8px; height: 8px; border-radius: 50%; background: #FF4D5E; animation: blink 1s steps(2) infinite"></span>
+</div>
+<sc-for list="{{ chat }}" as="m" hint-placeholder-count="4">
+<div class="msg" style="align-self: {{ m.align }}; background: {{ m.bg }}; border: 1px solid {{ m.border }}"><span class="disp" style="display: block; font-size: 11px; color: {{ m.whoColor }}; margin-bottom: 4px">{{ m.who }}</span>{{ m.text }}</div>
+</sc-for>
+<label for="ans" class="disp" style="font-size: 12px; color: #5CE1E6">Your answer</label>
+<textarea id="ans" placeholder="Talk it through like you would out loud..."></textarea>
+<div style="display: flex; gap: 10px; flex-wrap: wrap"><button class="btn go">Send</button><button class="btn" onClick="{{ stop }}">End and score</button></div>
+</div>
+<div style="flex: 1 1 240px; display: flex; flex-direction: column; gap: 10px; padding: 16px; background: rgba(0,0,0,.3); border: 1px solid rgba(255,155,61,.2)">
+<span class="disp" style="font-size: 12px; color: #FF9B3D">Live scorecard</span>
+<sc-for list="{{ rubric }}" as="r" hint-placeholder-count="6">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; justify-content: space-between; font-size: 13px"><span>{{ r.name }}</span><span class="mono" style="color: {{ r.color }}">{{ r.val }}</span></div>
+<div style="height: 6px; background: rgba(255,155,61,.14)"><div style="height: 100%; width: {{ r.pct }}%; background: {{ r.color }}"></div></div>
+</div>
+</sc-for>
+<span style="font-size: 13px; line-height: 1.45; color: #BFA58F">Scores fill in as topics come up. Untouched topics stay empty, so you can see what the interview has not covered yet.</span>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+state = { sel: 0, tab: 'mock', len: 1, focus: 0, run: true };
+
+P = [
+  { name: 'Movie recommender', status: 'COMPLETE', stack: 'React, FastAPI, NumPy, SQLite', steps: '6 of 6 steps', deck: '8 slide deck', mock: 'last mock 78 / 100', done: true, file: 'dossier.md', size: '3.1 KB, about 900 tokens',
+    dossier: '# dossier: movie-recommender\nmission: recommend films from the ratings of users with similar taste\nstack: React, FastAPI, NumPy, SQLite\narchitecture: UI -> API -> KNN core -> ratings matrix (in memory, loaded from SQLite at startup)\n\ndecisions:\n- cosine over euclidean: compares taste direction, ignores harsh raters\n- argpartition over full sort: top k in O(n) instead of O(n log n)\n- brute force over an ANN index: exact, fast enough under 100k users\n\nfailure modes:\n- cold start: new user has a zero vector -> most-popular fallback\n- latency grows linearly with user count\n\nevaluation: time-based split, precision@10 0.28 vs 0.11 baseline, recall@10 0.17, NDCG 0.31\n\ngate struggles:\n- step 3: why normalize ratings before distance (needed 2 hints)\n- step 5: when you would not use KNN (needed 1 hint)\n\ncode map: recommender/knn.py, recommender/store.py, api/routes.py, web/src/Search.tsx' },
+  { name: 'Ask my lecture notes', status: 'COMPLETE', stack: 'Next.js, FastAPI, pgvector, Claude', steps: '7 of 7 steps', deck: '9 slide deck', mock: 'no mock yet', done: true, file: 'dossier.md', size: '3.6 KB, about 1,050 tokens',
+    dossier: '# dossier: ask-my-lecture-notes\nmission: answer questions about course PDFs with page-level citations\nstack: Next.js, FastAPI, pgvector, Claude\narchitecture: PDFs -> section chunker -> embedder -> pgvector -> retrieve top 6 -> Claude answer with citations\n\ndecisions:\n- chunk by section heading, not by page\n- hybrid search: keyword + vector, merged by rank\n- refuse when no chunk passes the similarity floor\n\nevaluation: 40 hand-written questions, 34 answered with a correct citation\n\ngate struggles:\n- step 4: why hybrid beats vector-only on course codes' },
+  { name: 'Recipe finder by vibe', status: 'IN PROGRESS', stack: 'React, FastAPI, sentence-transformers', steps: 'step 3 of 5', deck: '2 slides so far', mock: 'locked', done: false, file: 'dossier.md', size: 'written when finished',
+    dossier: 'The dossier is written when the project is finished.' }
+];
+RUBRIC = [['Motivation and impact', 8, 10], ['Trade-offs', 7, 10], ['Failure modes', 4, 10], ['Evaluation', 0, 10], ['Code depth', 6, 10], ['Communication', 7, 10]];
+CHAT = [
+  ['i', 'You chose brute-force KNN. Your dossier says it is fast enough under 100k users. What happens at 10 million, and what would you change first?'],
+  ['u', 'Every query scans every user, so latency grows linearly. I would move to an approximate index like HNSW so lookups get much faster, at the cost of sometimes missing the exact nearest neighbor.'],
+  ['i', 'Good. How would you know the approximate index is not hurting recommendation quality?'],
+  ['u', 'I would rerun my evaluation with the same time-based split and compare precision at 10 against the exact version...']
+];
+INT = ['...oooooo...', '..oaaaaaao..', '.oabbbbbbao.', '.oabbbbbbao.', 'aobwpbbwpboa', 'aobwpbbwpboa', 'aokbbbbbbko.', 'aaobbmmbbbo.', '.obbbbbbbbo.', '..osbbbbso..', '...oooooo...', '...oo..oo...'];
+
+sprite() {
+  const pal = { o: '#2E3A63', w: '#FFFFFF', p: '#10162B', k: '#FF8FA3', m: '#141A30', a: '#FF9B3D', b: '#FF7EB6', s: '#D94A8C' }, out = [];
+  this.INT.forEach((row, y) => row.split('').forEach((ch, x) => { if (ch !== '.') out.push((x + 1) * 3 + 'px ' + (y + 1) * 3 + 'px 0 ' + pal[ch]); }));
+  return out.join(', ');
+}
+
+renderVals() {
+  const st = this.state, p = this.P[st.sel];
+  const mockOk = p.done;
+  return {
+    projects: this.P.map((x, i) => ({ name: x.name, status: x.status, stColor: x.done ? '#9FD8AE' : '#FFD27A', stack: x.stack, steps: x.steps, deck: x.deck, mock: x.mock, on: i === st.sel, cls: i === st.sel ? 'on' : '', pick: () => this.setState({ sel: i, run: false }) })),
+    sel: { name: p.name, file: p.file, size: p.size, dossier: p.dossier },
+    tabs: [['dossier', 'Dossier'], ['mock', 'Mock interview']].map((t) => ({ label: t[1], on: st.tab === t[0], cls: st.tab === t[0] ? 'on' : '', pick: () => this.setState({ tab: t[0] }) })),
+    isDossier: st.tab === 'dossier', isMock: st.tab === 'mock',
+    locked: !mockOk, setup: mockOk && !st.run, running: mockOk && st.run,
+    lengths: ['10 minutes', '20 minutes', '30 minutes'].map((l, i) => ({ label: l, on: st.len === i, cls: st.len === i ? 'on' : '', pick: () => this.setState({ len: i }) })),
+    focuses: ['Project deep dive', 'System design', 'Behavioral'].map((l, i) => ({ label: l, on: st.focus === i, cls: st.focus === i ? 'on' : '', pick: () => this.setState({ focus: i }) })),
+    start: () => this.setState({ run: true }), stop: () => this.setState({ run: false }),
+    sprite: this.sprite(),
+    chat: this.CHAT.map((m) => ({ who: m[0] === 'i' ? 'Interviewer' : 'You', text: m[1], align: m[0] === 'i' ? 'flex-start' : 'flex-end',
+      bg: m[0] === 'i' ? 'rgba(255,126,182,.08)' : 'rgba(92,225,230,.07)', border: m[0] === 'i' ? 'rgba(255,126,182,.4)' : 'rgba(92,225,230,.4)', whoColor: m[0] === 'i' ? '#FF7EB6' : '#5CE1E6' })),
+    rubric: this.RUBRIC.map((r) => ({ name: r[0], val: r[1] ? r[1] + ' / ' + r[2] : 'not yet', pct: r[1] * 10, color: r[1] >= 7 ? '#9FD8AE' : r[1] >= 5 ? '#FFD27A' : r[1] > 0 ? '#FF7A84' : '#BFA58F' }))
+  };
+}
+}
+</script>
+</body>
+</html>

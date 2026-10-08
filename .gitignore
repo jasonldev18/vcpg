@@ -1,0 +1,26 @@
+# secrets: keys live in the OS keychain, never in files
+.env
+.env.*
+*.pem
+*.key
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# node
+node_modules/
+frontend/dist/
+
+# app data (lives in ~/.vcpg, but guard against VCPG_HOME pointing here)
+.vcpg/
+*.db
+exports/
+workspaces/
+logs/
+
+.DS_Store

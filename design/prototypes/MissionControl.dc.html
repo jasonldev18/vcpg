@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VCPG mission control: Solar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+:root{--bg:#0D0A08;--panel:rgba(30,20,14,.78);--acc:#FF9B3D;--acc2:#FF4D5E;--acc3:#FFD27A;--you:#5CE1E6;--text:#F7EBDD;--mute:#BFA58F;--rx:0;--ry:0;--mx:50%;--my:40%}
+body{margin:0;background:#0D0A08}
+a{color:#FF9B3D}a:hover{color:#FFD27A}
+.hud{font-family:'IBM Plex Sans',sans-serif;color:var(--text);background:var(--bg)}
+.disp{font-family:'Oxanium',sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.mono{font-family:'IBM Plex Mono',monospace}
+.brand{background:linear-gradient(90deg,var(--acc),var(--acc2) 55%,var(--acc3));-webkit-background-clip:text;background-clip:text;color:transparent}
+.panel{position:relative;background:linear-gradient(160deg,color-mix(in srgb,var(--acc) 8%,transparent),transparent 45%),var(--panel);border:1px solid color-mix(in srgb,var(--acc) 26%,transparent);box-shadow:0 30px 70px -40px color-mix(in srgb,var(--acc2) 70%,transparent);transition:transform .25s ease-out}
+.panel::before{content:"";position:absolute;left:-1px;top:-1px;height:2px;width:60%;background:linear-gradient(90deg,var(--acc),var(--acc2),var(--acc3),transparent);background-size:200% 100%;animation:sheen 5s linear infinite;pointer-events:none}
+.panel::after{content:"";position:absolute;right:-1px;bottom:-1px;width:16px;height:16px;border-right:2px solid var(--acc);border-bottom:2px solid var(--acc);pointer-events:none}
+.tl{transform:perspective(1100px) rotateY(calc(var(--rx)*3deg + 4deg)) rotateX(calc(var(--ry)*-2deg))}
+.tc{transform:perspective(1400px) rotateY(calc(var(--rx)*2deg)) rotateX(calc(var(--ry)*-2deg))}
+.tr{transform:perspective(1100px) rotateY(calc(var(--rx)*3deg - 4deg)) rotateX(calc(var(--ry)*-2deg))}
+.float2{transform:translate(calc(var(--rx)*-14px),calc(var(--ry)*-10px));transition:transform .3s ease-out}
+.glow{position:absolute;inset:0;pointer-events:none;background:radial-gradient(560px circle at var(--mx) var(--my),color-mix(in srgb,var(--acc) 13%,transparent),color-mix(in srgb,var(--acc2) 6%,transparent) 45%,transparent 70%)}
+.row{position:relative;display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+.row .l{flex:1 1 240px}.row .c{flex:999 1 560px;min-width:0}.row .r{flex:1 1 280px}
+.row.hero .c{order:-1;flex-basis:100%}.row.hero .l,.row.hero .r{flex:1 1 360px}
+.row.split .c{order:-1}
+.cin{display:flex;flex-wrap:wrap;gap:24px;align-items:center}
+.ph{min-height:44px;padding:0 16px;background:transparent;border:1px solid color-mix(in srgb,var(--acc) 30%,transparent);color:var(--mute);cursor:pointer;font:500 13px 'Oxanium',sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.ph:hover{color:var(--text);border-color:var(--acc)}
+.ph.on{color:#05101C;background:linear-gradient(90deg,var(--acc),var(--acc2));border-color:transparent;box-shadow:0 0 22px -4px var(--acc)}
+.ph.on.you{background:var(--you);box-shadow:0 0 22px -4px var(--you)}
+.btn{min-height:44px;padding:0 18px;background:transparent;border:1px solid var(--acc);color:var(--acc);cursor:pointer;font:600 13px 'Oxanium',sans-serif;letter-spacing:.1em;text-transform:uppercase}
+.btn:hover{background:color-mix(in srgb,var(--acc) 16%,transparent)}
+.node{position:absolute;width:120px;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--mute);opacity:.62;filter:saturate(.7);transition:opacity .3s,filter .3s}
+.node.on{opacity:1;color:var(--text);filter:drop-shadow(0 0 10px var(--acc))}
+.node.on.you{filter:drop-shadow(0 0 10px var(--you))}
+.pad{position:relative;width:60px;height:64px}
+.spr{position:relative;width:60px;height:60px;color:var(--acc);animation:bob 2.4s steps(2) infinite}
+.node.on .spr{animation:hop .5s steps(2) infinite}
+.px{position:absolute;left:-5px;top:-5px;width:5px;height:5px}
+.lid{opacity:0;animation:lid 4.2s steps(1) infinite}
+.spark{position:absolute;width:5px;height:5px;background:var(--acc3);animation:twinkle .7s steps(2) infinite}
+.spark.s1{left:-12px;top:6px}.spark.s2{right:-12px;top:22px;animation-delay:.35s;background:var(--acc)}.spark.s3{right:-6px;top:-8px;animation-delay:.18s;background:#fff}
+.cur{display:inline-block;width:8px;height:15px;background:var(--acc);vertical-align:-2px;animation:twinkle 1s steps(2) infinite}
+textarea{width:100%;box-sizing:border-box;min-height:64px;background:rgba(0,0,0,.35);border:1px solid var(--you);color:var(--text);padding:10px;font:14px 'IBM Plex Mono',monospace;resize:vertical}
+.corebtn{position:absolute;border-radius:50%;background:transparent;border:1px dashed transparent;cursor:pointer;transition:border-color .2s,box-shadow .2s}
+.corebtn:hover{border-color:var(--acc3);box-shadow:0 0 40px -6px var(--acc)}
+.bc{position:relative;width:220px;height:220px;flex:none}
+.bc i{position:absolute;border-radius:50%;left:50%;top:50%}
+.bc .k1{width:220px;height:220px;margin:-110px 0 0 -110px;border:2px dashed rgba(255,210,122,.6);animation:spin 14s linear infinite}
+.bc .k2{width:170px;height:170px;margin:-85px 0 0 -85px;border:3px solid var(--acc);border-left-color:transparent;border-right-color:transparent;animation:spin 3s linear infinite reverse}
+.bc .k3{width:120px;height:120px;margin:-60px 0 0 -60px;border:2px solid var(--acc2);border-top-color:transparent;animation:spin 5s linear infinite}
+.bc .k4{width:70px;height:70px;margin:-35px 0 0 -35px;background:radial-gradient(circle,#FFF4DC,#FFD27A 35%,#FF9B3D 70%,rgba(255,77,94,0));animation:pulse 2s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{50%{transform:scale(1.12)}}
+.fld{width:100%;box-sizing:border-box;min-height:46px;padding:0 14px;background:rgba(0,0,0,.45);border:1px solid rgba(255,155,61,.45);color:var(--text);font:15px 'IBM Plex Mono',monospace}
+.fld:focus{outline:none;border-color:var(--acc3);box-shadow:0 0 0 2px rgba(255,210,122,.25)}
+.auditpop{position:absolute;right:24px;bottom:24px;z-index:2;display:flex;align-items:center;gap:10px;min-height:44px;padding:0 14px;background:rgba(20,13,9,.92);border:1px solid rgba(191,165,143,.4);color:var(--mute);text-decoration:none;font:600 12px 'Oxanium',sans-serif;letter-spacing:.1em;text-transform:uppercase}
+.auditpop:hover{border-color:var(--acc);color:var(--text)}
+.auditpop .sd{width:8px;height:8px;border-radius:50%;background:#6B5646}
+.auditpop .zz{font:12px 'IBM Plex Mono',monospace;color:#8FA2C4;animation:zz 2.4s ease-in-out infinite}
+@keyframes zz{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(-3px);opacity:1}}
+@keyframes sheen{from{background-position:200% 0}to{background-position:0 0}}
+@keyframes bob{50%{transform:translateY(-3px)}}
+@keyframes hop{50%{transform:translateY(-7px)}}
+@keyframes lid{0%,92%{opacity:0}93%,100%{opacity:1}}
+@keyframes twinkle{50%{opacity:.2}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div class="hud" ref="{{ setRoot }}" onMouseMove="{{ onMove }}" style="position: relative; min-height: 100vh; overflow: hidden; padding: 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+<canvas ref="{{ setCanvas }}" aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none"></canvas>
+<div class="glow"></div>
+
+<header style="position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 16px 28px">
+<div class="disp brand" style="font-size: 30px; font-weight: 700; letter-spacing: .22em">VCPG</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span class="disp" style="font-size: 12px; color: var(--mute)">Project</span>
+<span class="disp" style="font-size: 16px; font-weight: 600">Movie recommender</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span class="disp" style="font-size: 12px; color: var(--mute)">Step 03 of 06</span>
+<span class="disp" style="font-size: 16px; font-weight: 600">Core logic: KNN</span>
+</div>
+<div style="flex: 1 1 0"></div>
+<div class="mono" style="font-size: 13px; color: {{ whoColor }}">[ {{ whoLabel }} ]</div>
+<button class="btn" onClick="{{ toggle }}">{{ toggleLabel }}</button>
+<a class="btn" href="Squad.dc.html" style="display: inline-flex; align-items: center; text-decoration: none">Squad</a>
+<a class="btn" href="Archive.dc.html" style="display: inline-flex; align-items: center; text-decoration: none">Archive</a>
+</header>
+
+<nav aria-label="Step sequence" style="position: relative; display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{ phases }}" as="p" hint-placeholder-count="6">
+<button class="ph {{ p.cls }}" aria-pressed="{{ p.on }}" onClick="{{ p.pick }}">{{ p.num }} {{ p.label }}</button>
+</sc-for>
+</nav>
+
+<div class="row {{ layout }}">
+
+<section class="panel tl l" style="padding: 20px; display: flex; flex-direction: column; gap: 14px">
+<h2 class="disp" style="margin: 0; font-size: 13px; font-weight: 600; color: var(--acc)">Build plan</h2>
+<sc-for list="{{ steps }}" as="s" hint-placeholder-count="6">
+<div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid {{ s.border }}; background: {{ s.bg }}">
+<span class="mono" style="font-size: 12px; color: {{ s.color }}; width: 44px">{{ s.tag }}</span>
+<span style="font-size: 14px; color: {{ s.text }}">{{ s.name }}</span>
+</div>
+</sc-for>
+<div style="display: flex; flex-direction: column; gap: 8px; padding-top: 6px">
+<span class="disp" style="font-size: 12px; color: var(--mute)">Gate rubric, this step</span>
+<div style="display: flex; gap: 6px">
+<div style="flex: 1; height: 8px; background: var(--acc)"></div>
+<div style="flex: 1; height: 8px; background: var(--acc2)"></div>
+<div style="flex: 1; height: 8px; background: color-mix(in srgb, var(--acc) 18%, transparent)"></div>
+<div style="flex: 1; height: 8px; background: color-mix(in srgb, var(--acc) 18%, transparent)"></div>
+</div>
+<span class="mono" style="font-size: 12px; color: var(--mute)">2 of 4 items explained</span>
+</div>
+</section>
+
+<section class="panel tc c" style="padding: 20px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap">
+<h2 class="disp" style="margin: 0; font-size: 13px; font-weight: 600; color: var(--acc)">Agent network</h2>
+<span class="mono" style="font-size: 12px; color: var(--mute)">state: {{ stateName }}</span>
+</div>
+<div class="cin">
+<div style="flex: 1 1 680px; min-width: 0; overflow-x: auto">
+<div style="position: relative; width: 680px; height: 450px; margin: 0 auto">
+<canvas ref="{{ setStage }}" aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 680px; height: 450px"></canvas>
+<div class="disp float2" style="position: absolute; left: 260px; top: 300px; width: 160px; text-align: center; font-size: 12px; font-weight: 600">Orchestrator</div>
+<div class="mono" style="position: absolute; left: 240px; top: 318px; width: 200px; text-align: center; font-size: 11px; color: var(--mute)">click the core for access</div>
+<button class="corebtn" onClick="{{ openCore }}" aria-label="Open core access to enter your API key and GitHub token" style="left: 262px; top: 136px; width: 156px; height: 156px"></button>
+<sc-for list="{{ agents }}" as="a" hint-placeholder-count="7">
+<div class="node {{ a.cls }}" style="left: {{ a.left }}px; top: {{ a.top }}px">
+<div class="pad">
+<div class="spr" style="animation-delay: {{ a.delay }}s">
+<div class="px" style="box-shadow: {{ a.shadow }}"></div>
+<div class="px lid" style="box-shadow: {{ a.lid }}; animation-delay: {{ a.delay }}s"></div>
+</div>
+<sc-if value="{{ a.active }}" hint-placeholder-val="{{ false }}">
+<div class="spark s1"></div><div class="spark s2"></div><div class="spark s3"></div>
+</sc-if>
+</div>
+<span class="disp" style="font-size: 12px; font-weight: 600; text-align: center">{{ a.name }}</span>
+<span class="mono" style="font-size: 11px; color: {{ a.doingColor }}">{{ a.doing }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="flex: 1 1 360px; min-width: 0; border-top: 1px solid color-mix(in srgb, var(--acc) 24%, transparent); padding-top: 16px; display: flex; flex-direction: column; gap: 10px">
+<div class="disp" style="font-size: 12px; color: {{ whoColor }}">{{ status }}</div>
+<h3 class="disp" style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: .04em; text-transform: none">{{ title }}</h3>
+<sc-for list="{{ lines }}" as="l" hint-placeholder-count="3">
+<div class="{{ l.cls }}" style="font-size: 14px; line-height: 1.55; color: {{ l.color }}; white-space: pre-wrap">{{ l.text }}</div>
+</sc-for>
+<sc-if value="{{ isGate }}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<label for="ans" class="disp" style="font-size: 12px; color: var(--you)">Your answer</label>
+<textarea id="ans" placeholder="Some users rate everything high, so raw scores..."></textarea>
+<div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap">
+<button class="btn" style="border-color: var(--you); color: var(--you)">Submit to grader</button>
+<span class="mono" style="font-size: 12px; color: var(--mute)">Attempt 1. Hints unlock after a miss.</span>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ isWorking }}" hint-placeholder-val="{{ true }}">
+<div><span class="cur"></span></div>
+</sc-if>
+</div>
+</div>
+</section>
+
+<aside class="tr r" style="display: flex; flex-direction: column; gap: 20px; transition: transform .25s ease-out">
+<section class="panel" style="padding: 20px; display: flex; flex-direction: column; gap: 10px">
+<h2 class="disp" style="margin: 0; font-size: 13px; font-weight: 600; color: var(--acc)">Console</h2>
+<sc-for list="{{ log }}" as="g" hint-placeholder-count="4">
+<div class="mono" style="font-size: 12px; line-height: 1.5; color: {{ g.color }}">{{ g.text }}</div>
+</sc-for>
+</section>
+<section class="panel" style="padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<h2 class="disp" style="margin: 0; font-size: 13px; font-weight: 600; color: var(--acc)">Interview deck</h2>
+<sc-for list="{{ deck }}" as="d" hint-placeholder-count="4">
+<div style="display: flex; gap: 12px; align-items: center">
+<div style="width: 64px; height: 36px; border: 1px {{ d.line }} {{ d.color }}; background: {{ d.bg }}"></div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 14px; color: {{ d.text }}">{{ d.name }}</span>
+<span class="mono" style="font-size: 11px; color: var(--mute)">{{ d.note }}</span>
+</div>
+</div>
+</sc-for>
+</section>
+</aside>
+
+</div>
+<sc-if value="{{ coreOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 5; background: rgba(6,3,2,.82); display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box">
+<section class="panel" style="width: 100%; max-width: 900px; padding: 32px; display: flex; flex-wrap: wrap; gap: 32px; align-items: center">
+<div class="bc" aria-hidden="true"><i class="k1"></i><i class="k2"></i><i class="k3"></i><i class="k4"></i></div>
+<div style="flex: 1 1 380px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h2 class="disp brand" style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: .16em">Core access</h2>
+<span style="font-size: 15px; line-height: 1.5; color: var(--mute)">The orchestrator needs two keys to run your crew. Both stay on this machine.</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="ak" class="disp" style="font-size: 12px; color: var(--acc)">Anthropic API key</label>
+<input id="ak" class="fld" type="password" autocomplete="off" placeholder="sk-ant-...">
+<span class="mono" style="font-size: 12px; color: {{ akColor }}">{{ akStatus }}</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="gt" class="disp" style="font-size: 12px; color: var(--acc)">GitHub token</label>
+<input id="gt" class="fld" type="password" autocomplete="off" placeholder="github_pat_...">
+<span class="mono" style="font-size: 12px; color: {{ gtColor }}">{{ gtStatus }}</span>
+<span style="font-size: 13px; line-height: 1.5; color: var(--mute)">Use a fine-grained token for the vcpg repo only, with Contents and Pull requests set to read and write. No admin rights, so it cannot delete the repo.</span>
+</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap">
+<button class="btn" onClick="{{ testKeys }}" style="background: linear-gradient(90deg, #FF9B3D, #FFD27A); color: #1A0E06; border-color: transparent">Test and save</button>
+<a class="btn" href="Squad.dc.html" style="display: inline-flex; align-items: center; text-decoration: none">Agent loadouts</a>
+<button class="btn" onClick="{{ closeCore }}">Close</button>
+</div>
+<span class="mono" style="font-size: 12px; color: var(--mute)">Stored in your OS keychain. Sent only to Anthropic and GitHub, never logged or committed.</span>
+</div>
+</section>
+</div>
+</sc-if>
+<a class="auditpop" href="Audit.dc.html" aria-label="Audit bay, offline. Open to see the crew."><span class="sd"></span>Audit bay / offline<span class="zz">z z</span></a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","default":"solar","options":["arc","aurora","solar"]},"core":{"editor":"enum","default":"blob","options":["blob","reactor","radar"]},"ripple":{"editor":"range","default":1,"min":0,"max":2,"step":0.1},"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+state = { phase: 1, running: true, coreOpen: false, tested: false };
+DEFAULT_THEME = 'solar';
+
+THEMES = {
+arc: { bg: '#040A14', panel: 'rgba(9,22,40,.74)', acc: '#4FE3F0', acc2: '#3B7BFF', acc3: '#9A7BFF', you: '#FFB454', text: '#D8ECF7', mute: '#8FA9BF', dim: '#3E5A78', fx: 'dots', core: 'reactor', layout: '' },
+aurora: { bg: '#0A0618', panel: 'rgba(22,12,44,.74)', acc: '#B48CFF', acc2: '#FF5FB7', acc3: '#3DE8C8', you: '#FFD166', text: '#EDE6FF', mute: '#A99BC9', dim: '#4A3B78', fx: 'silk', core: 'blob', layout: 'hero' },
+solar: { bg: '#0D0A08', panel: 'rgba(30,20,14,.78)', acc: '#FF9B3D', acc2: '#FF4D5E', acc3: '#FFD27A', you: '#5CE1E6', text: '#F7EBDD', mute: '#BFA58F', dim: '#6B4A30', fx: 'motes', core: 'blob', layout: 'split' }
+};
+
+PHASES = [
+{ id: 'plan', label: 'Tutor plan', on: ['tutor'], doing: { tutor: 'teaching' }, you: false, state: 'planned > teaching', status: 'Tutor is explaining the plan', title: 'Why KNN, and why cosine distance',
+  lines: [['p', 'We recommend films by finding the k users whose ratings look most like yours, then surfacing what they rated highly.'], ['p', 'Cosine distance compares the direction of two rating vectors, so a harsh rater and a generous rater with the same taste still match.'], ['p', 'Trade-off to remember: brute-force KNN is exact and simple, but every query scans all users. It is the first thing to replace at scale.']],
+  log: ['orchestrator: step 03 > teaching', 'tutor: loaded plan + rubric (4 items)', 'tutor: streaming lesson', 'gate: locked until build is toured'] },
+{ id: 'build', label: 'Build', on: ['builder'], doing: { builder: 'writing code' }, you: false, state: 'taught > building', status: 'Builder is writing code', title: 'recommender/knn.py',
+  lines: [['c', 'def top_k_neighbors(user_vec, matrix, k=20):'], ['c', '    sims = matrix @ user_vec / (norm(matrix, axis=1) * norm(user_vec))'], ['c', '    return np.argpartition(-sims, k)[:k]']],
+  log: ['orchestrator: step 03 > building', 'builder: write recommender/knn.py', 'builder: write tests/test_knn.py', 'builder: git commit "step 03: knn core"'] },
+{ id: 'review', label: 'Review', on: ['reviewer'], doing: { reviewer: 'running tests' }, you: false, state: 'built > reviewing', status: 'Reviewer is running tests', title: 'Tests run, dead code cut',
+  lines: [['c', 'pytest tests/test_knn.py        6 passed'], ['p', 'Removed: a None check inside top_k_neighbors. It is only called from recommend(), which already validates input at the API boundary.'], ['p', 'Kept: the zero-vector guard. A new user with no ratings reaches it.']],
+  log: ['orchestrator: step 03 > reviewing', 'reviewer: sandbox up, 6 tests pass', 'reviewer: 1 branch unreachable, removed', 'reviewer: diff -9 lines, commit'] },
+{ id: 'tour', label: 'Code tour', on: ['tutor'], doing: { tutor: 'walking the diff' }, you: false, state: 'reviewed > touring', status: 'Tutor is walking the real code', title: 'What changed from the plan',
+  lines: [['p', 'The plan said sort all similarities. The builder used argpartition instead: it finds the top k without a full sort, O(n) rather than O(n log n).'], ['p', 'The reviewer cut one defensive branch. Be ready to say why input checks live at the boundary, not in every function.']],
+  log: ['orchestrator: step 03 > touring', 'tutor: read diff a41c..e07b', 'tutor: 2 deviations from plan', 'gate: unlocking'] },
+{ id: 'gate', label: 'Interview', on: ['interviewer', 'grader'], doing: { interviewer: 'asking', grader: 'scoring' }, you: true, state: 'toured > interviewing', status: 'Your turn: hard gate', title: 'Why normalize ratings before measuring distance?',
+  lines: [['p', 'Answer in your own words. The grader scores against a hidden rubric, and this step stays locked until every item is covered.']],
+  log: ['orchestrator: step 03 > interviewing', 'interviewer: question 3 of 4', 'grader: waiting for answer', 'gate: 2 of 4 rubric items passed'] },
+{ id: 'slide', label: 'Slide', on: ['slides'], doing: { slides: 'drafting' }, you: false, state: 'passed > slide', status: 'Slide writer is updating the deck', title: 'Core logic slide written',
+  lines: [['p', 'Added to the deck: what the KNN core does, the cosine and argpartition decisions, the cold-start failure mode, and the two questions you needed hints on.']],
+  log: ['orchestrator: step 03 > passed', 'grader: 4 of 4 rubric items', 'slides: wrote "Core logic"', 'orchestrator: step 04 unlocked'] }
+];
+
+AGENTS = [
+{ id: 'planner', name: 'Planner', x: 340, y: 56, b: '#5AA9FF', s: '#2F6FD0', h: '#CFE5FF', lid: 'b',
+  px: ['.....aa.....', '.....oo.....', '...oooooo...', '..obbbbbbo..', '.obbbbbbbbo.', '.obwpbbwpbo.', '.obwpbbwpbo.', '.okbbbbbbko.', '.obbbmmbbbo.', '..osbbbbso..', '...oooooo...', '...oo..oo...'] },
+{ id: 'tutor', name: 'Tutor', x: 112, y: 108, b: '#6FD98A', s: '#3FA864', h: '#D9F7C9', lid: 'b',
+  px: ['.oooooooooo.', '...oooooo.y.', '..obbbbbboy.', '.obbbbbbbbo.', '.obwwbbwwbo.', '.obwpbbwpbo.', '.okbbyybbko.', '.obbbbbbbbo.', '.obhhhhhhbo.', '..obhhhhbo..', '...oooooo...', '...yy..yy...'] },
+{ id: 'builder', name: 'Builder', x: 568, y: 108, b: '#FF9A52', s: '#D96A2A', h: '#FFD9B8', lid: 'b',
+  px: ['....yyyy....', '...yyyyyy...', '..yyyyyyyy..', '.oooooooooo.', '.obbbbbbbbo.', '.obwpbbwpbo.', '.obwpbbwpbo.', '.okbbbbbbko.', '.obbmmmmbbo.', '..osbbbbso..', '...oooooo...', '...oo..oo...'] },
+{ id: 'interviewer', name: 'Interviewer', x: 84, y: 282, b: '#FF7EB6', s: '#D94A8C', h: '#FFD3E6', lid: 'b',
+  px: ['...oooooo...', '..oaaaaaao..', '.oabbbbbbao.', '.oabbbbbbao.', 'aobwpbbwpboa', 'aobwpbbwpboa', 'aokbbbbbbko.', 'aaobbmmbbbo.', '.obbbbbbbbo.', '..osbbbbso..', '...oooooo...', '...oo..oo...'] },
+{ id: 'reviewer', name: 'Reviewer', x: 596, y: 282, b: '#B58CFF', s: '#7F56D9', h: '#E5D6FF', lid: 'b',
+  px: ['.oo......oo.', '.obo....obo.', '.obboooobbo.', '.obbbbbbbbo.', '.ogwpggwpgo.', '.obggbbggbo.', '.okbbbbbbko.', '.obbbmmbbbo.', '.obbbbbbbbo.', '..osbbbbso..', '...oooooo.oo', '...oo..oo.o.'] },
+{ id: 'grader', name: 'Grader', x: 226, y: 366, b: '#41D6C3', s: '#1E9C8C', h: '#C9F7F0', lid: 'a',
+  px: ['.....yy.....', '....yyyy....', '...oooooo...', '..obbbbbbo..', '.oaaaaaaaao.', '.oawpaawpao.', '.okbbbbbbko.', '.obbbmmbbbo.', '.obbbbbbbbo.', '..osbbbbso..', '...oooooo...', '...oo..oo...'] },
+{ id: 'slides', name: 'Slide writer', x: 454, y: 366, b: '#FFD45E', s: '#D9A62A', h: '#FFF1C2', lid: 'm',
+  px: ['.oooooooooo.', '.ommmmmmmmo.', '.omwmmmmwmo.', '.omwmmmmwmo.', '.ommmaammmo.', '.ommmmmmmmo.', '.oooooooooo.', '....obbo....', '..obbbbbbo..', '..osbbbbso..', '...oooooo...', '...oo..oo...'] }
+];
+
+setRoot = (el) => { this.root = el; };
+setCanvas = (el) => { this.canvas = el; };
+setStage = (el) => { this.stage = el; };
+
+rgb(hex) {
+  const n = parseInt(String(hex).replace('#', ''), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+ca(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + Math.max(0, Math.min(1, a)).toFixed(3) + ')'; }
+
+theme() {
+  const T = this.THEMES[this.props.theme ?? this.DEFAULT_THEME] || this.THEMES.arc;
+  if (!T.c) T.c = { acc: this.rgb(T.acc), acc2: this.rgb(T.acc2), acc3: this.rgb(T.acc3), you: this.rgb(T.you), dim: this.rgb(T.dim) };
+  return T;
+}
+
+applyTheme() {
+  const el = this.root; if (!el) return;
+  const T = this.theme();
+  ['bg', 'panel', 'acc', 'acc2', 'acc3', 'you', 'text', 'mute'].forEach((k) => el.style.setProperty('--' + k, T[k]));
+}
+
+onMove = (e) => {
+  const el = this.root; if (!el) return;
+  const r = el.getBoundingClientRect();
+  const k = el.offsetWidth / (r.width || 1);
+  const x = (e.clientX - r.left) * k, y = (e.clientY - r.top) * k;
+  el.style.setProperty('--rx', ((x / el.offsetWidth) * 2 - 1).toFixed(3));
+  el.style.setProperty('--ry', ((y / el.offsetHeight) * 2 - 1).toFixed(3));
+  el.style.setProperty('--mx', x + 'px');
+  el.style.setProperty('--my', y + 'px');
+  const l = this.last;
+  if (!l || Math.abs(x - l.x) + Math.abs(y - l.y) > 46) {
+    this.last = { x: x, y: y };
+    this.ripples = (this.ripples || []).slice(-9);
+    this.ripples.push({ x: x, y: y, t: performance.now() });
+  }
+};
+
+fit(c, w, h) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
+  const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  return g;
+}
+
+drawBg(t, T) {
+  const c = this.canvas, el = this.root; if (!c || !el) return;
+  const w = el.offsetWidth, h = el.offsetHeight, g = this.fit(c, w, h), C = T.c;
+  const str = this.still ? 0 : (this.props.ripple ?? 1), life = 1700;
+  const rip = this.ripples = (this.ripples || []).filter((r) => t - r.t < life);
+  const push = (x, y) => {
+    let ox = 0, oy = 0, a = 0;
+    for (let i = 0; i < rip.length; i++) {
+      const r = rip[i], age = (t - r.t) / life, rad = age * 280;
+      const dx = x - r.x, dy = y - r.y, d = Math.sqrt(dx * dx + dy * dy) || 1;
+      const k = Math.exp(-((d - rad) * (d - rad)) / 1100) * (1 - age) * str;
+      ox += (dx / d) * k; oy += (dy / d) * k; a += k;
+    }
+    return [ox, oy, a];
+  };
+  if (T.fx === 'dots') {
+    for (let y = 15; y < h; y += 30) for (let x = 15; x < w; x += 30) {
+      const p = push(x, y);
+      g.fillStyle = this.ca(p[2] > 0.25 ? C.acc3 : C.acc, 0.14 + p[2] * 0.55);
+      g.fillRect(x + p[0] * 8 - 1, y + p[1] * 8 - 1, 2 + p[2] * 2, 2 + p[2] * 2);
+    }
+  } else if (T.fx === 'silk') {
+    const cols = [C.acc, C.acc2, C.acc3];
+    g.lineWidth = 1.2;
+    for (let y = 18, i = 0; y < h + 20; y += 40, i++) {
+      g.beginPath();
+      for (let x = -10; x <= w + 24; x += 24) {
+        const p = push(x, y);
+        const yy = y + Math.sin(x / 190 + t / 2600 + i * 0.7) * 9 + p[1] * 16, xx = x + p[0] * 16;
+        if (x === -10) g.moveTo(xx, yy); else g.lineTo(xx, yy);
+      }
+      g.strokeStyle = this.ca(cols[i % 3], 0.2);
+      g.stroke();
+    }
+    for (let i = 0; i < rip.length; i++) {
+      const age = (t - rip[i].t) / life;
+      g.beginPath(); g.arc(rip[i].x, rip[i].y, age * 280, 0, Math.PI * 2);
+      g.strokeStyle = this.ca(cols[i % 3], (1 - age) * 0.22 * str); g.stroke();
+    }
+  } else if (T.fx === 'motes') {
+    for (let y = 11, r = 0; y < h; y += 22, r++) for (let x = (r % 2 ? 22 : 11); x < w; x += 22) {
+      const p = push(x, y);
+      g.fillStyle = this.ca(p[2] > 0.35 ? C.acc3 : C.acc, 0.1 + p[2] * 0.34);
+      g.beginPath(); g.arc(x + p[0] * 3.5, y + p[1] * 3.5, 1 + p[2] * 0.9, 0, 6.2832); g.fill();
+    }
+  } else {
+    g.lineWidth = 1.5;
+    for (let y = 17; y < h; y += 34) for (let x = 17; x < w; x += 34) {
+      const p = push(x, y), ang = Math.sin((x + y) / 260 + t / 3000) * 0.6;
+      let vx = Math.cos(ang) + p[0] * 3, vy = Math.sin(ang) + p[1] * 3;
+      const m = Math.sqrt(vx * vx + vy * vy) || 1, len = 5 + p[2] * 5; vx = vx / m * len; vy = vy / m * len;
+      g.beginPath(); g.moveTo(x - vx, y - vy); g.lineTo(x + vx, y + vy);
+      g.strokeStyle = this.ca(p[2] > 0.3 ? C.acc3 : C.acc, 0.16 + p[2] * 0.6);
+      g.stroke();
+    }
+  }
+}
+
+drawStage(t, T) {
+  const c = this.stage; if (!c) return;
+  const g = this.fit(c, 680, 450), C = T.c, TAU = Math.PI * 2, cx = 340, cy = 214;
+  const ph = this.PHASES[this.state.phase];
+  const core = this.props.core ?? T.core, strand = T.fx === 'silk', dash = T.fx === 'motes' || T.fx === 'field';
+  g.globalCompositeOperation = 'lighter';
+  g.lineCap = 'round';
+  this.AGENTS.forEach((a, i) => {
+    const active = ph.on.indexOf(a.id) >= 0, col = active ? (ph.you ? C.you : C.acc) : C.dim;
+    const dx = a.x - cx, dy = a.y - cy, d = Math.sqrt(dx * dx + dy * dy), ux = dx / d, uy = dy / d;
+    const x0 = cx + ux * 96, y0 = cy + uy * 96, x1 = a.x - ux * 44, y1 = a.y - uy * 44;
+    const nx = -uy, ny = ux, bend = (i % 2 ? 1 : -1) * 22;
+    const mx = (x0 + x1) / 2 + nx * bend, my = (y0 + y1) / 2 + ny * bend;
+    const Q = (u) => [(1 - u) * (1 - u) * x0 + 2 * (1 - u) * u * mx + u * u * x1, (1 - u) * (1 - u) * y0 + 2 * (1 - u) * u * my + u * u * y1];
+    g.shadowColor = this.ca(col, 1); g.shadowBlur = active ? 14 : 0;
+    if (strand) {
+      const cols = active ? [col, C.acc2, C.acc3] : [C.dim, C.dim, C.dim];
+      for (let s = 0; s < 3; s++) {
+        g.beginPath();
+        for (let u = 0; u <= 1.001; u += 0.04) {
+          const p = Q(u), off = Math.sin(u * 10 + t / 420 + s * 2.1) * (active ? 6 : 2) * Math.sin(u * Math.PI);
+          if (u === 0) g.moveTo(p[0] + nx * off, p[1] + ny * off); else g.lineTo(p[0] + nx * off, p[1] + ny * off);
+        }
+        g.lineWidth = active ? 1.8 : 1; g.strokeStyle = this.ca(cols[s], active ? 0.85 : 0.4); g.stroke();
+      }
+    } else {
+      g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo(mx, my, x1, y1);
+      if (dash) { g.setLineDash([9, 7]); g.lineDashOffset = active ? -t / 28 : 0; }
+      else g.setLineDash(active ? [] : [2, 7]);
+      g.lineWidth = active ? 2.2 : 1; g.strokeStyle = this.ca(col, active ? 0.95 : 0.55); g.stroke();
+      g.setLineDash([]);
+    }
+    if (active) {
+      for (let k = 0; k < 3; k++) {
+        const u = (t / 1300 + k / 3) % 1, pc = k === 1 ? C.acc2 : (k === 2 ? C.acc3 : col);
+        for (let j = 0; j < 10; j++) {
+          const uu = u - j * 0.017; if (uu < 0) continue;
+          const p = Q(uu), sz = 5.5 - j * 0.45;
+          g.fillStyle = this.ca(j === 0 ? [255, 255, 255] : pc, 1 - j / 10);
+          if (dash) g.fillRect(p[0] - sz / 2, p[1] - sz / 2, sz, sz);
+          else { g.beginPath(); g.arc(p[0], p[1], sz / 2, 0, TAU); g.fill(); }
+        }
+      }
+      g.shadowBlur = 0;
+      for (let k = 0; k < 2; k++) {
+        const pr = (t / 1100 + k / 2) % 1;
+        g.beginPath(); g.arc(a.x, a.y + 6, 40 + pr * 18, 0, TAU);
+        g.lineWidth = 1.5; g.strokeStyle = this.ca(col, (1 - pr) * 0.6); g.stroke();
+      }
+    } else {
+      g.shadowBlur = 0;
+      const p = Q((t / 5200 + i / 7) % 1);
+      g.fillStyle = this.ca(C.acc, 0.5); g.fillRect(p[0] - 1.5, p[1] - 1.5, 3, 3);
+    }
+  });
+  g.shadowBlur = 0;
+  const pulse = 0.5 + 0.5 * Math.sin(t / 600), hot = ph.you ? C.you : C.acc;
+  const rg = g.createRadialGradient(cx, cy, 2, cx, cy, 88);
+  rg.addColorStop(0, this.ca([255, 255, 255], 0.95)); rg.addColorStop(0.16, this.ca(hot, 0.9));
+  rg.addColorStop(0.45, this.ca(C.acc2, 0.28 + 0.14 * pulse)); rg.addColorStop(1, this.ca(C.acc2, 0));
+  g.fillStyle = rg; g.beginPath(); g.arc(cx, cy, 88, 0, TAU); g.fill();
+  if (core === 'reactor') {
+    [[34, 3, 1.4, 3], [48, 5, -0.9, 2], [62, 2, 0.6, 4], [76, 12, -0.3, 1.5], [88, 36, 0.12, 1]].forEach((r, i) => {
+      const n = r[1], seg = TAU / n, rot = (t / 1000) * r[2];
+      g.strokeStyle = this.ca([hot, C.acc2, C.acc3][i % 3], 0.9); g.lineWidth = r[3];
+      for (let k = 0; k < n; k++) { g.beginPath(); g.arc(cx, cy, r[0], rot + k * seg, rot + k * seg + seg * 0.62); g.stroke(); }
+    });
+  } else if (core === 'blob') {
+    const cols = [hot, C.acc2, C.acc3, hot];
+    for (let l = 0; l < 4; l++) {
+      g.beginPath();
+      for (let a = 0; a < TAU; a += 0.1) {
+        const r = 38 + l * 11 + 6 * Math.sin(a * 3 + t / 700 + l) + 4 * Math.sin(a * 5 - t / 520 + l * 2);
+        const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+        if (a === 0) g.moveTo(x, y); else g.lineTo(x, y);
+      }
+      g.closePath(); g.lineWidth = 2; g.strokeStyle = this.ca(cols[l], 0.85 - l * 0.13); g.stroke();
+    }
+    for (let k = 0; k < 9; k++) {
+      const a = k * 0.7 + t / (1400 + k * 90), r = 70 + 14 * Math.sin(t / 900 + k);
+      g.fillStyle = this.ca(cols[k % 3], 0.8); g.fillRect(cx + Math.cos(a) * r - 1.5, cy + Math.sin(a) * r - 1.5, 3, 3);
+    }
+  } else {
+    [30, 54, 78].forEach((r) => { g.beginPath(); g.arc(cx, cy, r, 0, TAU); g.lineWidth = 1; g.strokeStyle = this.ca(hot, 0.5); g.stroke(); });
+    const sw = t / 900;
+    for (let j = 0; j < 16; j++) {
+      g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, 78, sw - j * 0.07, sw - j * 0.07 + 0.08); g.closePath();
+      g.fillStyle = this.ca(j < 4 ? C.acc3 : hot, 0.26 * (1 - j / 16)); g.fill();
+    }
+    g.lineWidth = 1.5; g.strokeStyle = this.ca(C.acc3, 0.7);
+    for (let k = 0; k < 24; k++) {
+      const a = (k * TAU) / 24, r2 = k % 6 ? 90 : 96;
+      g.beginPath(); g.moveTo(cx + Math.cos(a) * 84, cy + Math.sin(a) * 84); g.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2); g.stroke();
+    }
+    for (let k = 0; k < 4; k++) {
+      const a = k * 1.7 + 0.4, r = 24 + k * 15, dA = (((sw - a) % TAU) + TAU) % TAU;
+      g.fillStyle = this.ca(C.acc2, 1 - dA / 3); g.fillRect(cx + Math.cos(a) * r - 3, cy + Math.sin(a) * r - 3, 6, 6);
+    }
+  }
+  g.globalCompositeOperation = 'source-over';
+}
+
+frame = (t) => {
+  this.raf = requestAnimationFrame(this.frame);
+  const T = this.theme();
+  this.drawBg(t, T);
+  this.drawStage(t, T);
+};
+
+componentDidMount() {
+  this.still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  this.applyTheme();
+  this.raf = requestAnimationFrame(this.frame);
+  this.timer = setInterval(() => { if (this.state.running) this.setState({ phase: (this.state.phase + 1) % this.PHASES.length }); }, 4600);
+}
+componentDidUpdate() { this.applyTheme(); }
+componentWillUnmount() { cancelAnimationFrame(this.raf); clearInterval(this.timer); }
+
+sprite(a, lidOnly) {
+  const pal = { o: '#2E3A63', w: '#FFFFFF', p: '#10162B', k: '#FF8FA3', m: '#141A30', y: '#FFD45E', g: '#E8F1FF', a: 'currentColor', b: a.b, s: a.s, h: a.h };
+  const out = [];
+  a.px.forEach((row, y) => row.split('').forEach((ch, x) => {
+    if (ch === '.') return;
+    const eye = ch === 'w' || ch === 'p';
+    if (lidOnly && !eye) return;
+    out.push((x + 1) * 5 + 'px ' + (y + 1) * 5 + 'px 0 ' + (lidOnly ? pal[a.lid] : pal[ch]));
+  }));
+  return out.join(', ');
+}
+
+renderVals() {
+  const ph = this.PHASES[this.state.phase], T = this.theme();
+  const tint = (v, n) => 'color-mix(in srgb, var(--' + v + ') ' + n + '%, transparent)';
+  const agents = this.AGENTS.map((a, i) => {
+    const active = ph.on.indexOf(a.id) >= 0;
+    return { name: a.name, active: active, cls: (active ? 'on' : '') + (ph.you ? ' you' : ''), left: a.x - 60, top: a.y - 30,
+      delay: (i * 0.37).toFixed(2), shadow: this.sprite(a, false), lid: this.sprite(a, true),
+      doing: active ? ph.doing[a.id] : 'standby', doingColor: active ? (ph.you ? 'var(--you)' : 'var(--acc)') : 'var(--mute)' };
+  });
+  const names = ['Mission', 'Architecture', 'Core logic: KNN', 'Data pipeline', 'API layer', 'Evaluation'];
+  const steps = names.map((n, i) => {
+    const st = i < 2 ? 'done' : i === 2 ? 'run' : 'lock';
+    return { name: n, tag: st === 'done' ? 'PASS' : st === 'run' ? 'LIVE' : 'LOCK',
+      color: st === 'lock' ? 'var(--mute)' : st === 'run' ? 'var(--acc)' : 'var(--acc3)', text: st === 'lock' ? 'var(--mute)' : 'var(--text)',
+      border: st === 'run' ? 'var(--acc)' : tint('acc', 16), bg: st === 'run' ? tint('acc', 11) : 'transparent' };
+  });
+  const sliding = ph.id === 'slide';
+  const deck = [
+    { name: 'Mission', note: 'written', done: true }, { name: 'Architecture', note: 'written', done: true },
+    { name: 'Core logic', note: sliding ? 'writing now' : 'unlocks on pass', done: sliding }, { name: 'Evaluation', note: 'locked', done: false }
+  ].map((d) => ({ name: d.name, note: d.note, line: d.done ? 'solid' : 'dashed', color: d.done ? 'var(--acc)' : 'var(--mute)',
+    bg: d.done ? 'linear-gradient(135deg, ' + tint('acc', 30) + ', ' + tint('acc2', 22) + ')' : 'transparent', text: d.done ? 'var(--text)' : 'var(--mute)' }));
+  return {
+    agents: agents, steps: steps, deck: deck, layout: T.layout,
+    phases: this.PHASES.map((p, i) => ({ label: p.label, num: '0' + (i + 1), on: i === this.state.phase,
+      cls: (i === this.state.phase ? 'on' : '') + (p.you ? ' you' : ''), pick: () => this.setState({ phase: i, running: false }) })),
+    stateName: ph.state, status: ph.status, title: ph.title,
+    lines: ph.lines.map((l) => ({ text: l[1], cls: l[0] === 'c' ? 'mono' : '', color: l[0] === 'c' ? 'var(--acc3)' : 'var(--text)' })),
+    log: ph.log.map((x, i) => ({ text: '> ' + x, color: i === ph.log.length - 1 ? 'var(--text)' : 'var(--mute)' })),
+    isGate: ph.you, isWorking: !ph.you,
+    whoLabel: ph.you ? 'YOUR TURN' : 'AGENTS WORKING', whoColor: ph.you ? 'var(--you)' : 'var(--acc)',
+    toggle: () => this.setState({ running: !this.state.running }), toggleLabel: this.state.running ? 'Pause demo' : 'Resume demo',
+    setRoot: this.setRoot, setCanvas: this.setCanvas, setStage: this.setStage, onMove: this.onMove,
+    coreOpen: this.state.coreOpen, openCore: () => this.setState({ coreOpen: true }), closeCore: () => this.setState({ coreOpen: false }),
+    testKeys: () => this.setState({ tested: true }),
+    akStatus: this.state.tested ? 'Connected / 7 agents ready' : 'Not connected', akColor: this.state.tested ? '#5CE1E6' : 'var(--mute)',
+    gtStatus: this.state.tested ? 'Connected to vcpg / pull requests allowed / delete not allowed' : 'Not connected', gtColor: this.state.tested ? '#5CE1E6' : 'var(--mute)'
+  };
+}
+}
+</script>
+</body>
+</html>

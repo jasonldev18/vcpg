@@ -1,0 +1,91 @@
+# Default model and effort for every agent.
+# The Squad screen writes user overrides to the database; these are the
+# recommended values it resets to. Model IDs are the Claude API IDs.
+#
+# runtime:
+#   api        -> plain Messages API call through backend/llm/client.py
+#   agent_sdk  -> Claude Agent SDK session (file edits, commands, git)
+#
+# max_tokens is a hard cap on output (thinking + text) per call.
+
+build_crew:
+  planner:
+    model: claude-opus-5-5
+    effort: high
+    runtime: api
+    max_tokens: 16000
+  tutor:
+    model: claude-sonnet-5-5
+    effort: high
+    runtime: api
+    max_tokens: 12000
+  builder:
+    model: claude-opus-5-5
+    effort: high
+    runtime: agent_sdk
+    max_turns: 60
+  reviewer:
+    model: claude-opus-5-5
+    effort: high
+    runtime: agent_sdk
+    max_turns: 40
+  interviewer:
+    model: claude-sonnet-5-5
+    effort: medium
+    runtime: api
+    max_tokens: 4000
+  grader:
+    model: claude-opus-5-5
+    effort: medium
+    runtime: api
+    max_tokens: 4000
+  slide_writer:
+    model: claude-haiku-5-5
+    effort: medium
+    runtime: api
+    max_tokens: 6000
+
+audit_crew:
+  rook:        # audit lead: traces causes across reports, opens pull requests
+    model: claude-opus-5-5
+    effort: high
+    runtime: agent_sdk
+    max_turns: 40
+  bolt:        # build auditor: planner, builder, reviewer
+    model: claude-opus-5-5
+    effort: high
+    runtime: agent_sdk
+    max_turns: 30
+  echo:        # teaching auditor: tutor, lessons, interviewer, grader
+    model: claude-opus-5-5
+    effort: high
+    runtime: agent_sdk
+    max_turns: 30
+  pixel:       # output auditor: slide writer, README coach
+    model: claude-opus-5-5
+    effort: high
+    runtime: agent_sdk
+    max_turns: 30
+
+# Helpers used by the lesson and project-discovery flows.
+helpers:
+  lesson_builder:   # builds lesson paths from retrieved source passages
+    model: claude-sonnet-5-5
+    effort: high
+    runtime: api
+    max_tokens: 16000
+  idea_generator:   # project ideas for "Give me ideas"
+    model: claude-sonnet-5-5
+    effort: medium
+    runtime: api
+    max_tokens: 6000
+  readme_coach:
+    model: claude-opus-5-5
+    effort: medium
+    runtime: api
+    max_tokens: 6000
+  dossier_writer:
+    model: claude-sonnet-5-5
+    effort: medium
+    runtime: api
+    max_tokens: 4000

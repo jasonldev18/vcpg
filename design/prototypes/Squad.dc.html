@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VCPG: squad loadout</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Silkscreen:wght@400;700&display=swap">
+<style>
+:root{--acc:#FF9B3D;--acc2:#FF4D5E;--acc3:#FFD27A;--you:#5CE1E6;--text:#F7EBDD;--mute:#BFA58F}
+body{margin:0;background:#0D0A08}
+a{color:#FF9B3D}a:hover{color:#FFD27A}
+.sq{font-family:'IBM Plex Sans',sans-serif;color:var(--text)}
+.disp{font-family:'Oxanium',sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.pix{font-family:'Silkscreen',monospace;letter-spacing:.04em}
+.mono{font-family:'IBM Plex Mono',monospace}
+.frame{position:relative;background:linear-gradient(160deg,rgba(255,155,61,.10),rgba(255,77,94,.03) 60%,transparent),rgba(24,15,10,.86);border:1px solid rgba(255,155,61,.35);clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,22px 100%,0 calc(100% - 22px))}
+.frame::before{content:"";position:absolute;left:0;top:0;width:46%;height:2px;background:linear-gradient(90deg,#FF9B3D,#FF4D5E,transparent)}
+.tab{min-height:44px;padding:0 16px;background:transparent;border:1px solid rgba(255,155,61,.3);color:var(--mute);cursor:pointer;font:600 12px 'Oxanium',sans-serif;letter-spacing:.1em;text-transform:uppercase}
+.tab.on{color:#1A0E06;background:linear-gradient(90deg,#FF9B3D,#FFD27A);border-color:transparent}
+.row{display:flex;align-items:center;gap:14px;width:100%;min-height:64px;padding:8px 12px;background:transparent;border:1px solid transparent;color:var(--text);cursor:pointer;text-align:left;font:inherit;transition:background .2s,border-color .2s,transform .2s}
+.row:hover{background:rgba(255,155,61,.08);transform:translateX(3px)}
+.row.on{background:linear-gradient(90deg,rgba(255,155,61,.22),rgba(255,77,94,.06));border-color:rgba(255,210,122,.6)}
+.hex{width:48px;height:52px;flex:none;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);display:flex;align-items:center;justify-content:center;font:700 18px 'Silkscreen',monospace;color:#1A0E06}
+.pill{display:inline-block;padding:2px 8px;border:1px solid currentColor;font:600 11px 'Oxanium',sans-serif;letter-spacing:.1em;text-transform:uppercase}
+.mcard{flex:1 1 150px;min-height:44px;padding:12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,155,61,.25);color:var(--text);cursor:pointer;text-align:left;font:inherit;display:flex;flex-direction:column;gap:6px}
+.mcard:hover{border-color:var(--acc)}
+.mcard.on{border-color:var(--acc3);background:rgba(255,210,122,.12);box-shadow:0 0 0 1px var(--acc3) inset}
+.eff{min-height:44px;flex:1 1 70px;background:transparent;border:1px solid rgba(255,155,61,.3);color:var(--mute);cursor:pointer;font:600 12px 'Oxanium',sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.eff:hover{color:var(--text);border-color:var(--acc)}
+.eff.on{color:#1A0E06;background:#FFD27A;border-color:#FFD27A}
+.seg{flex:1;height:10px;background:rgba(255,155,61,.14)}
+.btn{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;background:transparent;border:1px solid #FF9B3D;color:#FF9B3D;cursor:pointer;font:600 12px 'Oxanium',sans-serif;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;box-sizing:border-box}
+.btn:hover{background:rgba(255,155,61,.16);color:#FF9B3D}
+.btn.go{background:linear-gradient(90deg,#FF9B3D,#FFD27A);color:#1A0E06;border-color:transparent}
+</style>
+</helmet>
+<div class="sq" style="position: relative; min-height: 100vh; box-sizing: border-box; padding: 24px; background: radial-gradient(900px circle at 80% 30%, rgba(255,77,94,.16), transparent 60%), radial-gradient(800px circle at 10% 90%, rgba(255,155,61,.12), transparent 60%), #0D0A08; display: flex; flex-direction: column; gap: 18px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px">
+<span class="pix" style="font-size: 24px; font-weight: 700; color: #FFD27A">SQUAD</span>
+<span class="disp" style="font-size: 13px; color: var(--mute)">Choose each agent's model and how hard it thinks</span>
+<div style="flex: 1 1 0"></div>
+<a class="btn" href="MissionControl.dc.html">Mission control</a>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 18px; align-items: stretch">
+
+<section class="frame" style="flex: 0 1 340px; min-width: 280px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<sc-for list="{{ crews }}" as="c" hint-placeholder-count="2">
+<button class="tab {{ c.cls }}" aria-pressed="{{ c.on }}" onClick="{{ c.pick }}">{{ c.label }}</button>
+</sc-for>
+</div>
+<span class="mono" style="font-size: 12px; color: var(--mute)">{{ crewNote }}</span>
+<sc-for list="{{ list }}" as="r" hint-placeholder-count="7">
+<button class="row {{ r.cls }}" aria-pressed="{{ r.on }}" onClick="{{ r.pick }}">
+<span class="hex" style="background: {{ r.color }}">{{ r.initial }}</span>
+<span style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+<span class="disp" style="font-size: 15px; font-weight: 700; color: {{ r.nameColor }}">{{ r.name }}</span>
+<span style="display: flex; gap: 6px; flex-wrap: wrap"><span class="pill" style="color: {{ r.color }}">{{ r.modelShort }}</span><span class="pill" style="color: #BFA58F">{{ r.effort }}</span><sc-if value="{{ r.custom }}" hint-placeholder-val="{{ false }}"><span class="pill" style="color: #5CE1E6">custom</span></sc-if></span>
+</span>
+</button>
+</sc-for>
+</section>
+
+<section class="frame" style="flex: 1 1 480px; min-width: 0; padding: 24px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span class="disp" style="font-size: 12px; color: {{ sel.color }}">{{ sel.runtime }}</span>
+<h1 class="disp" style="margin: 0; font-size: 34px; font-weight: 700; letter-spacing: .06em">{{ sel.title }}</h1>
+<div style="font-size: 17px; line-height: 1.55; max-width: 640px">{{ sel.desc }}</div>
+<div style="font-size: 16px; font-style: italic; color: var(--mute)">{{ sel.quote }}</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span class="disp" style="font-size: 13px; font-weight: 600; color: #FF9B3D">Model</span>
+<div style="display: flex; gap: 10px; flex-wrap: wrap">
+<sc-for list="{{ models }}" as="m" hint-placeholder-count="3">
+<button class="mcard {{ m.cls }}" aria-pressed="{{ m.on }}" onClick="{{ m.pick }}">
+<span style="display: flex; justify-content: space-between; gap: 8px; align-items: baseline"><span class="disp" style="font-size: 15px; font-weight: 700">{{ m.name }}</span><sc-if value="{{ m.rec }}" hint-placeholder-val="{{ false }}"><span class="mono" style="font-size: 11px; color: #5CE1E6">recommended</span></sc-if></span>
+<span style="font-size: 14px; line-height: 1.4; color: var(--mute)">{{ m.note }}</span>
+</button>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span class="disp" style="font-size: 13px; font-weight: 600; color: #FF9B3D">Effort</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<sc-for list="{{ efforts }}" as="e" hint-placeholder-count="5">
+<button class="eff {{ e.cls }}" aria-pressed="{{ e.on }}" onClick="{{ e.pick }}">{{ e.label }}</button>
+</sc-for>
+</div>
+<span style="font-size: 14px; line-height: 1.45; color: var(--mute)">{{ effortNote }}</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span class="disp" style="font-size: 13px; font-weight: 600; color: #FF9B3D">Relative profile</span>
+<sc-for list="{{ stats }}" as="s" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; gap: 14px">
+<span class="disp" style="width: 70px; font-size: 12px; color: var(--mute)">{{ s.label }}</span>
+<div style="flex: 1; display: flex; gap: 3px">
+<sc-for list="{{ s.segs }}" as="g" hint-placeholder-count="10"><div class="seg" style="background: {{ g.bg }}"></div></sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span class="disp" style="font-size: 13px; font-weight: 600; color: #FF9B3D">Tools</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<sc-for list="{{ sel.tools }}" as="t" hint-placeholder-count="3"><span class="mono" style="font-size: 13px; padding: 6px 10px; border: 1px solid rgba(92,225,230,.5); color: #BFF6F8">{{ t }}</span></sc-for>
+</div>
+</div>
+
+<div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: auto">
+<button class="btn go">Save loadout</button>
+<button class="btn" onClick="{{ resetSel }}">Reset to recommended</button>
+<span class="mono" style="font-size: 12px; color: var(--mute)">Recommended: {{ sel.recLabel }}</span>
+</div>
+</section>
+
+<section class="frame" style="flex: 0 1 420px; min-width: 300px; padding: 20px; display: flex; flex-direction: column; gap: 14px; align-items: stretch">
+<canvas ref="{{ setPortrait }}" role="img" aria-label="{{ sel.title }} portrait" style="width: 100%; max-width: 380px; aspect-ratio: 380 / 440; align-self: center; image-rendering: pixelated"></canvas>
+<div style="display: flex; align-items: stretch; gap: 0">
+<div class="pix" style="width: 52px; display: flex; align-items: center; justify-content: center; background: #1A0E06; border: 1px solid {{ sel.color }}; font-size: 20px; color: {{ sel.color }}">{{ sel.num }}</div>
+<div class="disp" style="flex: 1; padding: 10px 16px; background: linear-gradient(90deg, {{ sel.color }}, rgba(255,155,61,.25)); color: #1A0E06; font-size: 24px; font-weight: 700; letter-spacing: .1em">{{ sel.title }}</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<div style="padding: 10px; background: rgba(0,0,0,.3); display: flex; flex-direction: column; gap: 4px"><span class="disp" style="font-size: 11px; color: var(--mute)">Model</span><span class="mono" style="font-size: 14px">{{ sel.modelName }}</span></div>
+<div style="padding: 10px; background: rgba(0,0,0,.3); display: flex; flex-direction: column; gap: 4px"><span class="disp" style="font-size: 11px; color: var(--mute)">Effort</span><span class="mono" style="font-size: 14px">{{ sel.effort }}</span></div>
+<div style="padding: 10px; background: rgba(0,0,0,.3); display: flex; flex-direction: column; gap: 4px"><span class="disp" style="font-size: 11px; color: var(--mute)">Runs on</span><span class="mono" style="font-size: 14px">{{ sel.rt }}</span></div>
+</div>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+state = { crew: 'build', sel: 0, over: {} };
+
+MODELS = {
+  haiku: { name: 'Haiku 5.5', short: 'Haiku', speed: 9, depth: 4, cost: 1, note: 'Fastest. Built for routing, extraction and short summaries.' },
+  sonnet: { name: 'Sonnet 5.5', short: 'Sonnet', speed: 7, depth: 7, cost: 4, note: 'Balanced speed and intelligence for teaching and chat.' },
+  opus: { name: 'Opus 5.5', short: 'Opus', speed: 5, depth: 9, cost: 7, note: 'Deepest reasoning. Long agentic coding and judgment calls.' }
+};
+EFF = ['low', 'medium', 'high', 'xhigh', 'max'];
+EFFNOTE = { low: 'Fewest tokens. Fine for simple, short tasks.', medium: 'Balanced. Good default for chat and well-scoped work.', high: 'Thinks as much as the task needs. Good for hard reasoning and code.', xhigh: 'Extended effort for long, multi-step agent runs.', max: 'No limit on thinking. Use only where it measurably helps.' };
+BUILD = [
+  { id: 'planner', title: 'PLANNER', model: 'opus', effort: 'high', rt: 'API', tools: ['Read project brief', 'Write step plan', 'Pick modules'], desc: 'Turns your idea into a step-by-step plan and decides which modules this project needs.', quote: '"No step without a reason."', b: '#5AA9FF', s: '#2F6FD0', h: '#CFE5FF',
+    px: ['.....aa.....', '.....oo.....', '...oooooo...', '..obbbbbbo..', '.obbbbbbbbo.', '.obwpbbwpbo.', '.obwpbbwpbo.', '.okbbbbbbko.', '.obbbmmbbbo.', '..osbbbbso..', '...oooooo...', '...oo..oo...'] },
+  { id: 'tutor', title: 'TUTOR', model: 'sonnet', effort: 'high', rt: 'API', tools: ['Read plan and diff', 'Draw diagrams', 'Cite sources'], desc: 'Teaches the plan before any code exists, then walks you through the real code after review.', quote: '"If you can\'t explain it, you don\'t own it."', b: '#6FD98A', s: '#3FA864', h: '#D9F7C9',
+    px: ['.oooooooooo.', '...oooooo.y.', '..obbbbbboy.', '.obbbbbbbbo.', '.obwwbbwwbo.', '.obwpbbwpbo.', '.okbbyybbko.', '.obbbbbbbbo.', '.obhhhhhhbo.', '..obhhhhbo..', '...oooooo...', '...yy..yy...'] },
+  { id: 'builder', title: 'BUILDER', model: 'opus', effort: 'high', rt: 'Agent SDK', tools: ['Edit files', 'Run commands', 'Git commit'], desc: 'Writes the code for each step, lean and readable, and only inside the project folder.', quote: '"Thirty clean lines beat fifty clever ones."', b: '#FF9A52', s: '#D96A2A', h: '#FFD9B8',
+    px: ['....yyyy....', '...yyyyyy...', '..yyyyyyyy..', '.oooooooooo.', '.obbbbbbbbo.', '.obwpbbwpbo.', '.obwpbbwpbo.', '.okbbbbbbko.', '.obbmmmmbbo.', '..osbbbbso..', '...oooooo...', '...oo..oo...'] },
+  { id: 'reviewer', title: 'REVIEWER', model: 'opus', effort: 'high', rt: 'Agent SDK', tools: ['Run tests in sandbox', 'Remove dead code', 'Git commit'], desc: 'Runs the tests and cuts any edge case it cannot prove is reachable.', quote: '"Prove that branch runs, or it goes."', b: '#B58CFF', s: '#7F56D9', h: '#E5D6FF',
+    px: ['.oo......oo.', '.obo....obo.', '.obboooobbo.', '.obbbbbbbbo.', '.ogwpggwpgo.', '.obggbbggbo.', '.okbbbbbbko.', '.obbbmmbbbo.', '.obbbbbbbbo.', '..osbbbbso..', '...oooooo.oo', '...oo..oo.o.'] },
+  { id: 'interviewer', title: 'INTERVIEWER', model: 'sonnet', effort: 'medium', rt: 'API', tools: ['Read rubric gaps', 'Ask follow-ups'], desc: 'Asks the gate questions and digs into whatever the grader says is still missing.', quote: '"Walk me through why."', b: '#FF7EB6', s: '#D94A8C', h: '#FFD3E6',
+    px: ['...oooooo...', '..oaaaaaao..', '.oabbbbbbao.', '.oabbbbbbao.', 'aobwpbbwpboa', 'aobwpbbwpboa', 'aokbbbbbbko.', 'aaobbmmbbbo.', '.obbbbbbbbo.', '..osbbbbso..', '...oooooo...', '...oo..oo...'] },
+  { id: 'grader', title: 'GRADER', model: 'opus', effort: 'medium', rt: 'API', tools: ['Score against rubric', 'Quote evidence'], desc: 'Silently scores each answer against the hidden rubric and decides whether the gate opens.', quote: '"Show me the sentence."', b: '#41D6C3', s: '#1E9C8C', h: '#C9F7F0',
+    px: ['.....yy.....', '....yyyy....', '...oooooo...', '..obbbbbbo..', '.oaaaaaaaao.', '.oawpaawpao.', '.okbbbbbbko.', '.obbbmmbbbo.', '.obbbbbbbbo.', '..osbbbbso..', '...oooooo...', '...oo..oo...'] },
+  { id: 'slides', title: 'SLIDE WRITER', model: 'haiku', effort: 'medium', rt: 'API', tools: ['Summarize step', 'Build slide', 'Export deck'], desc: 'Turns each passed step into an interview slide with the decisions and failure modes.', quote: '"One slide, one story."', b: '#FFD45E', s: '#D9A62A', h: '#FFF1C2',
+    px: ['.oooooooooo.', '.ommmmmmmmo.', '.omwmmmmwmo.', '.omwmmmmwmo.', '.ommmaammmo.', '.ommmmmmmmo.', '.oooooooooo.', '....obbo....', '..obbbbbbo..', '..osbbbbso..', '...oooooo...', '...oo..oo...'] }
+];
+AUDIT = [
+  { id: 'lead', title: 'ROOK', model: 'opus', effort: 'high', rt: 'Agent SDK', tools: ['Read all reports', 'Trace causes', 'Open pull requests'], desc: 'Audit lead. Traces issues across agents, drops conflicting fixes and opens the pull requests.', quote: '"Find the cause, not the symptom."' },
+  { id: 'build', title: 'BOLT', model: 'opus', effort: 'high', rt: 'Agent SDK', tools: ['Read plans and code', 'Check reviewer cuts', 'Propose fixes'], desc: 'Build auditor. Checks plan structure, code quality and whether the reviewer cut anything it should not have.', quote: '"Measure twice, commit once."' },
+  { id: 'teach', title: 'ECHO', model: 'opus', effort: 'high', rt: 'Agent SDK', tools: ['Read transcripts', 'Rerun calibration', 'Propose fixes'], desc: 'Teaching auditor. Checks lessons, interview questions, hints and grader calibration.', quote: '"Was that a hint or the answer?"' },
+  { id: 'out', title: 'PIXEL', model: 'opus', effort: 'high', rt: 'Agent SDK', tools: ['Compare slides to diff', 'Check README claims', 'Propose fixes'], desc: 'Output auditor. Checks slides and READMEs against what the code actually does.', quote: '"The deck has to match the diff."' }
+];
+CREW = {
+  lead: { tie: '#FF4D5E', tieD: '#B8303C', skin: '#E0B48F', skinD: '#C4936C', hair: '#C9CED6', hl: '#EEF0F4', coat: true },
+  build: { tie: '#5AA9FF', tieD: '#2F6FD0', skin: '#8D5A3B', skinD: '#6E4329', hair: '#2A1E16', hl: '#4A3A2E' },
+  teach: { tie: '#41D6C3', tieD: '#1E9C8C', skin: '#F1C7A3', skinD: '#D8A884', hair: '#1A1420', hl: '#3A2E48', mic: true },
+  out: { tie: '#FFD45E', tieD: '#D9A62A', skin: '#C68B5E', skinD: '#A56E45', hair: '#F2C25A', hl: '#FFE7A0', pocket: '#FFD45E' }
+};
+PAL = { o: '#2E3A63', w: '#FFFFFF', p: '#10162B', k: '#FF8FA3', m: '#141A30', y: '#FFD45E', g: '#E8F1FF', a: '#FF9B3D' };
+
+setPortrait = (el) => { this.cv = el; };
+
+list() { return this.state.crew === 'build' ? this.BUILD : this.AUDIT; }
+cur(a) { const o = this.state.over[a.id] || {}; return { model: o.model || a.model, effort: o.effort || a.effort }; }
+colorOf(a) { return a.b || this.CREW[a.id].tie; }
+
+setPick(field, val) { const a = this.list()[this.state.sel], over = Object.assign({}, this.state.over); over[a.id] = Object.assign({}, over[a.id] || {}, { [field]: val }); this.setState({ over: over }); }
+
+fig(g, id, x, y, s, T) {
+  const A = this.CREW[id], SUIT = '#1C1E27', SUITD = '#111218', SUITL = '#2E3140', PANTS = '#15161D', SHOE = '#07070B', SHIRT = '#ECECF2', GL = '#06060B';
+  const br = Math.floor(T * 1.2) % 2 * 0.4;
+  const R = (ux, uy, uw, uh, c) => { g.fillStyle = c; const px = Math.round(x + ux * s), py = Math.round(y + uy * s); g.fillRect(px, py, Math.max(1, Math.round(x + (ux + uw) * s) - px), Math.max(1, Math.round(y + (uy + uh) * s) - py)); };
+  const H = (ux, uy, uw, uh, c) => R(ux, uy + br, uw, uh, c);
+  R(-6.5, -0.6, 13, 1.2, 'rgba(0,0,0,0.4)');
+  R(-4, -10, 3, 8.6, PANTS); R(1, -10, 3, 8.6, PANTS); R(-2.6, -10, 0.5, 8, '#20212B'); R(2.4, -10, 0.5, 8, '#20212B');
+  R(-4.6, -1.5, 3.8, 1.5, SHOE); R(0.8, -1.5, 3.8, 1.5, SHOE); R(-4, -1.5, 1, 0.5, '#3A3F4C'); R(1.4, -1.5, 1, 0.5, '#3A3F4C');
+  if (A.coat) { R(-6.3, -12, 12.6, 4, SUIT); R(-0.3, -12, 0.6, 4, SUITD); }
+  R(-5.6, -20, 11.2, 10.6, SUIT); R(3.6, -20, 2, 10.6, SUITD); R(-5.6, -20, 1, 10.6, SUITL);
+  R(-1.6, -20, 3.2, 4.6, SHIRT); R(-1, -15.4, 2, 1.4, SHIRT); R(-2.7, -20, 1.1, 5.6, SUITL); R(1.6, -20, 1.1, 5.6, SUITL);
+  R(-0.5, -19.3, 1, 7.4, A.tie); R(-0.7, -19.8, 1.4, 1, A.tieD); R(-0.3, -11.8, 0.6, 0.6, '#3A3D4A'); R(-0.3, -13.6, 0.6, 0.6, '#3A3D4A');
+  if (A.pocket) R(2.3, -18.2, 1.5, 0.9, A.pocket);
+  R(-7.6, -19.6, 2, 9.6, SUIT); R(-7.6, -19.6, 0.6, 9.6, SUITL); R(-7.6, -10.2, 2, 1.6, A.skin);
+  R(5.6, -19.6, 2, 9.6, SUIT); R(5.6, -19.6, 0.6, 9.6, SUITL); R(5.6, -10.2, 2, 1.6, A.skin);
+  H(-1.6, -21.8, 3.2, 1.8, A.skinD);
+  H(-4, -29, 8, 8, A.skin); H(-3.6, -21.6, 7.2, 0.8, A.skin); H(2.6, -28.6, 1.4, 7.2, A.skinD); H(-4.7, -26.2, 0.8, 2.2, A.skinD); H(3.9, -26.2, 0.8, 2.2, A.skinD);
+  H(-3.9, -26.6, 3.5, 2.1, GL); H(0.4, -26.6, 3.5, 2.1, GL); H(-0.4, -26.2, 0.8, 0.5, GL); H(-4.4, -26.2, 0.6, 0.5, GL); H(3.8, -26.2, 0.6, 0.5, GL);
+  const gl = (T * 0.7) % 3; if (gl < 1.2) { H(-3.4 + gl * 2, -26.3, 0.8, 0.5, '#FFD27A'); H(0.9 + gl * 2, -26.3, 0.6, 0.4, '#5CE1E6'); }
+  H(-1.1, -23.1, 2.2, 0.5, '#7A3A30'); H(4.2, -25.6, 0.5, 3.6, '#BFE6EA');
+  if (id === 'lead') H(-1.8, -23.9, 3.6, 0.8, A.hair);
+  if (A.mic) { H(-4.9, -24.6, 0.5, 2.2, '#41D6C3'); H(-4.9, -22.8, 2.8, 0.5, '#41D6C3'); }
+  const c = A.hair, hl = A.hl;
+  if (id === 'lead') { H(-4.3, -29.6, 8.6, 2.4, c); H(-4.3, -27.4, 0.9, 2.8, c); H(3.4, -27.4, 0.9, 2.8, c); H(-2.6, -29.6, 3, 0.6, hl); }
+  if (id === 'build') { H(-4, -29.4, 8, 1.6, c); H(-4, -28, 0.6, 1.6, c); H(3.4, -28, 0.6, 1.6, c); }
+  if (id === 'teach') { H(-4.8, -29.8, 9.6, 2.9, c); H(-4.8, -27, 1.5, 6.2, c); H(3.3, -27, 1.5, 6.2, c); H(-3.8, -27.2, 3.2, 1, c); H(-3, -29.8, 3, 0.6, hl); H(-4.6, -30.4, 9.2, 0.7, '#2A3A44'); }
+  if (id === 'out') { H(-4, -30.4, 8, 2.6, c); H(-1.6, -32.2, 5, 2, c); H(-1, -32.2, 2.2, 0.6, hl); H(-4, -28, 0.7, 1.6, c); H(3.3, -28, 0.7, 1.6, c); }
+}
+
+frame = (now) => {
+  this.raf = requestAnimationFrame(this.frame);
+  const c = this.cv; if (!c) return;
+  const T = this.still ? 0 : now / 1000, W = 380, Hh = 440, dpr = Math.min(window.devicePixelRatio || 1, 2);
+  if (c.width !== W * dpr) { c.width = W * dpr; c.height = Hh * dpr; }
+  const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.imageSmoothingEnabled = false; g.clearRect(0, 0, W, Hh);
+  const a = this.list()[this.state.sel], col = this.colorOf(a);
+  const bg = g.createLinearGradient(0, 0, 0, Hh); bg.addColorStop(0, '#1A0F0A'); bg.addColorStop(1, '#2A140E'); g.fillStyle = bg; g.fillRect(0, 0, W, Hh);
+  g.strokeStyle = 'rgba(255,155,61,0.08)'; g.lineWidth = 1;
+  for (let i = 0; i < 12; i++) { g.beginPath(); g.moveTo(190, 250); g.lineTo(i * 36 - 20, Hh); g.stroke(); }
+  for (let i = 0; i < 6; i++) { const yy = 330 + i * i * 4; g.beginPath(); g.moveTo(0, yy); g.lineTo(W, yy); g.stroke(); }
+  g.globalCompositeOperation = 'lighter';
+  const rg = g.createRadialGradient(190, 200, 10, 190, 200, 200); rg.addColorStop(0, 'rgba(255,155,61,0.35)'); rg.addColorStop(1, 'rgba(255,155,61,0)'); g.fillStyle = rg; g.fillRect(0, 0, W, Hh);
+  for (let i = 0; i < 48; i++) { const an = i / 48 * Math.PI * 2 + T * 0.4; if (i % 4 === 3) continue; g.fillStyle = 'rgba(255,210,122,0.6)'; g.fillRect(Math.round(190 + Math.cos(an) * 120), Math.round(372 + Math.sin(an) * 22), 2, 2); }
+  g.fillStyle = 'rgba(255,155,61,0.25)'; g.beginPath(); g.ellipse(190, 372, 92, 15, 0, 0, Math.PI * 2); g.fill();
+  for (let i = 0; i < 14; i++) { const ph = (T * 0.25 + i / 14) % 1; g.fillStyle = 'rgba(255,210,122,' + (0.6 * (1 - ph)).toFixed(3) + ')'; g.fillRect(Math.round(110 + this.hs(i) * 160), Math.round(372 - ph * 260), 2, 2); }
+  g.globalCompositeOperation = 'source-over';
+  if (this.state.crew === 'build') {
+    const ps = 18, ox = 190 - 6 * ps, oy = 372 - 12 * ps - 4 - (Math.floor(T * 1.6) % 2) * 4, blink = (T % 3.6) < 0.14;
+    a.px.forEach((row, r) => row.split('').forEach((ch, cc) => {
+      if (ch === '.') return;
+      let k = ch; if (blink && (k === 'w' || k === 'p')) k = a.id === 'slides' ? 'm' : a.id === 'grader' ? 'a' : 'b';
+      g.fillStyle = k === 'b' ? a.b : k === 's' ? a.s : k === 'h' ? a.h : this.PAL[k];
+      g.fillRect(ox + cc * ps, oy + r * ps, ps, ps);
+      g.fillStyle = 'rgba(255,255,255,0.08)'; g.fillRect(ox + cc * ps, oy + r * ps, ps, 2);
+    }));
+  } else this.fig(g, a.id, 190, 372, 10.6, T);
+  g.fillStyle = col; g.fillRect(0, 0, W, 3);
+}
+hs(n) { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); }
+
+componentDidMount() { this.still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; this.raf = requestAnimationFrame(this.frame); }
+componentWillUnmount() { cancelAnimationFrame(this.raf); }
+
+renderVals() {
+  const L = this.list(), a = L[this.state.sel] || L[0], cur = this.cur(a), M = this.MODELS[cur.model], ei = this.EFF.indexOf(cur.effort);
+  const mult = [0.5, 1, 1.6, 2.4, 3.4][ei];
+  const segs = (v, col) => Array.from({ length: 10 }, (_, i) => ({ bg: i < Math.round(Math.max(1, Math.min(10, v))) ? col : 'rgba(255,155,61,.14)' }));
+  return {
+    setPortrait: this.setPortrait,
+    crews: [['build', 'Build crew'], ['audit', 'Audit crew']].map((c) => ({ label: c[1], on: this.state.crew === c[0], cls: this.state.crew === c[0] ? 'on' : '', pick: () => this.setState({ crew: c[0], sel: 0 }) })),
+    crewNote: this.state.crew === 'build' ? 'Seven agents that teach, build and gate each step.' : 'Four agents that audit the app after projects and every two weeks.',
+    list: L.map((x, i) => { const c = this.cur(x), on = i === this.state.sel, col = this.colorOf(x); return { name: x.title, initial: x.title.charAt(0), color: col, nameColor: on ? '#FFD27A' : '#F7EBDD', modelShort: this.MODELS[c.model].short, effort: c.effort, custom: !!this.state.over[x.id], on: on, cls: on ? 'on' : '', pick: () => this.setState({ sel: i }) }; }),
+    sel: { title: a.title, desc: a.desc, quote: a.quote, tools: a.tools, color: this.colorOf(a), runtime: (this.state.crew === 'build' ? 'Build crew' : 'Audit crew') + ' / runs on ' + a.rt, rt: a.rt, modelName: M.name, effort: cur.effort, num: String(this.state.sel + 1).padStart(2, '0'), recLabel: this.MODELS[a.model].name + ' / ' + a.effort },
+    models: ['haiku', 'sonnet', 'opus'].map((k) => ({ name: this.MODELS[k].name, note: this.MODELS[k].note, rec: a.model === k, on: cur.model === k, cls: cur.model === k ? 'on' : '', pick: () => this.setPick('model', k) })),
+    efforts: this.EFF.map((e) => ({ label: e, on: cur.effort === e, cls: cur.effort === e ? 'on' : '', pick: () => this.setPick('effort', e) })),
+    effortNote: this.EFFNOTE[cur.effort],
+    stats: [['Depth', M.depth + (ei - 1) * 0.6, '#FFD27A'], ['Speed', M.speed - (ei - 1) * 1.1, '#5CE1E6'], ['Cost', M.cost * mult * 0.8, '#FF4D5E']].map((s) => ({ label: s[0], segs: segs(s[1], s[2]) })),
+    resetSel: () => { const over = Object.assign({}, this.state.over); delete over[a.id]; this.setState({ over: over }); }
+  };
+}
+}
+</script>
+</body>
+</html>

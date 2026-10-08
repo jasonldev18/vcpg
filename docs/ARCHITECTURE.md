@@ -1,0 +1,239 @@
+# Architecture
+
+## 1. Overview
+
+```mermaid
+flowchart LR
+  UI[React UI<br/>127.0.0.1:5173] -- REST + SSE --> API[FastAPI<br/>127.0.0.1:8000]
+  API --> ORCH[Orchestrator<br/>state machine]
+  ORCH --> LLM[llm/ adapter]
+  LLM -- Messages API --> CLAUDE[(Claude API)]
+  LLM -- Agent SDK --> CLAUDE
+  ORCH --> WS[Project workspaces<br/>git repos]
+  ORCH --> SB[Sandbox<br/>Docker or venv]
+  ORCH --> DB[(SQLite)]
+  API --> KC[OS keychain]
+  AUD[Audit runner] --> LLM
+  AUD -- gh / REST --> GH[(GitHub: vcpg repo)]
+  AUD --> DB
+```
+
+One process serves the API; long agent runs execute as asyncio tasks inside it and publish events to an in-memory bus that the SSE endpoint streams. Everything persistent is in SQLite or on disk under the data directory.
+
+## 2. Repository layout
+
+```
+vcpg/
+  backend/
+    app.py               FastAPI app, routes mounted here
+    routes/              projects, steps, gate, lessons, ideas, deck, readme, archive, squad, core, audit, events
+    orchestrator/
+      machine.py         step states and allowed transitions
+      runner.py          drives a step through teach → build → review → tour → gate → slide
+      project_end.py     final review, re-test, deck, README, dossier
+    llm/
+      client.py          Messages API calls: call(agent, messages, schema=None)
+      sdk.py             Agent SDK sessions: run_agent(agent, task, cwd, ...)
+      config.py          merges config/agents.yaml with Squad overrides
+      prompts.py         loads prompts/<agent>.md
+      log.py             records every call to agent_calls
+    gate/
+      rubric.py          gate state computed from grader output
+    lessons/
+      sources.py         ingest, split into passages, embed
+      retrieve.py        top-k passages for a query
+      validate.py        deterministic citation validator
+    workspace/
+      git.py             init, commit, diff for project repos
+      sandbox.py         run commands in Docker or a venv
+    exports/
+      pptx.py            python-pptx deck export
+      pdf.py             PDF export
+      render.py          diagrams and charts to PNG for exports
+    audit/
+      runner.py          quick and deep scans
+      policy.py          auto-merge rules (see SECURITY.md)
+      secrets_scan.py
+      github.py          branches and pull requests
+    db.py                schema and queries
+    secrets.py           keyring wrapper
+    events.py            in-memory pub/sub for SSE
+  frontend/
+    src/
+      screens/           MissionControl, Start, Lesson, Squad, Audit, Deck, Readme, Archive
+      scenes/            canvas scenes: Background, CoreNetwork, AuditBay, sprites
+      components/        Panel, Console, Chip, CodeTour, GatePanel, SlideView, ...
+      api/               typed client and SSE hook
+      theme/tokens.css
+  prompts/               one markdown file per agent
+  templates/             slide layouts and README template guidance
+  content/quizzes/       seeded lesson questions
+  config/agents.yaml
+  calibration/           gate and audit test sets (see AGENTS.md)
+  design/prototypes/
+  docs/
+  tests/
+  Makefile
+```
+
+Data lives outside the repo in `~/.vcpg/` (`vcpg.db`, `workspaces/<project_id>/`, `exports/<project_id>/`, `sources/`). The location is set by `VCPG_HOME`.
+
+## 3. Step state machine
+
+```mermaid
+stateDiagram-v2
+  [*] --> planned
+  planned --> taught: user clicks Ready
+  taught --> built: builder finishes
+  built --> reviewed: tests pass
+  built --> taught: user stops build
+  reviewed --> toured: user clicks Ready for interview
+  toured --> interviewing: first question asked
+  interviewing --> interviewing: answer graded / hint / re-teach
+  interviewing --> passed: all rubric items covered
+  passed --> slide_done: slide written
+  slide_done --> [*]
+```
+
+- Transitions are defined in one table in `machine.py`; anything else raises. Agents never set state.
+- Review failures: `built → built` (builder retry once), then the step is marked `blocked` with both notes until the user picks *Retry build* or *Edit plan*.
+- A project is `planning → active → finishing → done`. `finishing` covers final review, re-test, deck and README.
+- On restart, any step that was mid-run (`taught` with a running build, `built` with a running review) is resumed from its last committed state; partial agent runs are discarded.
+
+## 4. Data model (SQLite)
+
+| Table | Key columns |
+|---|---|
+| `projects` | id, name, brief, start_path (plan/idea/lesson), status, workspace_path, created_at, finished_at |
+| `steps` | id, project_id, position, title, component, goal, concepts (json), files (json), acceptance (json), state, build_note, review_note, commit_sha |
+| `rubric_items` | id, step_id, text, status (missing/partial/covered), evidence |
+| `attempts` | id, step_id, kind (answer/hint/reteach), content, grader_json, created_at |
+| `messages` | id, project_id, step_id, agent, role, content, created_at (tutor chat, tour Q&A, interviewer turns) |
+| `slides` | id, project_id, step_id (null for title/overview/retro), position, json, notes |
+| `deck_exports` | id, project_id, version, format (pptx/pdf), path, created_at |
+| `readmes` | id, project_id, template, content, review_json, ready |
+| `lessons` | id, concept, path_json, status |
+| `sources` | id, kind (trusted/community), title, url_or_path, added_by |
+| `passages` | id, source_id, text, embedding (blob), position |
+| `dossiers` | id, project_id, markdown |
+| `mock_interviews` | id, project_id, length_min, focus, transcript, scorecard_json |
+| `agent_calls` | id, agent, model, effort, runtime, project_id, step_id, input_ref, output_ref, ok, error, duration_ms, created_at |
+| `agent_overrides` | agent, model, effort |
+| `audit_runs` | id, kind (project/deep), status, started_at, finished_at, report_json |
+| `audit_issues` | id, run_id, agent, severity, title, evidence, status |
+| `audit_prs` | id, run_id, issue_id, branch, pr_url, auto_merge (bool), state, before_json, after_json |
+
+Full prompts and outputs for `agent_calls` are stored as files under `~/.vcpg/logs/` and referenced by path, so the database stays small. Logs never contain secrets (SECURITY.md).
+
+## 5. LLM adapter
+
+All Claude access goes through `backend/llm/`. No other module imports `anthropic` or `claude_agent_sdk`.
+
+### 5.1 Config
+
+`config.py` reads `config/agents.yaml`, applies rows from `agent_overrides`, and returns `AgentConfig(model, effort, runtime, max_tokens | max_turns)`. Effort below `medium` is rejected.
+
+### 5.2 Messages API agents (`client.py`)
+
+Used by planner, tutor, interviewer, grader, slide writer, lesson builder, idea generator, README coach, dossier writer.
+
+```python
+async def call(agent: str, messages: list[dict], schema: type[BaseModel] | None = None) -> str | BaseModel:
+    cfg = load(agent)
+    resp = await anthropic.messages.create(
+        model=cfg.model,
+        max_tokens=cfg.max_tokens,
+        system=prompt(agent),
+        messages=messages,
+        output_config={"effort": cfg.effort},
+    )
+    ...  # log the call; if schema, parse JSON and validate, retry once with the error
+```
+
+Streaming variants (`stream(...)`) publish text deltas to the event bus for the tutor and interviewer. Check the current Anthropic Python SDK docs for exact parameter names at build time; keep the adapter the only place that needs changing if they differ.
+
+### 5.3 Agent SDK agents (`sdk.py`)
+
+Used by builder, reviewer and the audit crew: they edit files, run commands and use git.
+
+```python
+from claude_agent_sdk import query, ClaudeAgentOptions
+
+async def run_agent(agent: str, task: str, cwd: Path, allowed: list[str], denied: list[str]):
+    cfg = load(agent)
+    options = ClaudeAgentOptions(
+        model=cfg.model,
+        effort=cfg.effort,
+        system_prompt=prompt(agent),
+        cwd=str(cwd),
+        allowed_tools=allowed,
+        disallowed_tools=denied,
+        permission_mode="acceptEdits",
+        max_turns=cfg.max_turns,
+        setting_sources=[],          # ignore any CLAUDE.md or settings inside the workspace
+        hooks={"PreToolUse": [guard]},
+    )
+    async for event in query(prompt=task, options=options):
+        publish(event)               # to the console via SSE
+        ...
+```
+
+- `cwd` is the project workspace (builder, reviewer) or a fresh clone of vcpg on an audit branch (audit crew).
+- The `guard` hook checks every tool call against the rules in SECURITY.md section 4 and denies anything outside them, even if `allowed_tools` would allow it.
+- Tool lists per agent are in AGENTS.md.
+
+## 6. Project workspace
+
+- Each project is its own git repo at `~/.vcpg/workspaces/<project_id>/`, created at plan approval with a `.gitignore` and an empty README.
+- The orchestrator commits after review passes (`step N: <title>`) and after the README is ready. Agents may run `git diff` and `git status` but never commit, reset or push; the orchestrator owns history.
+- The code tour reads `git show <commit_sha>` for the step.
+- Projects are never pushed anywhere by the app. The user can add a remote themselves.
+
+## 7. Sandbox
+
+`sandbox.py` runs commands for generated code and tests.
+
+- **Docker (preferred):** one container per project from a slim language image, workspace mounted read-write, network off by default, CPU and memory limits, a timeout per command. Network can be turned on per command for package installs only (`pip install`, `npm install`) during the build step.
+- **venv fallback:** used when Docker is missing; the app warns the user once. Commands run in a per-project virtualenv with the workspace as `cwd`, a stripped environment (no keys), and a timeout.
+- The builder and reviewer run commands through the sandbox via a custom tool (`run_in_sandbox`) rather than raw Bash where possible.
+
+## 8. Streaming
+
+- `GET /api/events?project_id=...` is an SSE stream of events: `agent_started`, `agent_text` (deltas), `tool_use` (summarised: file path or command), `tool_result` (short), `state_changed`, `gate_update` (counts only), `audit_update`.
+- The frontend keeps one EventSource per open project and reconnects with `Last-Event-ID`; the server keeps the last 500 events per project in memory for replay.
+
+## 9. Lessons retrieval
+
+- Sources are split into passages of about 200 to 400 words at heading or paragraph boundaries, with stable IDs (`<source_id>:<position>`).
+- Embeddings use a small local model (`sentence-transformers/all-MiniLM-L6-v2`) so retrieval needs no extra API. Vectors live in the `passages` table; search is brute-force cosine over the topic's passages (small enough that an index is not needed).
+- The lesson builder receives only retrieved trusted passages (with IDs) and, separately labelled, community snippets. `validate.py` enforces the grounding rule in SPEC section 9.2.
+
+## 10. Exports
+
+- `render.py` turns slide visuals into PNG: mermaid via the mermaid CLI (`mmdc`) or a headless browser, charts via matplotlib with the Solar palette.
+- `pptx.py` builds 16:9 slides from slide JSON with fixed layouts per visual kind, Solar colours, fonts embedded as names with fallbacks (Oxanium → Arial, IBM Plex Sans → Calibri), and speaker notes.
+- `pdf.py` renders the same deck to PDF (via LibreOffice headless conversion of the pptx, or HTML to PDF with Playwright).
+
+## 11. Audit runner
+
+- Scheduler: on startup and every hour, check whether a deep scan is due (14 days since the last one). Project scans are queued by `project_end.py`.
+- Each run clones vcpg into a temp directory, creates a branch `audit/<run_id>/<slug>` per fix, and runs Bolt, Echo and Pixel in parallel on their slices of `agent_calls`, then Rook on their reports.
+- Rook's fixes are validated by `policy.py` (auto-merge rules) and `secrets_scan.py`, test sets are rerun, and pull requests are opened through the GitHub REST API (or `gh`) with the token from the keychain.
+
+## 12. API surface (summary)
+
+| Route | Purpose |
+|---|---|
+| `POST /api/projects` | create from plan, idea or lesson |
+| `POST /api/projects/{id}/plan/approve` | lock plan, init workspace |
+| `POST /api/steps/{id}/advance` | user actions: ready, stop, retry, ready-for-interview |
+| `POST /api/steps/{id}/gate/answer` · `/hint` · `/reteach` | gate actions |
+| `POST /api/steps/{id}/ask` | tutor side chat |
+| `GET/POST /api/projects/{id}/deck` · `/deck/export` | deck and exports |
+| `GET/PUT /api/projects/{id}/readme` · `/readme/review` | README editor and coach |
+| `POST /api/ideas` · `POST /api/lessons` | discovery |
+| `GET /api/archive` · `POST /api/archive/{id}/mock` | archive and mock interviews |
+| `GET/PUT /api/squad` | agent overrides |
+| `GET/PUT/DELETE /api/core/{anthropic,github}` | key status, save, test, remove (keys are never returned) |
+| `GET /api/audit` · `POST /api/audit/run` | audit state and manual deep scan |
+| `GET /api/events` | SSE |
