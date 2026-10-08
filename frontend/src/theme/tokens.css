@@ -1,0 +1,71 @@
+/* Solar theme tokens (docs/DESIGN.md section 1). */
+:root {
+  --bg: #0d0a08;
+  --panel: rgba(30, 20, 14, 0.78);
+  --acc: #ff9b3d;
+  --acc2: #ff4d5e;
+  --acc3: #ffd27a;
+  --you: #5ce1e6;
+  --text: #f7ebdd;
+  --mute: #bfa58f;
+  --dim: #6b4a30;
+
+  --pass: #6fd98a;
+  --partial: var(--acc3);
+  --fail: var(--acc2);
+
+  --font-display: 'Oxanium', system-ui, sans-serif;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-pixel: 'Silkscreen', monospace;
+
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 1280px;
+  background: var(--bg);
+  color: var(--text);
+  font: 400 15px/1.55 var(--font-body);
+}
+
+h1,
+h2,
+h3,
+nav {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+code,
+pre {
+  font-family: var(--font-mono);
+}
+
+:focus-visible {
+  outline: 2px solid var(--you);
+  outline-offset: 2px;
+}
+
+.brand {
+  background: linear-gradient(90deg, var(--acc), var(--acc2), var(--acc3));
+  background-clip: text;
+  color: transparent;
+}
+
+.panel {
+  position: relative;
+  background: linear-gradient(135deg, rgba(255, 155, 61, 0.08), transparent 60%), var(--panel);
+  border: 1px solid rgba(255, 155, 61, 0.26);
+  border-radius: 10px;
+  box-shadow: 0 10px 40px rgba(255, 77, 94, 0.12);
+  padding: 20px 24px;
+}

@@ -1,0 +1,31 @@
+.shell-header {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 16px 28px;
+  border-bottom: 1px solid rgba(255, 155, 61, 0.18);
+}
+
+.shell-logo {
+  font: 700 22px var(--font-display);
+  letter-spacing: 0.12em;
+}
+
+.shell-header nav {
+  display: flex;
+  gap: 20px;
+  font-size: 12px;
+}
+
+.shell-header a {
+  color: var(--mute);
+  text-decoration: none;
+}
+
+.shell-header a.active {
+  color: var(--acc);
+}
+
+.shell-main {
+  padding: 28px;
+}
