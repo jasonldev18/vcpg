@@ -63,7 +63,7 @@ Mission control (agent network, step loop, live console), start a project, conce
 
 ## Getting started
 
-Requires Python 3.12+, Node 20+, Git, and optionally Docker.
+Requires Python 3.12+, Node 20+, Git, make, and optionally Docker. On Windows, install make with `winget install ezwinports.make`.
 
 ```bash
 git clone https://github.com/<you>/vcpg.git

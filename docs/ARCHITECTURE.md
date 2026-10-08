@@ -55,12 +55,16 @@ vcpg/
       policy.py          auto-merge rules (see SECURITY.md)
       secrets_scan.py
       github.py          branches and pull requests
-    db.py                schema and queries
+    db.py                connection and numbered migrations (stdlib sqlite3)
+    migrations/          NNN_name.sql files, applied in order; version kept in PRAGMA user_version
     secrets.py           keyring wrapper
+    redact.py            log redaction filter (SECURITY.md section 2)
+    paths.py             repo root and VCPG_HOME
     events.py            in-memory pub/sub for SSE
   frontend/
     src/
       screens/           MissionControl, Start, Lesson, Squad, Audit, Deck, Readme, Archive
+      routes.tsx         one route per screen (screens.ts lists them)
       scenes/            canvas scenes: Background, CoreNetwork, AuditBay, sprites
       components/        Panel, Console, Chip, CodeTour, GatePanel, SlideView, ...
       api/               typed client and SSE hook
@@ -73,6 +77,7 @@ vcpg/
   design/prototypes/
   docs/
   tests/
+  scripts/dev.py         starts API and UI together for `make dev`
   Makefile
 ```
 
@@ -237,3 +242,5 @@ async def run_agent(agent: str, task: str, cwd: Path, allowed: list[str], denied
 | `GET/PUT/DELETE /api/core/{anthropic,github}` | key status, save, test, remove (keys are never returned) |
 | `GET /api/audit` · `POST /api/audit/run` | audit state and manual deep scan |
 | `GET /api/events` | SSE |
+| `GET /api/health` | liveness check |
+| `GET /api/session` | per-launch token; every non-GET request must send it as `X-VCPG-Token` |
