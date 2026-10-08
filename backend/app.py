@@ -9,6 +9,10 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 
 from backend import db, redact
+from backend.errors import Conflict, NotFound
+from backend.llm.client import LLMError, MissingKey
+from backend.orchestrator.machine import InvalidTransition
+from backend.routes import core, events, projects, steps
 
 HOST = "127.0.0.1"  # never 0.0.0.0 (SECURITY.md section 8)
 PORT = 8000
@@ -46,6 +50,25 @@ def create_app() -> FastAPI:
     )
     # Blocks DNS rebinding: a foreign page resolved to 127.0.0.1 still sends its own Host.
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=[HOST, "localhost"])
+
+    for router in (projects.router, steps.router, core.router, events.router):
+        app.include_router(router)
+
+    def error(status: int) -> Callable[[Request, Exception], Awaitable[Response]]:
+        async def handle(_: Request, exc: Exception) -> Response:
+            return JSONResponse({"detail": redact.redact(str(exc))}, status_code=status)
+
+        return handle
+
+    # Handlers match the most specific class, so MissingKey (fixable in Core access) gets 409.
+    for exc, status in (
+        (NotFound, 404),
+        (Conflict, 409),
+        (InvalidTransition, 409),
+        (MissingKey, 409),
+        (LLMError, 502),
+    ):
+        app.add_exception_handler(exc, error(status))
 
     @app.get("/api/health")
     def health() -> dict[str, bool]:

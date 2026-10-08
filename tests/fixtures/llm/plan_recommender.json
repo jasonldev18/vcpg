@@ -1,0 +1,86 @@
+{
+ "questions": [],
+ "project_name": "Movie Recommender",
+ "one_liner": "Recommends films from MovieLens ratings.",
+ "stack": [
+  "Python",
+  "FastAPI",
+  "pandas"
+ ],
+ "steps": [
+  {
+   "title": "Ratings loader",
+   "component": "data",
+   "goal": "Load MovieLens ratings into a user-item matrix.",
+   "concepts": [
+    "sparse matrices",
+    "data cleaning"
+   ],
+   "files": [
+    "app/ratings.py"
+   ],
+   "acceptance": [
+    "Ratings loader has a passing test"
+   ],
+   "rubric": [
+    "Explains why the user-item matrix is sparse and why that matters for memory.",
+    "Explains how missing ratings differ from zero ratings.",
+    "Explains how the loader would be checked for duplicate or malformed rows."
+   ]
+  },
+  {
+   "title": "KNN recommender core",
+   "component": "backend",
+   "goal": "Recommend five films for a user from their nearest neighbours.",
+   "concepts": [
+    "cosine similarity",
+    "mean-centring",
+    "k-nearest neighbours"
+   ],
+   "files": [
+    "app/knn.py"
+   ],
+   "acceptance": [
+    "KNN recommender core has a passing test"
+   ],
+   "rubric": [
+    "Explains that mean-centring removes each user's rating bias before similarity is computed.",
+    "Explains why cosine similarity suits sparse rating vectors better than raw Euclidean distance.",
+    "Explains how the choice of k trades noise against over-smoothing.",
+    "Explains the cold-start problem for a user with no ratings."
+   ]
+  },
+  {
+   "title": "Offline evaluation",
+   "component": "evaluation",
+   "goal": "Measure precision@5 on a held-out split.",
+   "concepts": [
+    "train/test split",
+    "precision@k"
+   ],
+   "files": [
+    "app/offline.py"
+   ],
+   "acceptance": [
+    "Offline evaluation has a passing test"
+   ],
+   "rubric": [
+    "Explains why ratings are held out per user rather than at random across all users.",
+    "Explains what precision@5 measures and what it misses.",
+    "Explains how to tell whether a change actually improved the recommender."
+   ]
+  }
+ ],
+ "changes_from_spine": [
+  {
+   "step": "interface",
+   "change": "skipped",
+   "reason": "A CLI is enough for a first version."
+  },
+  {
+   "step": "mission",
+   "change": "merged",
+   "reason": "Folded into the ratings loader step."
+  }
+ ]
+}

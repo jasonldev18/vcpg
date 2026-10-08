@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from backend.db import connect, migrate
+from backend.db import MIGRATIONS, connect, migrate
 
 TABLES = {
     "projects", "steps", "rubric_items", "attempts", "messages", "slides", "deck_exports",
@@ -17,7 +17,7 @@ def test_connect_creates_every_table_under_vcpg_home(isolated_home: Path) -> Non
     tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
     assert (isolated_home / "vcpg.db").exists()
     assert tables == TABLES
-    assert conn.execute("PRAGMA user_version").fetchone()[0] == 1
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == len(list(MIGRATIONS.glob("*.sql")))
 
 
 def test_migrate_twice_keeps_data() -> None:

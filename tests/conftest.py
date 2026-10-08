@@ -9,6 +9,7 @@ from keyring.backend import KeyringBackend
 from keyring.errors import PasswordDeleteError
 
 from backend import redact
+from backend.events import bus
 from backend.llm import client
 from backend.llm.client import Message, OnText, Reply
 from backend.llm.config import AgentConfig
@@ -94,3 +95,9 @@ def fake_llm(monkeypatch: pytest.MonkeyPatch) -> FakeLLM:
     fake = FakeLLM()
     monkeypatch.setattr(client, "transport", fake)
     return fake
+
+
+@pytest.fixture(autouse=True)
+def fresh_bus() -> None:
+    """Project IDs restart in every test database, so stale events must not replay."""
+    bus.__init__()  # type: ignore[misc]
