@@ -77,3 +77,23 @@ def reviewer_cases() -> dict[str, ReviewerCase]:
         case.files = sorted(folder.glob("*.py"))
         cases[folder.name] = case
     return cases
+
+
+SLIDE_SETS = REPO_ROOT / "calibration" / "slides"
+
+
+class SlideBundle(BaseModel):
+    step: str
+    build_summary: str
+    build_note: str
+    review_note: str
+    code_files: str
+    gate: str
+    forbidden: list[str]
+
+
+def slide_bundles() -> dict[str, SlideBundle]:
+    return {
+        path.stem: SlideBundle.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
+        for path in sorted(SLIDE_SETS.glob("*.yaml"))
+    }

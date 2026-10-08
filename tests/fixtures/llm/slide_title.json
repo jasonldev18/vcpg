@@ -4,22 +4,7 @@
  "what": "Finds the five films a user's nearest neighbours liked most.",
  "visual": {
   "kind": "table",
-  "spec": {
-   "columns": [
-    "Layer",
-    "Tool"
-   ],
-   "rows": [
-    [
-     "data",
-     "pandas"
-    ],
-    [
-     "api",
-     "FastAPI"
-    ]
-   ]
-  }
+  "spec_json": "{\"columns\": [\"Layer\", \"Tool\"], \"rows\": [[\"data\", \"pandas\"], [\"api\", \"FastAPI\"]]}"
  },
  "decisions": [
   {

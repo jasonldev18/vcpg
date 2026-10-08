@@ -4,24 +4,7 @@
  "what": "Finds the five films a user's nearest neighbours liked most.",
  "visual": {
   "kind": "chart",
-  "spec": {
-   "type": "bar",
-   "series": [
-    {
-     "name": "precision@5",
-     "x": [
-      "pop",
-      "knn"
-     ],
-     "y": [
-      0.1,
-      0.2
-     ]
-    }
-   ],
-   "x_label": "model",
-   "y_label": "precision"
-  }
+  "spec_json": "{\"type\": \"bar\", \"series\": [{\"name\": \"precision@5\", \"x\": [\"pop\", \"knn\"], \"y\": [0.1, 0.2]}], \"x_label\": \"model\", \"y_label\": \"precision\"}"
  },
  "decisions": [
   {

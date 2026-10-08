@@ -1,0 +1,28 @@
+# Slide calibration: a step bundle, plus claims the slide must not make. Numbers on the slide
+# must all appear somewhere in the bundle; `forbidden` terms are plausible but unsupported.
+step: |
+  Title: KNN recommender core
+  Component: backend
+  Goal: Recommend five films for a user from their nearest neighbours.
+  Concepts: mean-centring, cosine similarity, k-nearest neighbours, cold start
+build_summary: |
+  recommend.py: mean-centres ratings, cosine similarity over co-rated films, keeps k=20 neighbours
+  test_recommend.py: tests a user with known neighbours gets their films
+  Decision: k=20 because the tutorial dataset has 610 users
+  Reviewer cut from recommend.py: a None check on the ratings dict (the loader never returns None)
+build_note: '{"files": [{"path": "recommend.py", "summary": "KNN recommender"}], "decisions": ["k=20"], "not_done": ["no evaluation yet"]}'
+review_note: '{"commands": [{"cmd": "pytest -q", "result": "pass", "summary": "4 passed"}], "cut": [], "fixed": [], "status": "pass", "failure": null}'
+code_files: "recommend.py: 42 lines\ntest_recommend.py: 30 lines"
+gate: |
+  Interviewer: Why subtract each user's mean before comparing?
+  Learner: Because some people rate everything high, and I want to compare what they like more than usual, not their scale.  [1 of 4 points covered]
+  Interviewer: Why cosine and not Euclidean distance?
+  Learner: I'm not sure, it was the default.  [1 of 4 points covered]
+  Interviewer: Hint: think about users who rated very different numbers of films.
+  Learner: Euclidean would push apart people who rated lots of films even if their tastes match; cosine only looks at direction.  [2 of 4 points covered]
+  Interviewer: What happens with k?
+  Learner: Small k is noisy, big k drifts to popular films.  [3 of 4 points covered]
+  Interviewer: And a brand-new user?
+  Learner: No ratings means no neighbours, so we fall back to popular films.  [4 of 4 points covered]
+  [hints given in total: 1]
+forbidden: [GPU, Redis, Spark, "%", million, milliseconds]

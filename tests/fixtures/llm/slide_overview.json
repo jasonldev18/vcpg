@@ -4,37 +4,7 @@
  "what": "Finds the five films a user's nearest neighbours liked most.",
  "visual": {
   "kind": "architecture",
-  "spec": {
-   "nodes": [
-    {
-     "id": "csv",
-     "label": "Ratings CSV",
-     "group": "data"
-    },
-    {
-     "id": "knn",
-     "label": "KNN core",
-     "group": "backend"
-    },
-    {
-     "id": "cli",
-     "label": "CLI",
-     "group": "interface"
-    }
-   ],
-   "edges": [
-    {
-     "from": "csv",
-     "to": "knn",
-     "label": "load"
-    },
-    {
-     "from": "knn",
-     "to": "cli",
-     "label": "top 5"
-    }
-   ]
-  }
+  "spec_json": "{\"nodes\": [{\"id\": \"csv\", \"label\": \"Ratings CSV\", \"group\": \"data\"}, {\"id\": \"knn\", \"label\": \"KNN core\", \"group\": \"backend\"}, {\"id\": \"cli\", \"label\": \"CLI\", \"group\": \"interface\"}], \"edges\": [{\"from\": \"csv\", \"to\": \"knn\", \"label\": \"load\"}, {\"from\": \"knn\", \"to\": \"cli\", \"label\": \"top 5\"}]}"
  },
  "decisions": [
   {

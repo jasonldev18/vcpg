@@ -4,14 +4,7 @@
  "what": "Finds the five films a user's nearest neighbours liked most.",
  "visual": {
   "kind": "flow",
-  "spec": {
-   "steps": [
-    "Ratings",
-    "Mean-centre",
-    "Cosine neighbours",
-    "Top 5"
-   ]
-  }
+  "spec_json": "{\"steps\": [\"Ratings\", \"Mean-centre\", \"Cosine neighbours\", \"Top 5\"]}"
  },
  "decisions": [
   {

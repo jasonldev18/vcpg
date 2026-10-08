@@ -13,7 +13,7 @@ from backend.llm import client
 from backend.orchestrator import runner
 from backend.orchestrator.context import tag, user_message
 from backend.paths import vcpg_home
-from backend.schemas import Slide
+from backend.schemas import Slide, SlideDraft
 from backend.workspace import git
 
 Kind = Literal["title", "overview", "step", "retrospective"]
@@ -47,17 +47,38 @@ def _code_files(conn: sqlite3.Connection, step: sqlite3.Row) -> str:
     )
 
 
-def _step_message(conn: sqlite3.Connection, step: sqlite3.Row, instruction: str | None) -> str:
+def step_message(
+    step: str,
+    summary: str,
+    build_note: str,
+    review_note: str,
+    code_files: str,
+    gate: str,
+    instruction: str | None = None,
+) -> str:
+    """Shared by the app and calibration/slides, so both prompt the slide writer the same way."""
     blocks = [
         tag("mode", "step"),
-        runner._step_block(step),
-        tag("build_summary", runner.build_summary(step)),
-        tag("build_note", step["build_note"] or ""),
-        tag("review_note", step["review_note"] or ""),
-        tag("code_files", _code_files(conn, step)),
-        tag("gate", _gate_transcript(conn, step["id"])),
+        step,
+        tag("build_summary", summary),
+        tag("build_note", build_note),
+        tag("review_note", review_note),
+        tag("code_files", code_files),
+        tag("gate", gate),
     ]
     return "\n\n".join([*blocks, *([tag("instruction", instruction)] if instruction else [])])
+
+
+def _step_message(conn: sqlite3.Connection, step: sqlite3.Row, instruction: str | None) -> str:
+    return step_message(
+        runner._step_block(step),
+        runner.build_summary(step),
+        step["build_note"] or "",
+        step["review_note"] or "",
+        _code_files(conn, step),
+        _gate_transcript(conn, step["id"]),
+        instruction,
+    )
 
 
 def _project_message(
@@ -92,13 +113,10 @@ def _project_message(
 
 
 async def _write(project_id: int, message: str, step_id: int | None) -> Slide:
-    return await client.structured(
-        "slide_writer",
-        user_message(message),
-        Slide,
-        project_id=project_id,
-        step_id=step_id,
+    draft = await client.structured(
+        "slide_writer", user_message(message), SlideDraft, project_id=project_id, step_id=step_id
     )
+    return draft.to_slide()
 
 
 def _save(

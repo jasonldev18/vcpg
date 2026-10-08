@@ -17,7 +17,7 @@ Only write what the inputs show. Do not invent numbers, benchmarks, libraries, u
 - `kicker`: the component label in capitals, for example "DATA PIPELINE". For the extra slides use "PROJECT", "ARCHITECTURE" or "RETROSPECTIVE".
 - `title`: short.
 - `what`: one line on what this part does.
-- `visual`: exactly one, chosen to explain this part best:
+- `visual`: exactly one, chosen to explain this part best. Give its `kind`, and its spec as JSON text in `spec_json` (for example `{"steps": ["Load", "Score", "Rank"]}` for a flow). The spec for each kind:
   - `architecture`: `nodes` (id, label, group) and `edges` (from, to, label). Use it for components and how they connect. At most 12 nodes.
   - `flow`: `steps`, 2 to 7 short labels, left to right.
   - `chart`: only when the inputs contain real numbers to plot. `type` bar, line or scatter; `series` with `x` and `y`; axis labels.

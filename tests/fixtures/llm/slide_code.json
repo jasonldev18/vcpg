@@ -4,16 +4,7 @@
  "what": "Finds the five films a user's nearest neighbours liked most.",
  "visual": {
   "kind": "code",
-  "spec": {
-   "path": "step_1.py",
-   "lines": [
-    1,
-    1
-   ],
-   "highlight": [
-    1
-   ]
-  }
+  "spec_json": "{\"path\": \"step_1.py\", \"lines\": [1, 1], \"highlight\": [1]}"
  },
  "decisions": [
   {

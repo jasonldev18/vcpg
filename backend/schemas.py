@@ -1,8 +1,9 @@
 """Structured outputs from agents (AGENTS.md). Each is sent to the model as a JSON schema."""
 
-from typing import Annotated, Literal
+import json
+from typing import Annotated, Literal, Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError, model_validator
 
 Component = Literal["frontend", "backend", "data", "llm", "infra", "evaluation"]
 Status = Literal["missing", "partial", "covered"]
@@ -192,3 +193,34 @@ class Slide(BaseModel):
     failure_and_scale: list[str] = Field(max_length=3)
     struggled: list[Struggle]
     notes: str
+
+
+class VisualDraft(BaseModel):
+    kind: Literal["architecture", "flow", "chart", "code", "table"]
+    spec_json: str  # the spec as JSON text: one typed schema per kind is too large for the API
+
+
+class SlideDraft(BaseModel):
+    """What the slide writer returns; validated into a Slide, so a bad spec triggers a retry."""
+
+    title: str
+    kicker: str
+    what: str
+    visual: VisualDraft
+    decisions: list[Decision]
+    failure_and_scale: list[str]
+    struggled: list[Struggle]
+    notes: str
+
+    def to_slide(self) -> Slide:
+        data = self.model_dump()
+        data["visual"] = {"kind": self.visual.kind, "spec": json.loads(self.visual.spec_json)}
+        return Slide.model_validate(data)
+
+    @model_validator(mode="after")
+    def spec_matches_kind(self) -> Self:
+        try:
+            self.to_slide()
+        except (ValueError, ValidationError) as e:
+            raise ValueError(f"visual.spec_json does not fit kind {self.visual.kind}: {e}") from e
+        return self

@@ -1,0 +1,23 @@
+# Slide calibration: a step bundle, plus claims the slide must not make. Numbers on the slide
+# must all appear somewhere in the bundle; `forbidden` terms are plausible but unsupported.
+step: |
+  Title: Chunking and retrieval
+  Component: llm
+  Goal: Answer questions about lecture notes by retrieving the most relevant passages.
+  Concepts: chunking, embeddings, similarity search
+build_summary: |
+  ingest.py: splits notes into about 300-word chunks at paragraph boundaries with 50 words of overlap
+  retrieve.py: embeds the question and returns the top 4 chunks by cosine similarity
+  Decision: overlap so a sentence split across chunks is still found
+build_note: '{"files": [{"path": "ingest.py", "summary": "chunking"}, {"path": "retrieve.py", "summary": "top-k search"}], "decisions": ["300-word chunks"], "not_done": []}'
+review_note: '{"commands": [{"cmd": "pytest -q", "result": "pass", "summary": "6 passed"}], "cut": [], "fixed": [], "status": "pass", "failure": null}'
+code_files: "ingest.py: 38 lines\nretrieve.py: 25 lines"
+gate: |
+  Interviewer: Why split the notes into chunks at all?
+  Learner: One vector for a whole lecture blurs its topics, so a specific question matches it weakly.  [1 of 3 points covered]
+  Interviewer: How did you pick the chunk size?
+  Learner: Smaller chunks lose context and bigger ones dilute the match, 300 words seemed a middle ground.  [2 of 3 points covered]
+  Interviewer: How would you know retrieval failed?
+  Learner: Check whether the chunk with the answer was in the top 4.  [3 of 3 points covered]
+  [hints given in total: 0]
+forbidden: [Pinecone, FAISS, GPU, "%", million, OpenAI, milliseconds]
