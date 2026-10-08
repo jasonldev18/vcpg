@@ -275,8 +275,7 @@ def reviewer_cases() -> dict[str, ReviewerCase]:
 async def review_case(box: int, name: str, case: ReviewerCase) -> tuple[ReviewNote, dict[str, str]]:
     """Run the real reviewer on a planted repo in sandbox `box`; return its note and the files."""
     repo = git.workspace_path(box)
-    if repo.exists():
-        shutil.rmtree(repo)  # a scratch copy from an earlier calibration run, never a project
+    git.remove_clone(repo)  # a scratch copy from an earlier calibration run, never a project
     repo = git.init(box, name)
     base = git.head(repo)
     for path in case.files:

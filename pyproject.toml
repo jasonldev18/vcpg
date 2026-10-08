@@ -19,8 +19,11 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-asyncio>=1", "httpx2", "ruff>=0.8", "mypy>=1.13", "types-PyYAML"]
 
-[tool.setuptools]
-packages = ["backend"]
+[tool.setuptools.packages.find]
+include = ["backend*"]
+
+[tool.setuptools.package-data]
+"backend.migrations" = ["*.sql"]
 
 [tool.ruff]
 line-length = 100

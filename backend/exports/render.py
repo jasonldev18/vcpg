@@ -1,5 +1,6 @@
 """Draws slide visuals (and whole slides for the PDF) with matplotlib in the Solar palette."""
 
+import itertools
 import logging
 import textwrap
 from typing import Any
@@ -72,7 +73,7 @@ def _flow(ax: Axes, spec: dict[str, Any]) -> None:
     xs = [(i + 0.5) / len(steps) for i in range(len(steps))]
     for x, label in zip(xs, steps, strict=True):
         _box(ax, x, 0.5, width, 0.25, label)
-    for a, b in zip(xs, xs[1:], strict=False):
+    for a, b in itertools.pairwise(xs):
         _arrow(ax, (a + width / 2, 0.5), (b - width / 2, 0.5))
 
 
@@ -165,7 +166,10 @@ def slide_figure(slide: dict[str, Any], code: list[str] | None) -> Figure:
     draw_visual(fig.add_axes((0.04, 0.17, 0.6, 0.6), facecolor=BG), slide["visual"], code)
     right = []
     if slide["decisions"]:
-        right.append("DECISIONS\n" + _bullets([f"{d['choice']}: {d['tradeoff']}" for d in slide["decisions"]], 44))
+        right.append(
+            "DECISIONS\n"
+            + _bullets([f"{d['choice']}: {d['tradeoff']}" for d in slide["decisions"]], 44)
+        )
     if slide["failure_and_scale"]:
         right.append("FAILURE AND SCALE\n" + _bullets(slide["failure_and_scale"], 44))
     fig.text(0.67, 0.77, "\n\n".join(right), color=TEXT, fontsize=10, family=SANS, va="top",

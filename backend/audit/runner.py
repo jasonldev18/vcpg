@@ -5,7 +5,6 @@ import asyncio
 import difflib
 import json
 import re
-import shutil
 import subprocess
 from datetime import UTC, datetime, timedelta
 from fnmatch import fnmatch
@@ -50,8 +49,7 @@ def _set_stage(stage: str, **extra: Any) -> None:
 
 def _clone(dest: Path) -> Path:
     dest.parent.mkdir(parents=True, exist_ok=True)
-    if dest.exists():
-        shutil.rmtree(dest)  # a scratch clone from an earlier run, never the vcpg repo itself
+    git.remove_clone(dest)  # a scratch clone from an earlier run, never the vcpg repo itself
     subprocess.run(["git", "clone", "--quiet", str(REPO_ROOT), str(dest)], check=True)
     return dest
 
@@ -135,7 +133,7 @@ async def _unit_tests(name: str, files: dict[str, str]) -> bool:
         f'cd {name} && python -m pytest -q -p no:cacheprovider -m "not live and not network"',
         timeout=1200,
     )
-    shutil.rmtree(dest, ignore_errors=True)
+    git.remove_clone(dest)
     return result.exit_code == 0
 
 
@@ -301,7 +299,7 @@ async def run(kind: Kind, project_id: int | None = None) -> int:
         except Exception as e:
             report, status = {"error": redact(str(e))}, "failed"
         finally:
-            shutil.rmtree(work, ignore_errors=True)
+            git.remove_clone(work)
         with db.session() as conn:
             conn.execute(
                 "UPDATE audit_runs SET status = ?, finished_at = CURRENT_TIMESTAMP,"

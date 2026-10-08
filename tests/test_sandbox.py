@@ -44,18 +44,15 @@ async def test_commands_run_in_the_workspace_with_no_secrets(
 def test_stripped_env_has_only_the_allowed_names(project: int) -> None:
     allowed = {"PATH", "HOME", "LANG", "PIP_CACHE_DIR", "npm_config_cache"}
     if sys.platform == "win32":
-        allowed |= {"USERPROFILE", "TEMP", "TMP"}
-    assert set(sandbox.stripped_env(project, network=False)) == allowed
-    with_network = set(sandbox.stripped_env(project, network=True))
-    assert with_network - allowed <= {"SYSTEMROOT"}
+        allowed |= {"USERPROFILE", "TEMP", "TMP", "SYSTEMROOT"}
+    assert set(sandbox.stripped_env(project)) == allowed
 
 
-@pytest.mark.skipif(sys.platform != "win32", reason="the venv cannot block sockets elsewhere")
-async def test_venv_python_has_no_network_outside_installs(project: int) -> None:
+async def test_async_code_runs_in_the_venv(project: int) -> None:
     result = await sandbox.run(
-        project, "python -c \"import socket; socket.getaddrinfo('pypi.org', 443)\""
+        project, 'python -c "import asyncio; print(asyncio.run(asyncio.sleep(0, 7)))"'
     )
-    assert result.exit_code != 0
+    assert result.exit_code == 0 and result.output.strip() == "7", result.output
 
 
 async def test_timeout_stops_the_command(project: int) -> None:

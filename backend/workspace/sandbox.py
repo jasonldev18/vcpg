@@ -90,10 +90,11 @@ def venv_dir(project_id: int) -> Path:
     return vcpg_home() / "venvs" / str(project_id)
 
 
-def stripped_env(project_id: int, network: bool) -> dict[str, str]:
+def stripped_env(project_id: int) -> dict[str, str]:
     """PATH, HOME (into the workspace), LANG and package-cache folders; no keys. On Windows,
-    user and temp folders also point into VCPG's own folders, and SYSTEMROOT, without which
-    Python cannot open network sockets, is added only for a package install."""
+    user and temp folders also point into VCPG's own folders, and SYSTEMROOT is kept: without
+    it Windows cannot load its socket provider, so even `import asyncio` fails. The venv
+    therefore has no network isolation; only Docker has that (the UI says so)."""
     venv = venv_dir(project_id)
     scripts = venv / ("Scripts" if sys.platform == "win32" else "bin")
     workspace = workspace_path(project_id)
@@ -108,9 +109,12 @@ def stripped_env(project_id: int, network: bool) -> dict[str, str]:
         "npm_config_cache": str(temp / "npm"),
     }
     if sys.platform == "win32":
-        env |= {"USERPROFILE": str(workspace), "TEMP": str(temp), "TMP": str(temp)}
-        if network:
-            env["SYSTEMROOT"] = os.environ.get("SYSTEMROOT", r"C:\Windows")
+        env |= {
+            "USERPROFILE": str(workspace),
+            "TEMP": str(temp),
+            "TMP": str(temp),
+            "SYSTEMROOT": os.environ.get("SYSTEMROOT", r"C:\Windows"),
+        }
     return env
 
 
@@ -172,7 +176,7 @@ def _run(project_id: int, command: str, network: bool, timeout: int) -> Result:
                     ["docker", "network", "disconnect", "bridge", name], capture_output=True
                 )
     _ensure_venv(project_id)
-    env = stripped_env(project_id, network)
+    env = stripped_env(project_id)
     return _run_blocking(command, workspace_path(project_id), env, timeout)
 
 

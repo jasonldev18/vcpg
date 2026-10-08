@@ -1,7 +1,11 @@
 """Project workspace repos. Only the orchestrator writes history; agents only read it."""
 
+import os
+import shutil
+import stat
 import subprocess
 from pathlib import Path
+from typing import Any
 
 from backend.errors import NotFound
 from backend.paths import vcpg_home
@@ -86,3 +90,14 @@ def changed_files(repo: Path, sha: str) -> list[str]:
 
 def tracked_files(repo: Path) -> list[str]:
     return [line for line in _git(repo, "ls-files").splitlines() if line]
+
+
+def remove_clone(path: Path) -> None:
+    """Delete a scratch clone. Git marks object files read-only, which Windows refuses to delete."""
+
+    def writable_then_retry(func: Any, target: str, _: BaseException) -> None:
+        os.chmod(target, stat.S_IWRITE)
+        func(target)
+
+    if path.exists():
+        shutil.rmtree(path, onexc=writable_then_retry)

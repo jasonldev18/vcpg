@@ -25,7 +25,8 @@ export function BuildPanel({ step, lines, onChange }: Props) {
       {build?.isolation === 'venv' && (
         <p className="warning">
           Docker is not available, so generated code runs in a plain virtual environment. Its
-          isolation is weaker than a container.
+          isolation is weaker than a container: it gets no keys, but it is not cut off from the
+          network.
         </p>
       )}
       <p aria-live="polite">

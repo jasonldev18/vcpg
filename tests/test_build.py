@@ -124,3 +124,10 @@ def test_retry_passes_the_previous_notes(
     api.post(f"/api/steps/{first}/advance", json={"action": "build"})
     wait_for(lambda: step(api, first)["state"] == "reviewed")
     assert "<previous_notes>" in fake_builder.calls[0]["task"]
+
+
+def test_scratch_clones_with_read_only_git_objects_are_removed(tmp_path: Path) -> None:
+    repo = git.init(42, "scratch")
+    assert any((repo / ".git" / "objects").rglob("*"))
+    git.remove_clone(repo)
+    assert not repo.exists()

@@ -18,7 +18,11 @@ def _rgb(hex_color: str) -> RGBColor:
     return RGBColor(*bytes.fromhex(hex_color))
 
 
-def _text(slide: Any, box: tuple[float, float, float, float], paragraphs: list[tuple[str, int, str, str, bool]]) -> None:
+def _text(
+    slide: Any,
+    box: tuple[float, float, float, float],
+    paragraphs: list[tuple[str, int, str, str, bool]],
+) -> None:
     left, top, width, height = (Inches(v) for v in box)
     frame = slide.shapes.add_textbox(left, top, width, height).text_frame
     frame.word_wrap = True
@@ -56,17 +60,24 @@ def export(deck: list[dict[str, Any]], path: Path) -> None:
         right: list[tuple[str, int, str, str, bool]] = []
         if data["decisions"]:
             right.append(("DECISIONS", 12, ACC3, DISPLAY, True))
-            right += [(f"{d['choice']}: {d['tradeoff']}", 12, TEXT, BODY, False) for d in data["decisions"]]
+            right += [
+                (f"{d['choice']}: {d['tradeoff']}", 12, TEXT, BODY, False)
+                for d in data["decisions"]
+            ]
         if data["failure_and_scale"]:
             right.append(("FAILURE AND SCALE", 12, ACC3, DISPLAY, True))
             right += [(line, 12, TEXT, BODY, False) for line in data["failure_and_scale"]]
         if right:
             _text(page, (9.0, 1.9, 3.9, 4.6), right)
         if data["struggled"]:
-            footer = "  ·  ".join(f"{s['question']} ({s['hints']} hints)" for s in data["struggled"])
-            _text(page, (0.5, 6.6, 12.3, 0.7), [(f"Questions I struggled with: {footer}", 11, ACC3, BODY, False)])
+            footer = "  ·  ".join(
+                f"{s['question']} ({s['hints']} hints)" for s in data["struggled"]
+            )
+            _text(
+                page,
+                (0.5, 6.6, 12.3, 0.7),
+                [(f"Questions I struggled with: {footer}", 11, ACC3, BODY, False)],
+            )
         page.notes_slide.notes_text_frame.text = data["notes"]
     path.parent.mkdir(parents=True, exist_ok=True)
     prs.save(str(path))
-
-
