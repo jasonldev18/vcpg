@@ -1,5 +1,6 @@
 import logging
 import re
+from collections.abc import Mapping
 
 MASK = "[redacted]"
 KEY_PATTERN = re.compile(r"(?:sk-ant-|github_pat_|ghp_|gho_|ghs_)[A-Za-z0-9_\-]+")
@@ -21,9 +22,19 @@ def redact(text: str) -> str:
     return KEY_PATTERN.sub(MASK, text)
 
 
+def _clean(arg: object) -> object:
+    return arg if isinstance(arg, int | float | None) else redact(str(arg))
+
+
 class RedactFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
-        record.msg, record.args = redact(record.getMessage()), None
+        # Args are redacted in place, not merged into msg: formatters such as uvicorn's
+        # access log unpack record.args themselves.
+        record.msg = redact(str(record.msg))
+        if isinstance(record.args, Mapping):
+            record.args = {k: _clean(v) for k, v in record.args.items()}
+        elif record.args:
+            record.args = tuple(_clean(a) for a in record.args)
         if record.exc_info:
             record.exc_text = redact(logging.Formatter().formatException(record.exc_info))
             record.exc_info = None

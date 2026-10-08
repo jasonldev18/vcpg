@@ -3,6 +3,7 @@ import logging
 from collections.abc import Iterator
 
 import pytest
+from uvicorn.logging import AccessFormatter
 
 from backend import secrets
 from backend.redact import MASK, RedactFilter, install, redact
@@ -44,6 +45,25 @@ def test_exception_text_is_redacted(log: tuple[logging.Logger, io.StringIO]) -> 
     assert STORED not in out.getvalue()
     assert FAKE_KEY not in out.getvalue()
     assert "RuntimeError" in out.getvalue()
+
+
+def test_uvicorn_access_log_still_formats_with_args_redacted() -> None:
+    out = io.StringIO()
+    handler = logging.StreamHandler(out)
+    handler.setFormatter(AccessFormatter("%(client_addr)s %(request_line)s %(status_code)s"))
+    handler.addFilter(RedactFilter())
+    logger = logging.getLogger("vcpg.test.access")
+    logger.setLevel(logging.INFO)
+    logger.addHandler(handler)
+    logger.info('%s - "%s %s HTTP/%s" %d', "127.0.0.1:5", "GET", f"/api/x?k={FAKE_KEY}", "1.1", 200)
+    logger.removeHandler(handler)
+    assert out.getvalue().strip() == f"127.0.0.1:5 GET /api/x?k={MASK} HTTP/1.1 200 OK"
+
+
+def test_non_string_args_are_redacted(log: tuple[logging.Logger, io.StringIO]) -> None:
+    logger, out = log
+    logger.error("failed: %s (%d tries)", ValueError(FAKE_KEY), 3)
+    assert out.getvalue().strip() == f"failed: {MASK} (3 tries)"
 
 
 @pytest.mark.parametrize("prefix", ["sk-ant-", "github_pat_", "ghp_", "gho_", "ghs_"])
