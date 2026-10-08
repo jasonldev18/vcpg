@@ -1,0 +1,58 @@
+# README coach calibration: a project and a README with planted mismatches. Each planted
+# line must be flagged does_not_match, with `project_shows` naming what the project shows
+# (any of `shows` keywords). The coach must never return rewritten README text.
+project: |
+  Project: Movie Recommender
+  One-liner: Recommends five films from MovieLens ratings.
+  Stack: Python, pandas, pytest
+
+  Step 1: KNN recommender core (Recommend five films for a user from their nearest neighbours.)
+  recommend.py: mean-centres ratings, cosine similarity over co-rated films, keeps k=20 neighbours
+  Decision: k=20 because the dataset has 610 users
+  Learner's gate answers:
+  - I subtract each user's mean so harsh and generous raters line up.
+
+  Step 2: Offline evaluation (Measure precision@5 on a held-out split.)
+  evaluate.py: holds out 20% of each user's ratings, computes precision@5
+  Learner's gate answers:
+  - Precision@5 is the share of the top five the user liked in held-out ratings.
+
+  Final test results:
+  - pytest -q: pass, 9 passed
+  - python evaluate.py: pass, precision@5 = 0.21 for KNN, 0.12 for the popularity baseline
+
+  Code:
+  --- recommend.py
+  import pandas as pd
+
+  K = 20
+
+  def neighbours(ratings: pd.DataFrame, user: int) -> pd.Series:
+      centred = ratings.sub(ratings.mean(axis=1), axis=0)
+      norms = (centred ** 2).sum(axis=1) ** 0.5
+      sims = centred.fillna(0) @ centred.loc[user].fillna(0) / (norms * norms[user])
+      return sims.drop(user).nlargest(K)
+  --- evaluate.py
+  HOLDOUT = 0.2
+readme: |
+  # Movie Recommender
+
+  Recommends five films from your MovieLens ratings.
+
+  ## How it works
+
+  Ratings are mean-centred per user, then users are compared with Euclidean distance.
+  The recommender keeps the 50 nearest neighbours and ranks the films they liked.
+
+  ## Results
+
+  On a held-out split, precision@5 is 0.35, against 0.12 for the popularity baseline.
+
+  ## How to run it
+
+  pip install pandas pytest
+  pytest -q
+planted:
+  - {line: 7, shows: [cosine]}
+  - {line: 8, shows: ["20", "k=20", "K = 20"]}
+  - {line: 12, shows: ["0.21"]}
