@@ -1,10 +1,8 @@
-"""Build runs in the background per step; the user can pause, resume or stop it (SPEC 5.2).
-
-Review is still a stub (phase 3): a finished build is marked reviewed and committed.
+"""Build and review run in the background per step; the user can pause, resume or stop
+them (SPEC 5.2 and 5.3).
 """
 
 import asyncio
-import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -17,11 +15,11 @@ from backend.orchestrator import runner
 from backend.orchestrator.context import tag
 from backend.orchestrator.machine import State
 from backend.redact import redact
-from backend.schemas import BuildNote
+from backend.schemas import BuildNote, ReviewNote
 from backend.workspace import git, sandbox
 
 S = State
-REVIEW_STUB = "Review arrives in phase 3; this step was committed without one."
+DIFF_LIMIT = 60_000
 
 
 @dataclass
@@ -109,22 +107,21 @@ def _task(conn: Any, step: Any) -> str:
 
 
 async def _run(step_id: int, resume: asyncio.Event) -> None:
+    """Build, then review. A failed review sends the step back to the builder once;
+    a second failure blocks the step until the user retries or edits the plan."""
     with db.session() as conn:
-        step = runner._step(conn, step_id)
-        task = _task(conn, step)
-    project_id = step["project_id"]
+        project_id = runner._step(conn, step_id)["project_id"]
     try:
         cwd = workspace(project_id)
-        note = await sdk.run_agent(
-            "builder", task, cwd, BuildNote,
-            project_id=project_id, step_id=step_id, allow_install=True, resume=resume,
-        )  # fmt: skip
-        with db.session() as conn:
-            conn.execute(
-                "UPDATE steps SET build_note = ? WHERE id = ?", (note.model_dump_json(), step_id)
-            )
-        runner._advance(step_id, S.BUILT)
-        _stub_review(step_id, cwd)
+        base = git.head(cwd)
+        for _ in range(2):
+            await _build(step_id, cwd, resume)
+            runner._advance(step_id, S.BUILT)  # from taught, or built again on the retry
+            review = await _review(step_id, cwd, base, resume)
+            if review.status == "pass":
+                _accept(step_id, cwd)
+                return
+        runner._advance(step_id, S.BLOCKED)
     except asyncio.CancelledError:
         bus.publish(project_id, "build_stopped", step_id=step_id)
         raise
@@ -133,15 +130,52 @@ async def _run(step_id: int, resume: asyncio.Event) -> None:
         bus.publish(project_id, "build_failed", step_id=step_id, error=_builds[step_id].error)
 
 
-def _stub_review(step_id: int, cwd: Path) -> None:
+async def _build(step_id: int, cwd: Path, resume: asyncio.Event) -> None:
     with db.session() as conn:
         step = runner._step(conn, step_id)
-        conn.execute("UPDATE steps SET review_note = ? WHERE id = ?", (REVIEW_STUB, step_id))
+        task = _task(conn, step)
+    note = await sdk.run_agent(
+        "builder", task, cwd, BuildNote,
+        project_id=step["project_id"], step_id=step_id, allow_install=True, resume=resume,
+    )  # fmt: skip
+    with db.session() as conn:
+        conn.execute(
+            "UPDATE steps SET build_note = ? WHERE id = ?", (note.model_dump_json(), step_id)
+        )
+
+
+async def _review(step_id: int, cwd: Path, base: str, resume: asyncio.Event) -> ReviewNote:
+    with db.session() as conn:
+        step = runner._step(conn, step_id)
+    diff = git.diff_since(cwd, base)
+    if len(diff) > DIFF_LIMIT:
+        diff = diff[:DIFF_LIMIT] + "\n[diff truncated]"
+    task = "\n\n".join(
+        [runner._step_block(step), tag("build_note", step["build_note"]), tag("diff", diff)]
+    )
+    review = await sdk.run_agent(
+        "reviewer", task, cwd, ReviewNote,
+        project_id=step["project_id"], step_id=step_id, allow_install=False, resume=resume,
+    )  # fmt: skip
+    with db.session() as conn:
+        conn.execute(
+            "UPDATE steps SET review_note = ? WHERE id = ?", (review.model_dump_json(), step_id)
+        )
+    return review
+
+
+def _accept(step_id: int, cwd: Path) -> None:
+    """Review passed: the orchestrator commits the step (ARCHITECTURE section 6)."""
+    with db.session() as conn:
+        step = runner._step(conn, step_id)
     runner._advance(step_id, S.REVIEWED)
     sha = git.commit(cwd, f"step {step['position'] + 1}: {step['title']}")
     with db.session() as conn:
         conn.execute("UPDATE steps SET commit_sha = ? WHERE id = ?", (sha, step_id))
 
 
-def note(raw: str | None) -> dict[str, Any] | None:
-    return json.loads(raw) if raw else None
+def retry(step_id: int) -> None:
+    """Retry build, from a blocked step."""
+    with db.session() as conn:
+        runner._set_state(conn, runner._current(conn, step_id, S.BLOCKED), S.TAUGHT)
+    start(step_id)

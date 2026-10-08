@@ -16,7 +16,7 @@ from backend.events import bus
 from backend.llm import client, sdk
 from backend.llm.client import LLMError, Message, OnText, Reply
 from backend.llm.config import AgentConfig
-from backend.schemas import BuildNote, FileChange
+from backend.schemas import BuildNote, CommandRun, Cut, FileChange, ReviewNote
 
 FIXTURES = Path(__file__).parent / "fixtures" / "llm"
 
@@ -108,18 +108,29 @@ def fresh_bus() -> None:
 
 
 class FakeBuilder:
-    """Stands in for an Agent SDK build: writes a real file, then returns a note."""
+    """Stands in for Agent SDK builder and reviewer sessions. The builder writes a real file;
+    the reviewer passes unless a "fail" verdict is queued in `reviews`."""
 
     def __init__(self) -> None:
         self.calls: list[dict[str, Any]] = []
         self.release = threading.Event()
         self.release.set()
         self.fail: str | None = None
+        self.reviews: deque[str] = deque()
 
     async def __call__(
         self, agent: str, task: str, cwd: Path, schema: type[Any], **kw: Any
-    ) -> BuildNote:
+    ) -> BuildNote | ReviewNote:
         self.calls.append({"agent": agent, "task": task, "cwd": cwd, **kw})
+        if agent == "reviewer":
+            verdict = self.reviews.popleft() if self.reviews else "pass"
+            return ReviewNote(
+                commands=[CommandRun(cmd="pytest -q", result=verdict, summary="ran tests")],
+                cut=[Cut(path="app.py", what="unused import os", why="nothing uses it")],
+                fixed=[],
+                status=verdict,
+                failure="test_x fails: off by one" if verdict == "fail" else None,
+            )
         (cwd / f"step_{kw['step_id']}.py").write_text("x = 1\n", encoding="utf-8")
         while not self.release.is_set():  # the test thread releases it
             await asyncio.sleep(0.01)
@@ -130,6 +141,9 @@ class FakeBuilder:
             decisions=["kept it small"],
             not_done=[],
         )
+
+    def agents(self) -> list[str]:
+        return [c["agent"] for c in self.calls]
 
 
 @pytest.fixture

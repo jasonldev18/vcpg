@@ -11,7 +11,7 @@ Text = Field(min_length=1, max_length=5_000)
 
 
 class Advance(BaseModel):
-    action: Literal["ready", "build", "stop", "pause", "resume", "ready_for_interview"]
+    action: Literal["ready", "build", "retry", "stop", "pause", "resume", "ready_for_interview"]
 
 
 class Question(BaseModel):
@@ -37,6 +37,17 @@ async def teach(step_id: int) -> dict[str, Any]:
     return view(step_id)
 
 
+@router.post("/{step_id}/tour")
+async def tour(step_id: int) -> dict[str, Any]:
+    await runner.tour(step_id)
+    return view(step_id)
+
+
+@router.get("/{step_id}/file")
+def file(step_id: int, path: str) -> dict[str, Any]:
+    return {"path": path, "lines": runner.file_at_commit(step_id, path)}
+
+
 @router.post("/{step_id}/ask")
 async def ask(step_id: int, body: Question) -> dict[str, Any]:
     await runner.ask(step_id, body.question)
@@ -50,6 +61,8 @@ async def advance(step_id: int, body: Advance) -> dict[str, Any]:
             build.ready(step_id)
         case "build":
             build.start(step_id)
+        case "retry":
+            build.retry(step_id)
         case "stop":
             build.stop(step_id)
         case "pause" | "resume":

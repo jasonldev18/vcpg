@@ -3,6 +3,7 @@
 import subprocess
 from pathlib import Path
 
+from backend.errors import NotFound
 from backend.paths import vcpg_home
 
 GITIGNORE = """\
@@ -69,3 +70,10 @@ def diff_since(repo: Path, sha: str) -> str:
 
 def show(repo: Path, sha: str) -> str:
     return _git(repo, "show", "--format=%H%n%s%n", sha)
+
+
+def file_at(repo: Path, sha: str, path: str) -> str:
+    try:
+        return _git(repo, "show", f"{sha}:{path}")
+    except GitError as e:
+        raise NotFound(f"{path} is not in this commit.") from e

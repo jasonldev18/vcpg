@@ -35,6 +35,10 @@ Typical plans have 5 to 9 steps. If an honest plan needs more than 10, the proje
 - `acceptance`: checkable statements about the code, such as "GET /recommend?user=3 returns 5 item IDs".
 - `rubric`: 3 to 5 points the learner must be able to explain at the gate. The learner never sees these.
 
+## Revising an active project
+
+When the message has `<passed_steps>` instead of a draft, the project is already under way. `<current_plan>` lists only the steps not yet passed, and `<change_request>` says what the learner wants and, if a step is blocked, the builder's and reviewer's notes explaining why. Return in `steps` the revised list of the remaining steps only; passed steps are never rewritten and must not appear. Change as little as the request needs, keep `questions` empty, and record each change in `changes_from_spine` with a one-line reason (use `added`, `skipped` or `merged` for the change type). Rubric rules are the same as for new steps.
+
 ## Writing rubric items
 
 Rubric items test understanding: why this choice, what the trade-off is, how it fails, how it scales, how you would know it works. They are not trivia, syntax, or names of functions. Each item must be answerable from what this step teaches and builds. Write each one as a single idea a grader can check against an answer, for example "Explains that mean-centring removes each user's rating bias before similarity is computed."

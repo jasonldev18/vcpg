@@ -54,3 +54,39 @@ class BuildNote(BaseModel):
     files: list[FileChange]
     decisions: list[str]
     not_done: list[str]
+
+
+class CommandRun(BaseModel):
+    cmd: str
+    result: Literal["pass", "fail"]
+    summary: str
+
+
+class Cut(BaseModel):
+    path: str
+    what: str
+    why: str
+
+
+class Fix(BaseModel):
+    path: str
+    what: str
+
+
+class ReviewNote(BaseModel):
+    commands: list[CommandRun]
+    cut: list[Cut]
+    fixed: list[Fix]
+    status: Literal["pass", "fail"]
+    failure: str | None
+
+
+class TourStop(BaseModel):
+    file: str
+    line_start: int = Field(ge=1)
+    line_end: int = Field(ge=1)
+    explanation: str
+
+
+class Tour(BaseModel):
+    stops: list[TourStop] = Field(min_length=1)

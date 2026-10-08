@@ -8,7 +8,7 @@ from backend import db
 from backend.errors import Conflict, NotFound
 from backend.llm import client
 from backend.orchestrator.context import history, tag, user_message
-from backend.schemas import Plan
+from backend.schemas import Plan, PlanStep
 from backend.workspace import git
 
 
@@ -114,35 +114,135 @@ def edit(project_id: int, order: list[tuple[int, str]]) -> None:
         _save(conn, project_id, plan.model_copy(update={"steps": steps}))
 
 
+def _insert_steps(
+    conn: sqlite3.Connection, project_id: int, steps: list[PlanStep], start: int
+) -> None:
+    for position, step in enumerate(steps, start):
+        step_id = conn.execute(
+            "INSERT INTO steps (project_id, position, title, component, goal, concepts,"
+            " files, acceptance) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                project_id,
+                position,
+                step.title,
+                step.component,
+                step.goal,
+                json.dumps(step.concepts),
+                json.dumps(step.files),
+                json.dumps(step.acceptance),
+            ),
+        ).lastrowid
+        conn.executemany(
+            "INSERT INTO rubric_items (step_id, text) VALUES (?, ?)",
+            [(step_id, item) for item in step.rubric],
+        )
+
+
 def approve(project_id: int) -> None:
     with db.session() as conn:
         plan = _draft_of(_planning(conn, project_id))
         if plan.questions or not plan.steps:
             raise Conflict("Answer the planner's questions before approving.")
-        for position, step in enumerate(plan.steps):
-            step_id = conn.execute(
-                "INSERT INTO steps (project_id, position, title, component, goal, concepts,"
-                " files, acceptance) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (
-                    project_id,
-                    position,
-                    step.title,
-                    step.component,
-                    step.goal,
-                    json.dumps(step.concepts),
-                    json.dumps(step.files),
-                    json.dumps(step.acceptance),
-                ),
-            ).lastrowid
-            conn.executemany(
-                "INSERT INTO rubric_items (step_id, text) VALUES (?, ?)",
-                [(step_id, item) for item in step.rubric],
-            )
+        _insert_steps(conn, project_id, plan.steps, 0)
         workspace = git.init(project_id, plan.project_name)  # a failure rolls the approval back
         conn.execute(
             "UPDATE projects SET status = 'active', workspace_path = ? WHERE id = ?",
             (str(workspace), project_id),
         )
+
+
+PASSED = ("passed", "slide_done")
+
+
+def _steps_as_plan(conn: sqlite3.Connection, rows: list[sqlite3.Row]) -> list[PlanStep]:
+    return [
+        PlanStep(
+            title=r["title"],
+            component=r["component"],
+            goal=r["goal"],
+            concepts=json.loads(r["concepts"]),
+            files=json.loads(r["files"]),
+            acceptance=json.loads(r["acceptance"]),
+            rubric=[
+                i["text"]
+                for i in conn.execute(
+                    "SELECT text FROM rubric_items WHERE step_id = ? ORDER BY id", (r["id"],)
+                )
+            ],
+        )
+        for r in rows
+    ]
+
+
+def _open_steps(conn: sqlite3.Connection, project_id: int) -> list[sqlite3.Row]:
+    return conn.execute(
+        "SELECT * FROM steps WHERE project_id = ? AND state NOT IN (?, ?) ORDER BY position",
+        (project_id, *PASSED),
+    ).fetchall()
+
+
+async def propose_replan(project_id: int, request: str) -> None:
+    """Revise the steps not yet passed (SPEC section 4). The user approves or discards it."""
+    with db.session() as conn:
+        project = project_row(conn, project_id)
+        if project["status"] != "active":
+            raise Conflict("Only an active project's plan can be revised.")
+        passed = conn.execute(
+            "SELECT title FROM steps WHERE project_id = ? AND state IN (?, ?) ORDER BY position",
+            (project_id, *PASSED),
+        ).fetchall()
+        rows = _open_steps(conn, project_id)
+        notes = [
+            f"Step '{r['title']}' is blocked.\nBuild note: {r['build_note']}\n"
+            f"Review note: {r['review_note']}"
+            for r in rows
+            if r["state"] == "blocked"
+        ]
+        current = [s.model_dump() for s in _steps_as_plan(conn, rows)]
+        blocks = [
+            tag("brief", project["brief"]),
+            tag("passed_steps", "\n".join(r["title"] for r in passed) or "none"),
+            tag("current_plan", json.dumps(current, indent=1)),
+            tag("change_request", "\n\n".join([request, *notes])),
+        ]
+    plan = await client.structured("planner", user_message(*blocks), Plan, project_id=project_id)
+    with db.session() as conn:
+        conn.execute(
+            "UPDATE projects SET replan_json = ? WHERE id = ?", (plan.model_dump_json(), project_id)
+        )
+
+
+def apply_replan(project_id: int) -> None:
+    """Replace every unpassed step with the revision. Passed steps are never rewritten."""
+    with db.session() as conn:
+        project = project_row(conn, project_id)
+        if project["replan_json"] is None:
+            raise Conflict("There is no plan revision to approve.")
+        plan = Plan.model_validate_json(project["replan_json"])
+        if not plan.steps:
+            raise Conflict("The revision has no steps.")
+        start = conn.execute(
+            "SELECT COUNT(*) FROM steps WHERE project_id = ? AND state IN (?, ?)",
+            (project_id, *PASSED),
+        ).fetchone()[0]
+        conn.executemany(
+            "DELETE FROM steps WHERE id = ?", [(r["id"],) for r in _open_steps(conn, project_id)]
+        )
+        _insert_steps(conn, project_id, plan.steps, start)
+        conn.execute("UPDATE projects SET replan_json = NULL WHERE id = ?", (project_id,))
+
+
+def discard_replan(project_id: int) -> None:
+    with db.session() as conn:
+        conn.execute("UPDATE projects SET replan_json = NULL WHERE id = ?", (project_id,))
+
+
+def replan_view(conn: sqlite3.Connection, project: sqlite3.Row) -> dict[str, Any] | None:
+    if project["replan_json"] is None:
+        return None
+    new = public_plan(Plan.model_validate_json(project["replan_json"]))
+    old = [{"title": r["title"], "goal": r["goal"]} for r in _open_steps(conn, project["id"])]
+    return {"old": old, "new": new["steps"], "changes": new["changes_from_spine"]}
 
 
 def public_plan(plan: Plan) -> dict[str, Any]:

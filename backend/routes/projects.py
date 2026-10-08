@@ -4,7 +4,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from backend import db
-from backend.orchestrator import planning, runner
+from backend.errors import Conflict
+from backend.orchestrator import build, planning, runner
 from backend.schemas import Plan
 
 router = APIRouter(prefix="/api/projects")
@@ -43,6 +44,7 @@ def project_view(project_id: int) -> dict[str, Any]:
             )
         ]
         current = runner.current_step_id(conn, project_id)
+        replan = planning.replan_view(conn, project)
     draft = project["plan_json"] and Plan.model_validate_json(project["plan_json"])
     return {
         "id": project["id"],
@@ -52,6 +54,7 @@ def project_view(project_id: int) -> dict[str, Any]:
         "plan": planning.public_plan(draft) if draft and project["status"] == "planning" else None,
         "steps": [runner.step_view(i) | {"chat": [], "gate": []} for i in step_ids],
         "current_step_id": current,
+        "replan": replan,
     }
 
 
@@ -95,4 +98,29 @@ def edit(project_id: int, body: PlanEdit) -> dict[str, Any]:
 @router.post("/{project_id}/plan/approve")
 def approve(project_id: int) -> dict[str, Any]:
     planning.approve(project_id)
+    return project_view(project_id)
+
+
+@router.post("/{project_id}/replan")
+async def replan(project_id: int, body: Revision) -> dict[str, Any]:
+    await planning.propose_replan(project_id, body.request)
+    return project_view(project_id)
+
+
+@router.post("/{project_id}/replan/approve")
+def approve_replan(project_id: int) -> dict[str, Any]:
+    with db.session() as conn:
+        ids = [
+            r["id"]
+            for r in conn.execute("SELECT id FROM steps WHERE project_id = ?", (project_id,))
+        ]
+    if any(build.status(i)["running"] for i in ids):
+        raise Conflict("Stop the running build before changing the plan.")
+    planning.apply_replan(project_id)
+    return project_view(project_id)
+
+
+@router.delete("/{project_id}/replan")
+def discard_replan(project_id: int) -> dict[str, Any]:
+    planning.discard_replan(project_id)
     return project_view(project_id)

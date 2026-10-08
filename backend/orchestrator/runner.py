@@ -6,6 +6,7 @@ without writing one.
 
 import json
 import sqlite3
+from pathlib import Path
 from typing import Any
 
 from backend import db
@@ -16,7 +17,8 @@ from backend.gate.rubric import Item
 from backend.llm import client
 from backend.orchestrator.context import history, tag, user_message
 from backend.orchestrator.machine import State, transition
-from backend.schemas import GateGrade
+from backend.schemas import BuildNote, GateGrade, ReviewNote, Tour
+from backend.workspace import git
 
 S = State
 
@@ -132,6 +134,36 @@ def _lesson(conn: sqlite3.Connection, step_id: int) -> str | None:
     return rows[-1]["content"] if rows else None
 
 
+def build_summary(step: sqlite3.Row) -> str:
+    """What the code does, for the tutor, interviewer and grader: the notes and tour stops."""
+    lines: list[str] = []
+    if step["build_note"]:
+        note = BuildNote.model_validate_json(step["build_note"])
+        lines += [f"{f.path}: {f.summary}" for f in note.files]
+        lines += [f"Decision: {d}" for d in note.decisions]
+    if step["review_note"]:
+        review = ReviewNote.model_validate_json(step["review_note"])
+        lines += [f"Reviewer cut from {c.path}: {c.what} ({c.why})" for c in review.cut]
+        lines += [f"Reviewer fixed in {f.path}: {f.what}" for f in review.fixed]
+    if step["tour_json"]:
+        tour = Tour.model_validate_json(step["tour_json"])
+        lines += [f"Code at {s.file}:{s.line_start}-{s.line_end}" for s in tour.stops]
+    return "\n".join(lines)
+
+
+def _repo(conn: sqlite3.Connection, project_id: int) -> Path:
+    row = conn.execute("SELECT workspace_path FROM projects WHERE id = ?", (project_id,)).fetchone()
+    return Path(row["workspace_path"])
+
+
+COMMIT_LIMIT = 80_000
+
+
+def _commit(conn: sqlite3.Connection, step: sqlite3.Row) -> str:
+    shown = git.show(_repo(conn, step["project_id"]), step["commit_sha"])
+    return shown[:COMMIT_LIMIT] + ("\n[diff truncated]" if len(shown) > COMMIT_LIMIT else "")
+
+
 def _transcript(rows: list[sqlite3.Row]) -> str:
     speaker = {"user": "Learner", "assistant": "Interviewer", "reteach": "Tutor (re-teach)"}
     return "\n\n".join(f"{speaker[r['role']]}: {r['content']}" for r in rows) or "(not started)"
@@ -178,7 +210,8 @@ async def ask(step_id: int, question: str) -> None:
             _plan_block(conn, step["project_id"]),
             _step_block(step),
             tag("lesson", _lesson(conn, step_id) or "(not written yet)"),
-            tag("build_summary", step["build_note"] or "(no code yet)"),
+            tag("build_summary", build_summary(step) or "(no code yet)"),
+            *([tag("commit", _commit(conn, step))] if step["commit_sha"] else []),
             tag("conversation", "\n\n".join(f"{m['role']}: {m['content']}" for m in chat)),
             tag("question", question),
         )
@@ -190,6 +223,43 @@ async def ask(step_id: int, question: str) -> None:
         _say(conn, step, "tutor", "assistant", reply)
 
 
+# ---- code tour
+
+
+async def tour(step_id: int) -> None:
+    with db.session() as conn:
+        step = _current(conn, step_id, S.REVIEWED)
+        if step["tour_json"]:
+            return
+        msg = user_message(
+            tag("mode", "tour"),
+            _plan_block(conn, step["project_id"]),
+            _step_block(step),
+            tag("commit", _commit(conn, step)),
+            tag("build_note", step["build_note"] or ""),
+            tag("review_note", step["review_note"] or ""),
+        )
+    stops = await client.structured(
+        "tutor", msg, Tour, project_id=step["project_id"], step_id=step_id
+    )
+    with db.session() as conn:
+        conn.execute(
+            "UPDATE steps SET tour_json = ? WHERE id = ?", (stops.model_dump_json(), step_id)
+        )
+
+
+def file_at_commit(step_id: int, path: str) -> list[str]:
+    """A file from the step's commit, for the tour. Only files the tour stops at."""
+    with db.session() as conn:
+        step = _step(conn, step_id)
+        if not step["tour_json"] or path not in {
+            s.file for s in Tour.model_validate_json(step["tour_json"]).stops
+        }:
+            raise NotFound(f"{path} is not part of this step's tour.")
+        repo = _repo(conn, step["project_id"])
+    return git.file_at(repo, step["commit_sha"], path).splitlines()
+
+
 # ---- gate
 
 
@@ -198,7 +268,7 @@ async def _interviewer(step_id: int, request: str) -> None:
         step = _step(conn, step_id)
         msg = user_message(
             _step_block(step),
-            tag("build_summary", step["build_note"] or ""),
+            tag("build_summary", build_summary(step)),
             _rubric_block(_items(conn, step_id)),
             tag("gap", _last_gap(conn, step_id)),
             tag("conversation", _transcript(_messages(conn, step_id, GATE))),
@@ -239,7 +309,7 @@ async def _grade(step_id: int, project_id: int) -> GateGrade:
         msg = grader_message(
             [r["text"] for r in _items(conn, step_id)],
             _step_block(step),
-            step["build_note"] or "",
+            build_summary(step),
             [m["content"] for m in gate if m["role"] == "user"],
             [m["content"] for m in gate if m["role"] == "assistant"],
         )
@@ -359,7 +429,8 @@ def step_view(step_id: int) -> dict[str, Any]:
             "current": current_step_id(conn, step["project_id"]) == step_id,
             "lesson": _lesson(conn, step_id),
             "build_note": json.loads(step["build_note"]) if step["build_note"] else None,
-            "review_note": step["review_note"],
+            "review_note": json.loads(step["review_note"]) if step["review_note"] else None,
+            "tour": json.loads(step["tour_json"]) if step["tour_json"] else None,
             "chat": [dict(m) for m in _messages(conn, step_id, CHAT)],
             "gate": [dict(m) for m in _messages(conn, step_id, GATE)],
             "progress": rubric.progress(items),

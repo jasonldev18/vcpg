@@ -53,7 +53,8 @@ def test_build_writes_files_then_the_orchestrator_commits(
     wait_for(lambda: step(api, first)["state"] == "reviewed")
 
     repo = git.workspace_path(project["id"])
-    [call] = fake_builder.calls
+    call = fake_builder.calls[0]
+    assert fake_builder.agents() == ["builder", "reviewer"]
     assert call["agent"] == "builder" and call["cwd"] == repo and call["allow_install"] is True
     assert "<step>" in call["task"] and "Ratings loader" in call["task"]
     assert log(repo) == ["step 1: Ratings loader", "Start project"]
