@@ -88,3 +88,21 @@ def test_symlink_that_resolves_outside_is_denied(ws: Path, tmp_path: Path) -> No
     except OSError:
         pytest.skip("creating symlinks needs Developer Mode on Windows")
     assert check("Write", {"file_path": "link/x.py", "content": "x"}, ws) is not None
+
+
+def test_audit_sessions_read_the_logs_but_never_write(ws: Path, tmp_path: Path) -> None:
+    logs = tmp_path / "logs"
+    logs.mkdir()
+    audit = {"read_roots": (logs,), "can_write": False}
+    assert check("Read", {"file_path": str(logs / "call.json")}, ws, **audit) is None  # type: ignore[arg-type]
+    assert check("Grep", {"pattern": "hint", "path": str(logs)}, ws, **audit) is None  # type: ignore[arg-type]
+    assert check("Read", {"file_path": "app/main.py"}, ws, **audit) is None  # type: ignore[arg-type]
+    assert check("Write", {"file_path": "app/x.py", "content": "x"}, ws, **audit) is not None  # type: ignore[arg-type]
+    assert check("Edit", {"file_path": str(logs / "call.json")}, ws, **audit) is not None  # type: ignore[arg-type]
+    assert (
+        check("Read", {"file_path": str(Path.home() / ".ssh" / "id_rsa")}, ws, **audit) is not None
+    )  # type: ignore[arg-type]
+    assert check("Bash", {"command": "git status"}, ws, **audit) is not None  # type: ignore[arg-type]
+    assert check(SANDBOX_TOOL, {"command": "pytest"}, ws, **audit) is not None  # type: ignore[arg-type]
+    # builders never get the logs, even for reading
+    assert check("Read", {"file_path": str(logs / "call.json")}, ws) is not None

@@ -154,3 +154,34 @@ async def test_pause_holds_the_next_tool_call(
     gate.set()
     await task
     assert replay.decisions == [None]
+
+
+async def test_audit_sessions_are_read_only_with_the_logs(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    logs = tmp_path / "logs"
+    logs.mkdir()
+    replay = Replay(
+        (
+            [
+                ("Read", {"file_path": str(logs / "1.json")}),
+                ("Write", {"file_path": "prompts/grader.md", "content": "x"}),
+                ("mcp__vcpg__run_in_sandbox", {"command": "pytest"}),
+            ],
+            NOTE,
+        )
+    )
+    monkeypatch.setattr(sdk, "run_query", replay)
+    go = asyncio.Event()
+    go.set()
+    await sdk.run_agent(
+        "bolt", "audit", tmp_path, BuildNote,
+        project_id=None, step_id=None, allow_install=False, resume=go, read_only=(logs,),
+    )  # fmt: skip
+    [options] = replay.options
+    assert options.tools == ["Read", "Glob", "Grep"] and options.mcp_servers == {}
+    assert options.add_dirs == [logs]
+    assert replay.decisions == [None, "deny", "deny"]
+    with db.session() as conn:
+        row = conn.execute("SELECT agent, project_id FROM agent_calls").fetchone()
+    assert (row["agent"], row["project_id"]) == ("bolt", None)

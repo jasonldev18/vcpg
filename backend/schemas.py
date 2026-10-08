@@ -333,3 +333,44 @@ class IdeaCard(BaseModel):
 
 class IdeaBatch(BaseModel):
     cards: list[IdeaCard] = Field(min_length=4, max_length=4)
+
+
+# ---- audit crew (AGENTS.md)
+
+
+class Evidence(BaseModel):
+    call_id: int
+    excerpt: str
+
+
+class AuditIssue(BaseModel):
+    title: str
+    severity: Literal["low", "medium", "high"]
+    agent: str
+    evidence: list[Evidence]
+    suspected_cause: str
+    suggested_fix: str
+
+
+class AuditReport(BaseModel):
+    issues: list[AuditIssue]
+
+
+class NewFile(BaseModel):
+    path: str
+    content: str  # the whole file after the change
+
+
+class RookFix(BaseModel):
+    slug: str
+    title: str
+    issues: list[str]  # titles of the scout issues this fixes
+    problem: str
+    evidence: list[str]
+    change: str
+    files: list[NewFile] = Field(min_length=1)
+    risk: Literal["auto", "review"]
+
+
+class RookPlan(BaseModel):
+    fixes: list[RookFix]

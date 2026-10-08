@@ -39,6 +39,8 @@ from backend.redact import redact
 from backend.workspace import sandbox
 
 BUILT_IN = ["Read", "Write", "Edit", "Glob", "Grep", "Bash"]
+READ_ONLY = ["Read", "Glob", "Grep"]
+AUDIT_CHANNEL = -1  # event bus id for audit runs, which belong to no project
 SECRETISH = re.compile(r"KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL|AUTH", re.IGNORECASE)
 Query = Callable[..., AsyncIterator[Any]]
 run_query: Query = query  # unit tests replay recorded sessions
@@ -69,15 +71,20 @@ async def run_agent[T: BaseModel](
     cwd: Path,
     schema: type[T],
     *,
-    project_id: int,
-    step_id: int,
+    project_id: int | None,
+    step_id: int | None,
     allow_install: bool,
     resume: asyncio.Event,
+    read_only: tuple[Path, ...] | None = None,
 ) -> T:
     """Run one session in `cwd`; return its final JSON, validated, retrying once on error.
 
     `resume` gates every tool call, so clearing it pauses the agent before its next action.
+    `read_only` makes an audit session: Read, Glob and Grep over `cwd` and these extra folders,
+    no edits, no shell and no sandbox (SECURITY.md section 4). Its events go to AUDIT_CHANNEL.
     """
+    channel = project_id if project_id is not None else AUDIT_CHANNEL
+    tools = READ_ONLY if read_only is not None else BUILT_IN
     with db.session() as conn:
         cfg = load(agent, conn)
 
@@ -89,7 +96,7 @@ async def run_agent[T: BaseModel](
     )
     async def run_in_sandbox(args: dict[str, Any]) -> dict[str, Any]:
         result = await sandbox.run(
-            project_id,
+            channel,  # only builder and reviewer sessions have this tool, always with a project
             args["command"],
             allow_install=allow_install,
             timeout=int(args.get("timeout_seconds") or sandbox.DEFAULT_TIMEOUT),
@@ -104,9 +111,15 @@ async def run_agent[T: BaseModel](
         if hook_input["hook_event_name"] != "PreToolUse":
             return {}
         name, tool_input = hook_input["tool_name"], hook_input["tool_input"]
-        reason = guard.check(name, tool_input, cwd)
+        reason = guard.check(
+            name,
+            tool_input,
+            cwd,
+            read_roots=read_only or (),
+            can_write=read_only is None,
+        )
         bus.publish(
-            project_id,
+            channel,
             "tool_use",
             agent=agent,
             summary=redact(summarise(name, tool_input)),
@@ -124,7 +137,7 @@ async def run_agent[T: BaseModel](
 
     transcript: list[dict[str, Any]] = []
     started, error = time.monotonic(), None
-    bus.publish(project_id, "agent_started", agent=agent)
+    bus.publish(channel, "agent_started", agent=agent)
     try:
         async with KeyProxy() as proxy:
             options = ClaudeAgentOptions(
@@ -132,27 +145,30 @@ async def run_agent[T: BaseModel](
                 effort=cfg.effort,
                 system_prompt=prompt(agent),
                 cwd=str(cwd),
-                tools=BUILT_IN,
-                allowed_tools=[*BUILT_IN, guard.SANDBOX_TOOL],
+                tools=tools,
+                allowed_tools=tools if read_only is not None else [*tools, guard.SANDBOX_TOOL],
                 disallowed_tools=["WebFetch", "WebSearch", "Task", "NotebookEdit"],
                 permission_mode="acceptEdits",
                 max_turns=cfg.max_turns,
                 setting_sources=[],  # never load a CLAUDE.md or settings from the workspace
                 hooks={"PreToolUse": [HookMatcher(hooks=[guard_hook], timeout=86_400)]},
-                mcp_servers={"vcpg": create_sdk_mcp_server("vcpg", tools=[run_in_sandbox])},
+                mcp_servers={}
+                if read_only is not None
+                else {"vcpg": create_sdk_mcp_server("vcpg", tools=[run_in_sandbox])},
+                add_dirs=list(read_only or ()),
                 env=session_env(proxy),
                 output_format={
                     "type": "json_schema",
                     "schema": anthropic.transform_schema(schema),
                 },
             )
-            result = await _session(options, task, agent, project_id, transcript)
+            result = await _session(options, task, agent, channel, transcript)
             try:
                 return schema.model_validate(result.structured_output)
             except ValidationError as e:
                 options.resume = result.session_id
                 fix = f"Your final JSON failed validation:\n{e}\nReturn the corrected JSON."
-                result = await _session(options, fix, agent, project_id, transcript)
+                result = await _session(options, fix, agent, channel, transcript)
                 try:
                     return schema.model_validate(result.structured_output)
                 except ValidationError as e2:
@@ -174,7 +190,7 @@ async def run_agent[T: BaseModel](
             project_id=project_id,
             step_id=step_id,
         )
-        bus.publish(project_id, "agent_finished", agent=agent, ok=error is None)
+        bus.publish(channel, "agent_finished", agent=agent, ok=error is None)
 
 
 async def _session(

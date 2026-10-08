@@ -10,6 +10,7 @@ from typing import Any
 
 SANDBOX_TOOL = "mcp__vcpg__run_in_sandbox"
 FILE_TOOLS = {"Read", "Write", "Edit", "Glob", "Grep"}
+WRITE_TOOLS = {"Write", "Edit"}
 RESULT_TOOL = "StructuredOutput"  # how the SDK returns the final JSON; it touches nothing
 PATH_FIELDS = ("file_path", "path", "notebook_path")
 
@@ -51,8 +52,20 @@ def _command(command: str, bash: bool) -> str | None:
     return None
 
 
-def check(tool: str, tool_input: dict[str, Any], cwd: Path) -> str | None:
-    """Return why a tool call is denied, or None to allow it."""
+def check(
+    tool: str,
+    tool_input: dict[str, Any],
+    cwd: Path,
+    *,
+    read_roots: tuple[Path, ...] = (),
+    can_write: bool = True,
+) -> str | None:
+    """Return why a tool call is denied, or None to allow it.
+
+    `read_roots` are extra folders a session may read (the audit crew reads the call logs);
+    `can_write=False` makes a session read-only (the audit crew never edits files)."""
+    if not can_write and tool in ("Bash", SANDBOX_TOOL):
+        return "This session can only read; the app runs commands and tests itself."
     if tool == "Bash":
         return _command(str(tool_input.get("command", "")), bash=True)
     if tool == SANDBOX_TOOL:
@@ -61,9 +74,14 @@ def check(tool: str, tool_input: dict[str, Any], cwd: Path) -> str | None:
         return None
     if tool not in FILE_TOOLS:
         return f"The {tool} tool is not available in this session."
+    if tool in WRITE_TOOLS and not can_write:
+        return "This session can read files but never edit them."
+    roots = (cwd,) if tool in WRITE_TOOLS else (cwd, *read_roots)
     for field in PATH_FIELDS:
-        if field in tool_input and (reason := _outside(cwd, str(tool_input[field]))):
-            return reason
+        if field in tool_input:
+            reasons = [_outside(root, str(tool_input[field])) for root in roots]
+            if all(reasons):
+                return reasons[0]
     for field in ("pattern", "glob") if tool == "Glob" else ("glob",):
         value = str(tool_input.get(field, ""))
         if ".." in value or Path(value).is_absolute() or value.startswith("~"):
