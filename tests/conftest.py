@@ -8,10 +8,12 @@ from typing import Any
 
 import keyring
 import pytest
+from fastapi.testclient import TestClient
 from keyring.backend import KeyringBackend
 from keyring.errors import PasswordDeleteError
 
 from backend import redact
+from backend.app import TOKEN_HEADER, create_app
 from backend.events import bus
 from backend.llm import client, sdk
 from backend.llm.client import LLMError, Message, OnText, Reply
@@ -159,3 +161,18 @@ def wait_for(check: Callable[[], bool], timeout: float = 5) -> None:
         if time.monotonic() > deadline:
             raise AssertionError("timed out waiting")
         time.sleep(0.02)
+
+
+@pytest.fixture
+def api() -> Iterator[TestClient]:
+    with TestClient(create_app(), base_url="http://127.0.0.1:8000") as c:
+        c.headers[TOKEN_HEADER] = c.get("/api/session").json()["token"]
+        yield c
+
+
+@pytest.fixture
+def deck(api: TestClient, fake_llm: FakeLLM, fake_builder: FakeBuilder) -> tuple[int, list[Any]]:
+    """A finished one-step project at the deck stage."""
+    from tests.journeys import finished_deck
+
+    return finished_deck(api, fake_llm)

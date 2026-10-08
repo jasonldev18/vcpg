@@ -1,13 +1,11 @@
 """Plan and step loop through the real routes, with recorded agent replies."""
 
 import json
-from collections.abc import Iterator
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
 
-from backend.app import TOKEN_HEADER, create_app
 from backend.schemas import Status
 from tests.conftest import FakeLLM, wait_for
 
@@ -15,13 +13,6 @@ pytestmark = pytest.mark.usefixtures("fake_builder")
 
 ANSWER = "I mean-centre each user's ratings so harsh and generous raters compare fairly."
 QUOTE = "mean-centre each user's ratings"
-
-
-@pytest.fixture
-def api() -> Iterator[TestClient]:
-    with TestClient(create_app(), base_url="http://127.0.0.1:8000") as c:
-        c.headers[TOKEN_HEADER] = c.get("/api/session").json()["token"]
-        yield c
 
 
 def grade(*statuses: Status, evidence: str = QUOTE) -> str:

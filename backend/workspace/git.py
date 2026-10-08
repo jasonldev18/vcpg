@@ -82,3 +82,7 @@ def file_at(repo: Path, sha: str, path: str) -> str:
 def changed_files(repo: Path, sha: str) -> list[str]:
     out = _git(repo, "show", "--name-only", "--diff-filter=AM", "--format=", sha)
     return [line for line in out.splitlines() if line]
+
+
+def tracked_files(repo: Path) -> list[str]:
+    return [line for line in _git(repo, "ls-files").splitlines() if line]

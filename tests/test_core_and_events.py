@@ -1,23 +1,14 @@
 import asyncio
-from collections.abc import Iterator
 
 import pytest
 from fastapi.testclient import TestClient
 
-from backend.app import TOKEN_HEADER, create_app
 from backend.events import Bus
 from backend.llm import client
 from backend.llm.client import LLMError
 from backend.routes.events import sse
 
 KEY = "sk-ant-api03-real-looking-key-WXYZ"
-
-
-@pytest.fixture
-def api() -> Iterator[TestClient]:
-    with TestClient(create_app(), base_url="http://127.0.0.1:8000") as c:
-        c.headers[TOKEN_HEADER] = c.get("/api/session").json()["token"]
-        yield c
 
 
 @pytest.fixture

@@ -1,22 +1,12 @@
 """Review loop (retry once, then blocked), Edit plan, and the code tour."""
 
 import json
-from collections.abc import Iterator
 from typing import Any
 
-import pytest
 from fastapi.testclient import TestClient
 
-from backend.app import TOKEN_HEADER, create_app
 from backend.workspace import git
 from tests.conftest import FIXTURES, FakeBuilder, FakeLLM, wait_for
-
-
-@pytest.fixture
-def api() -> Iterator[TestClient]:
-    with TestClient(create_app(), base_url="http://127.0.0.1:8000") as c:
-        c.headers[TOKEN_HEADER] = c.get("/api/session").json()["token"]
-        yield c
 
 
 def approved(api: TestClient, fake_llm: FakeLLM) -> dict[str, Any]:

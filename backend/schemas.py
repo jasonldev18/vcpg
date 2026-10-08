@@ -224,3 +224,29 @@ class SlideDraft(BaseModel):
         except (ValueError, ValidationError) as e:
             raise ValueError(f"visual.spec_json does not fit kind {self.visual.kind}: {e}") from e
         return self
+
+
+class ReadmeNote(BaseModel):
+    line: int
+    kind: Literal["does_not_match", "gap", "unclear"]
+    note: str
+    project_shows: str
+
+
+class ReadmeReview(BaseModel):
+    notes: list[ReadmeNote]
+
+
+Dimension = Literal["system_design", "failure_modes", "motivation_and_impact", "communication"]
+
+
+class DimensionScore(BaseModel):
+    name: Dimension
+    score: int = Field(ge=1, le=5)
+    evidence: str | None
+    reason: str
+
+
+class Scorecard(BaseModel):
+    dimensions: list[DimensionScore] = Field(min_length=4, max_length=4)
+    practise: list[str]

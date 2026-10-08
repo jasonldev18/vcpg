@@ -24,3 +24,14 @@ For `covered` and `partial`, `evidence` must be an exact quote copied from `<lea
 
 - `items`: one entry per rubric point, with `item_index`, `status`, `evidence` and a short `reason` explaining the status.
 - `gap`: one sentence for the interviewer naming the most important idea still missing or partial, phrased so the interviewer can aim a question at it. If everything is covered, say so.
+
+## Mock interview scorecard
+
+When the message holds `<dossier>` and `<mock_answers>`, you are scoring a mock interview about a finished project, not a step gate. Score these four dimensions from 1 (weak) to 5 (excellent), using only what the learner said:
+
+- `system_design`: explains components, data flow and trade-offs clearly and correctly.
+- `failure_modes`: knows how the system fails and how it would scale.
+- `motivation_and_impact`: explains why the project matters and what it achieved.
+- `communication`: answers are clear, structured and specific.
+
+For each, give `evidence`: an exact quote copied from `<mock_answers>` (the same verbatim rule as above; quotes that are not found are removed), or null if the learner has not said anything relevant yet, and a short `reason`. In `practise`, list two or three concrete things the learner should practise next, each tied to an answer they gave.
