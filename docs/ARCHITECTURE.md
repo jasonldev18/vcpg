@@ -64,8 +64,10 @@ vcpg/
       runner.py          quick and deep scans
       policy.py          auto-merge rules (see SECURITY.md)
       secrets_scan.py
-      github.py          branches and pull requests
+      github.py          token checks; branches, commits, pull requests and merges via the API
+      testsets.py        calibration sets scored per item, shared by `make live` and audits
     db.py                connection and numbered migrations (stdlib sqlite3)
+    numbers.py           numbers a text states, for the slide and dossier checks
     schemas.py           Pydantic models for structured agent outputs (Plan, GateGrade, ...)
     errors.py            NotFound (404) and Conflict (409), mapped in app.py
     migrations/          NNN_name.sql files, applied in order; version kept in PRAGMA user_version
@@ -241,9 +243,11 @@ async def run_agent(agent: str, task: str, cwd: Path, allowed: list[str], denied
 
 ## 11. Audit runner
 
-- Scheduler: on startup and every hour, check whether a deep scan is due (14 days since the last one). Project scans are queued by `project_end.py`.
-- Each run clones vcpg into a temp directory, creates a branch `audit/<run_id>/<slug>` per fix, and runs Bolt, Echo and Pixel in parallel on their slices of `agent_calls`, then Rook on their reports.
-- Rook's fixes are validated by `policy.py` (auto-merge rules) and `secrets_scan.py`, test sets are rerun, and pull requests are opened through the GitHub REST API (or `gh`) with the token from the keychain.
+- Scheduler: on startup and every hour, check whether a deep scan is due: 14 days since the last one, an Anthropic key saved, and agent calls logged since. Project scans start when a project is archived (`wrapup.finish`). The audit bay can start a deep scan by hand. One run at a time.
+- Each run clones vcpg into `~/.vcpg/audit/<run_id>/clone`. Bolt, Echo and Pixel run in parallel as **read-only** Agent SDK sessions (Read, Glob and Grep over the clone and `~/.vcpg/logs/`; the guard denies every edit, shell and sandbox call), each on its slice of `agent_calls`, and return an `AuditReport`. Rook reads the three reports and the clone, also read-only, and returns a `RookPlan`: each fix carries the **complete new content** of every file it changes, so no agent ever edits the repository.
+- For each fix, code (not an agent) decides: a fix touching a path Rook may never change is dropped; the diff is computed against GitHub's current `main` (`github.file_at`); any secret-scan hit blocks it and raises a high-severity issue; the unit suite runs on a fresh clone with the change **inside the sandbox** (reserved id -1; tests marked `network` are skipped there); the relevant calibration sets (`testsets.relevant`) are scored before and after in-process, with the proposed prompt and template files laid over a copy of the data folders (`prompts.root`); then `policy.py` checks every auto-merge rule.
+- **No git push.** The branch `audit/<run_id>/<slug>`, its commit, the pull request and any merge are made through the GitHub REST API from VCPG's own process (`audit/github.py`), with the token from the keychain in an HTTP header only. Merges use the pull request merge endpoint with `merge_method: merge`.
+- The token is checked on save by probing: it must read the vcpg repo; a 200 from an admin-only, secrets, webhooks or account endpoint, or access to any other repository, refuses it. GitHub offers no way to list a fine-grained token's permissions, so Workflows and Actions write cannot be detected; Core access says so.
 
 ## 12. API surface (summary)
 
@@ -270,6 +274,7 @@ async def run_agent(agent: str, task: str, cwd: Path, allowed: list[str], denied
 | `GET/PUT /api/squad` | agent overrides |
 | `GET/PUT/DELETE /api/core/{anthropic,github}` | key status, save, test, remove (keys are never returned) |
 | `GET /api/audit` · `POST /api/audit/run` | audit state and manual deep scan |
+| `GET/PUT/DELETE /api/core/github` · `POST /api/core/github/test` | GitHub token: status, checked save, test, remove |
 | `GET /api/events` | SSE |
 | `GET /api/health` | liveness check |
 | `GET /api/session` | per-launch token; every non-GET request must send it as `X-VCPG-Token` |

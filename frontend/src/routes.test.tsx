@@ -16,6 +16,14 @@ describe('app shell', () => {
       'GET /api/archive': [],
       'GET /api/lessons': [],
       'GET /api/sources': [],
+      'GET /api/audit': {
+        current: null,
+        runs: [],
+        issues: [],
+        prs: [],
+        next_deep_scan: null,
+        github: false,
+      },
     })
     renderAt(path)
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument()

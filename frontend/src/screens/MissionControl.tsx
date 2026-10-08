@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { api } from '../api/client'
 import type { Project, Step } from '../api/types'
 import { type Events, useEvents } from '../api/useEvents'
+import { AuditPill } from './AuditBay'
 import { BlockedPanel, ReplanReview } from '../components/Blocked'
 import { BuildPanel } from '../components/BuildPanel'
 import { FinishPanel } from '../components/FinishPanel'
@@ -170,7 +171,10 @@ export function MissionControl() {
           </section>
         )}
       </div>
-      <Console lines={events.lines} live={events.live} />
+      <div className="stack">
+        <AuditPill />
+        <Console lines={events.lines} live={events.live} />
+      </div>
     </div>
   )
 }

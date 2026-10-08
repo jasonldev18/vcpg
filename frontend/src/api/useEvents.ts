@@ -63,6 +63,16 @@ export function useEvents(projectId: number | null): Events {
       version: e.version + 1,
       lines: log(e, { id, agent: 'orchestrator', text: `project → ${d.stage as string}` }),
     }))
+    on('audit_update', (e, d, id) => ({
+      ...e,
+      version: e.version + 1,
+      lines: log(e, { id, agent: 'audit', text: String(d.stage) }),
+    }))
+    on('audit_siren', (e, d, id) => ({
+      ...e,
+      version: e.version + 1,
+      lines: log(e, { id, agent: 'audit', text: `high-severity issue: ${String(d.title)}` }),
+    }))
     on('build_stopped', (e, _d, id) => ({
       ...e,
       version: e.version + 1,

@@ -1,5 +1,6 @@
 import type { RouteObject } from 'react-router'
 import { Archive } from './screens/Archive'
+import { AuditBay } from './screens/AuditBay'
 import { DeckViewer } from './screens/DeckViewer'
 import { LessonScreen } from './screens/LessonScreen'
 import { MissionControl } from './screens/MissionControl'
@@ -15,6 +16,7 @@ const BUILT: Record<string, React.ReactNode> = {
   '/readme': <ReadmeCoach />,
   '/archive': <Archive />,
   '/lesson': <LessonScreen />,
+  '/audit': <AuditBay />,
 }
 
 export const routes: RouteObject[] = [

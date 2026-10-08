@@ -274,3 +274,38 @@ export interface SourceRow {
   added_by: string
   passages: number
 }
+
+export interface TokenStatus extends KeyStatus {
+  found: string[]
+  problems: string[]
+}
+
+export interface AuditState {
+  current: { run_id: number; kind: 'project' | 'deep'; stage: string } | null
+  runs: {
+    id: number
+    kind: string
+    status: string
+    started_at: string
+    finished_at: string | null
+  }[]
+  issues: {
+    id: number
+    run_id: number
+    agent: string
+    severity: 'low' | 'medium' | 'high'
+    title: string
+    evidence: string
+    status: string
+  }[]
+  prs: {
+    id: number
+    run_id: number
+    branch: string
+    pr_url: string | null
+    auto_merge: number
+    state: string
+  }[]
+  next_deep_scan: string | null
+  github: boolean
+}

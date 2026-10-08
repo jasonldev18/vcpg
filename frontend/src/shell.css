@@ -769,3 +769,62 @@ button.wrong {
 .community {
   border-style: dashed;
 }
+
+.audit {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.pixel-status {
+  font: 400 14px var(--font-pixel);
+  color: var(--acc3);
+}
+
+.audit-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.audit-list .tag {
+  font: 400 11px var(--font-pixel);
+  color: var(--acc3);
+}
+
+.audit-list li.high .tag {
+  color: var(--acc2);
+}
+
+.audit-pill {
+  display: block;
+  font: 500 12px var(--font-mono);
+  color: var(--text);
+  text-decoration: none;
+  border: 1px solid rgba(255, 155, 61, 0.3);
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+
+.audit-pill .light-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dim);
+}
+
+.audit-pill.project .light-dot {
+  background: var(--acc3);
+}
+
+.audit-pill.deep {
+  border-color: var(--acc2);
+}
+
+.audit-pill.deep .light-dot {
+  background: var(--acc2);
+}
