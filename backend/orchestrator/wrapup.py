@@ -146,6 +146,20 @@ def dossier_problems(text: str, sources: str) -> list[str]:
     return problems
 
 
+async def draft_dossier(blocks: list[str], project_id: int | None = None) -> str:
+    """Write the dossier and check it in code; one retry with the problems, then give up."""
+    sources = "\n".join(blocks)
+    messages: list[dict[str, Any]] = user_message(*blocks)
+    text = await client.text("dossier_writer", messages, project_id=project_id)
+    if problems := dossier_problems(text, sources):
+        fix = "Fix these problems and return the whole dossier:\n" + "\n".join(problems)
+        messages += [{"role": "assistant", "content": text}, {"role": "user", "content": fix}]
+        text = await client.text("dossier_writer", messages, project_id=project_id)
+        if problems := dossier_problems(text, sources):
+            raise LLMError("The dossier still breaks the rules: " + " ".join(problems))
+    return text
+
+
 async def write_dossier(project_id: int) -> None:
     with db.session() as conn:
         bundle = project_bundle(conn, project_id)
@@ -169,21 +183,7 @@ async def write_dossier(project_id: int) -> None:
         tag("gates", "\n\n".join(gates)),
         tag("readme", readme["content"] if readme else ""),
     ]
-    sources = "\n".join(blocks)
-    messages: list[dict[str, Any]] = user_message(*blocks)
-    text = await client.text("dossier_writer", messages, project_id=project_id)
-    if problems := dossier_problems(text, sources):
-        messages += [
-            {"role": "assistant", "content": text},
-            {
-                "role": "user",
-                "content": "Fix these problems and return the whole dossier:\n"
-                + "\n".join(problems),
-            },
-        ]
-        text = await client.text("dossier_writer", messages, project_id=project_id)
-        if problems := dossier_problems(text, sources):
-            raise LLMError("The dossier still breaks the rules: " + " ".join(problems))
+    text = await draft_dossier(blocks, project_id)
     with db.session() as conn:
         conn.execute("DELETE FROM dossiers WHERE project_id = ?", (project_id,))
         conn.execute(
