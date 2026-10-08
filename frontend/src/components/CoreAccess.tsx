@@ -1,3 +1,4 @@
+import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 import type { KeyStatus, TokenStatus } from '../api/types'
@@ -110,10 +111,35 @@ export function CoreAccess({ onClose }: { onClose: () => void }) {
   }, [onClose])
 
   return (
-    <div className="overlay" role="dialog" aria-modal="true" aria-label="Core access">
-      <section className="panel stack core-access">
+    <motion.div
+      className="overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Core access"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.22 }}
+    >
+      <motion.div
+        layoutId="core"
+        className="core-big"
+        aria-hidden="true"
+        transition={{ type: 'spring', duration: 0.4, bounce: 0.2 }}
+      >
+        <i className="k1" />
+        <i className="k2" />
+        <i className="k3" />
+        <i className="k4" />
+      </motion.div>
+      <motion.section
+        className="panel stack core-access"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, delay: 0.12 }}
+      >
         <header className="row spread">
-          <h1>Core access</h1>
+          <h1 className="brand">Core access</h1>
           <button onClick={onClose} aria-label="Close">
             ×
           </button>
@@ -157,7 +183,7 @@ export function CoreAccess({ onClose }: { onClose: () => void }) {
             </div>
           )}
         </SecretPanel>
-      </section>
-    </div>
+      </motion.section>
+    </motion.div>
   )
 }

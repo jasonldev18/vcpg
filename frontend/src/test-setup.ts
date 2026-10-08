@@ -14,3 +14,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
   vi.stubGlobal('EventSource', SilentEventSource)
 })
+
+// jsdom has no canvas; scenes skip drawing when getContext returns null.
+HTMLCanvasElement.prototype.getContext = (() =>
+  null) as typeof HTMLCanvasElement.prototype.getContext

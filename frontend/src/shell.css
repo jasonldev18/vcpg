@@ -828,3 +828,270 @@ button.wrong {
 .audit-pill.deep .light-dot {
   background: var(--acc2);
 }
+
+.stage-panel h2 {
+  margin: 0;
+  font-size: 13px;
+  color: var(--acc);
+}
+
+.stage {
+  position: relative;
+  width: 680px;
+  height: 450px;
+  margin: 0 auto;
+}
+
+.stage-canvas {
+  position: absolute;
+  inset: 0;
+  width: 680px;
+  height: 450px;
+}
+
+.stage-core-label {
+  position: absolute;
+  left: 240px;
+  top: 300px;
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+}
+
+.core-button-stage {
+  position: absolute;
+  left: 262px;
+  top: 136px;
+  width: 156px;
+  height: 156px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px dashed transparent;
+  cursor: pointer;
+  padding: 0;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.core-button-stage:hover,
+.core-button-stage:focus-visible {
+  border-color: var(--acc3);
+  box-shadow: 0 0 40px -6px var(--acc);
+}
+
+.node {
+  position: absolute;
+  width: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--mute);
+  opacity: 0.62;
+  filter: saturate(0.7);
+  transition:
+    opacity 0.3s,
+    filter 0.3s;
+}
+
+.node.on {
+  opacity: 1;
+  color: var(--text);
+  filter: drop-shadow(0 0 10px var(--acc));
+}
+
+.stage.you .node.on {
+  filter: drop-shadow(0 0 10px var(--you));
+}
+
+.node-name {
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.node-doing {
+  font-size: 11px;
+}
+
+.node.on .node-doing {
+  color: var(--acc);
+}
+
+.pad {
+  position: relative;
+  width: 60px;
+  height: 64px;
+}
+
+.spr {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  color: var(--acc);
+  animation: bob 2.4s steps(2) infinite;
+}
+
+.node.on .spr {
+  animation: hop 0.5s steps(2) infinite;
+}
+
+.px {
+  position: absolute;
+  left: -5px;
+  top: -5px;
+  width: 5px;
+  height: 5px;
+}
+
+.lid {
+  opacity: 0;
+  animation: lid 4.2s steps(1) infinite;
+}
+
+.spark {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: var(--acc3);
+  animation: twinkle 0.7s steps(2) infinite;
+}
+
+.spark.s1 {
+  left: -12px;
+  top: 6px;
+}
+
+.spark.s2 {
+  right: -12px;
+  top: 22px;
+  animation-delay: 0.35s;
+  background: var(--acc);
+}
+
+.spark.s3 {
+  right: -6px;
+  top: -8px;
+  animation-delay: 0.18s;
+  background: #fff;
+}
+
+.who {
+  font: 400 13px var(--font-mono);
+  color: var(--acc);
+  text-align: center;
+  margin: 4px 0 0;
+}
+
+.who.you {
+  color: var(--you);
+}
+
+@keyframes bob {
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes hop {
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes lid {
+  0%,
+  92% {
+    opacity: 0;
+  }
+  93%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes twinkle {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+.overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  flex-wrap: wrap;
+  padding: 24px;
+  background: rgba(6, 3, 2, 0.82);
+  z-index: 10;
+}
+
+.core-big {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  flex: none;
+}
+
+.core-big i {
+  position: absolute;
+  border-radius: 50%;
+  left: 50%;
+  top: 50%;
+}
+
+.core-big .k1 {
+  width: 220px;
+  height: 220px;
+  margin: -110px 0 0 -110px;
+  border: 2px dashed rgba(255, 210, 122, 0.6);
+  animation: spin 14s linear infinite;
+}
+
+.core-big .k2 {
+  width: 170px;
+  height: 170px;
+  margin: -85px 0 0 -85px;
+  border: 3px solid var(--acc);
+  border-left-color: transparent;
+  border-right-color: transparent;
+  animation: spin 3s linear infinite reverse;
+}
+
+.core-big .k3 {
+  width: 120px;
+  height: 120px;
+  margin: -60px 0 0 -60px;
+  border: 2px solid var(--acc2);
+  border-top-color: transparent;
+  animation: spin 5s linear infinite;
+}
+
+.core-big .k4 {
+  width: 70px;
+  height: 70px;
+  margin: -35px 0 0 -35px;
+  background: radial-gradient(circle, #fff4dc, #ffd27a 35%, #ff9b3d 70%, rgba(255, 77, 94, 0));
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  50% {
+    transform: scale(1.12);
+  }
+}
+
+.mission {
+  grid-template-columns: 240px minmax(720px, 1fr) 300px;
+}

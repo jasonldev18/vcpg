@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useState } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useCallback, useContext, useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { api } from '../api/client'
 import type { Project, Step } from '../api/types'
 import { type Events, useEvents } from '../api/useEvents'
 import { AuditPill } from './AuditBay'
+import { OpenCore } from '../coreContext'
+import { CoreNetwork } from '../scenes/CoreNetwork'
 import { BlockedPanel, ReplanReview } from '../components/Blocked'
 import { BuildPanel } from '../components/BuildPanel'
 import { FinishPanel } from '../components/FinishPanel'
@@ -98,6 +101,7 @@ export function MissionControl() {
   const [step, setStep] = useState<Step | null>(null)
   const [error, setError] = useState<string | null>(null)
   const events = useEvents(project?.id ?? null)
+  const openCore = useContext(OpenCore)
 
   const load = useCallback(
     () =>
@@ -124,6 +128,11 @@ export function MissionControl() {
   )
 
   const shown = currentId !== null && step?.id === currentId ? step : null
+  const active = new Set(Object.keys(events.live))
+  const youTurn =
+    active.size === 0 &&
+    !shown?.build?.running &&
+    (shown !== null || project?.finish?.stage === 'retest')
 
   if (error) return <p className="error">Could not reach the API: {error}</p>
   if (project === undefined) return <p className="mute">Loading…</p>
@@ -149,15 +158,31 @@ export function MissionControl() {
     <div className="mission">
       <StepList steps={project.steps} currentId={currentId} />
       <div className="current stack">
+        <section className="panel stage-panel">
+          <header className="row spread">
+            <h2>Agent network</h2>
+            <span className="mono mute">
+              state: {shown?.state ?? project.finish?.stage ?? 'idle'}
+            </span>
+          </header>
+          <CoreNetwork active={active} youTurn={youTurn} onCore={openCore} />
+          <p className={youTurn ? 'who you' : 'who'} aria-live="polite">
+            [ {youTurn ? 'YOUR TURN' : 'AGENTS WORKING'} ]
+          </p>
+        </section>
         <ReplanReview project={project} onProject={setProject} />
         {shown ? (
-          <CurrentPanel
-            key={shown.id}
-            step={shown}
-            events={events}
-            onChange={onStep}
-            onProject={setProject}
-          />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`${shown.id}:${shown.state}`}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22 }}
+            >
+              <CurrentPanel step={shown} events={events} onChange={onStep} onProject={setProject} />
+            </motion.div>
+          </AnimatePresence>
         ) : project.finish ? (
           <FinishPanel
             project={project}

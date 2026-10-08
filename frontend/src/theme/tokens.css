@@ -61,11 +61,90 @@ pre {
   color: transparent;
 }
 
+/* Panels tilt toward the cursor and carry a sheen and a corner mark (DESIGN 1, 3.2). */
+:root {
+  --rx: 0;
+  --ry: 0;
+  --mx: 50%;
+  --my: 40%;
+}
+
 .panel {
-  position: relative;
+  transform: perspective(1200px) rotateY(calc(var(--rx) * 2deg)) rotateX(calc(var(--ry) * -1.5deg));
+  transition: transform 0.25s ease-out;
   background: linear-gradient(135deg, rgba(255, 155, 61, 0.08), transparent 60%), var(--panel);
   border: 1px solid rgba(255, 155, 61, 0.26);
   border-radius: 10px;
   box-shadow: 0 10px 40px rgba(255, 77, 94, 0.12);
   padding: 20px 24px;
+}
+
+.panel::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: -1px;
+  height: 2px;
+  width: 60%;
+  background: linear-gradient(90deg, var(--acc), var(--acc2), var(--acc3), transparent);
+  background-size: 200% 100%;
+  animation: sheen 5s linear infinite;
+  pointer-events: none;
+}
+
+.panel::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 16px;
+  height: 16px;
+  border-right: 2px solid var(--acc);
+  border-bottom: 2px solid var(--acc);
+  pointer-events: none;
+}
+
+@keyframes sheen {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+.background {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.glow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(
+    560px circle at var(--mx) var(--my),
+    rgba(255, 155, 61, 0.13),
+    rgba(255, 77, 94, 0.06) 45%,
+    transparent 70%
+  );
+}
+
+/* Reduced motion: nothing moves; only fades remain (DESIGN 8). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition-property: opacity !important;
+  }
+
+  .panel {
+    transform: none;
+  }
 }
