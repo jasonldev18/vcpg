@@ -8,7 +8,7 @@ from backend.db import MIGRATIONS, connect, migrate
 TABLES = {
     "projects", "steps", "rubric_items", "attempts", "messages", "slides", "deck_exports",
     "readmes", "lessons", "sources", "passages", "dossiers", "mock_interviews", "agent_calls",
-    "agent_overrides", "audit_runs", "audit_issues", "audit_prs",
+    "agent_overrides", "audit_runs", "audit_issues", "audit_prs", "ideas",
 }  # fmt: skip
 
 

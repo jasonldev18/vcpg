@@ -1,0 +1,33 @@
+# Seeded open sources, fetched on demand when a lesson finds no trusted passage on its topic.
+# Only official documentation, so they count as trusted (SPEC 9.1). `topics` are matched
+# against the words of the concept being taught.
+- title: scikit-learn user guide, Nearest Neighbors
+  url: https://scikit-learn.org/stable/modules/neighbors.html
+  topics: [nearest, neighbours, neighbors, knn, recommender, recommendation, similarity, distance]
+- title: scikit-learn user guide, Metrics and scoring
+  url: https://scikit-learn.org/stable/modules/model_evaluation.html
+  topics: [precision, recall, evaluation, metric, metrics, accuracy, f1, roc, auc, scoring]
+- title: scikit-learn user guide, Cross-validation
+  url: https://scikit-learn.org/stable/modules/cross_validation.html
+  topics: [cross-validation, validation, split, holdout, overfitting, train, test]
+- title: scikit-learn user guide, Text feature extraction
+  url: https://scikit-learn.org/stable/modules/feature_extraction.html
+  topics: [tf-idf, tfidf, text, features, bag, words, vectorizer, tokenization]
+- title: scikit-learn user guide, Clustering
+  url: https://scikit-learn.org/stable/modules/clustering.html
+  topics: [clustering, cluster, k-means, kmeans, dbscan, unsupervised]
+- title: scikit-learn user guide, Linear models
+  url: https://scikit-learn.org/stable/modules/linear_model.html
+  topics: [linear, regression, logistic, classification, gradient, regularization]
+- title: Sentence Transformers documentation, Semantic search
+  url: https://sbert.net/examples/sentence_transformer/applications/semantic-search/README.html
+  topics: [embedding, embeddings, semantic, search, retrieval, rag, vector, vectors, cosine]
+- title: Sentence Transformers documentation, Computing embeddings
+  url: https://sbert.net/examples/sentence_transformer/applications/computing-embeddings/README.html
+  topics: [embedding, embeddings, sentence, transformer, transformers, encode, vector]
+- title: NumPy documentation, Broadcasting
+  url: https://numpy.org/doc/stable/user/basics.broadcasting.html
+  topics: [numpy, broadcasting, array, arrays, matrix, vectorization]
+- title: FastAPI documentation, First steps
+  url: https://fastapi.tiangolo.com/tutorial/first-steps/
+  topics: [api, fastapi, endpoint, http, rest, server, backend]

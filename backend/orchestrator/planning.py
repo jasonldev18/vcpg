@@ -67,11 +67,11 @@ async def _draft(project_id: int, change_request: str | None = None) -> None:
         _save(conn, project_id, plan)
 
 
-async def create(brief: str) -> int:
+async def create(brief: str, start_path: str = "plan") -> int:
     with db.session() as conn:
         project_id = conn.execute(
-            "INSERT INTO projects (name, brief, start_path) VALUES ('New project', ?, 'plan')",
-            (brief,),
+            "INSERT INTO projects (name, brief, start_path) VALUES ('New project', ?, ?)",
+            (brief, start_path),
         ).lastrowid
     assert project_id is not None
     try:

@@ -114,6 +114,11 @@ def stripped_env(project_id: int, network: bool) -> dict[str, str]:
     return env
 
 
+def venv_has(project_id: int, tool: str) -> bool:
+    scripts = venv_dir(project_id) / ("Scripts" if sys.platform == "win32" else "bin")
+    return any((scripts / f"{tool}{ext}").exists() for ext in ("", ".exe"))
+
+
 def _ensure_venv(project_id: int) -> None:
     if not venv_dir(project_id).exists():
         subprocess.run([sys.executable, "-m", "venv", str(venv_dir(project_id))], check=True)
