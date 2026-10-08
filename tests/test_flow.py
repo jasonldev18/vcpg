@@ -9,7 +9,9 @@ from fastapi.testclient import TestClient
 
 from backend.app import TOKEN_HEADER, create_app
 from backend.schemas import Status
-from tests.conftest import FakeLLM
+from tests.conftest import FakeLLM, wait_for
+
+pytestmark = pytest.mark.usefixtures("fake_builder")
 
 ANSWER = "I mean-centre each user's ratings so harsh and generous raters compare fairly."
 QUOTE = "mean-centre each user's ratings"
@@ -41,17 +43,22 @@ def approved_project(api: TestClient, fake_llm: FakeLLM) -> dict[str, Any]:
     return api.post(f"/api/projects/{project['id']}/plan/approve").json()
 
 
+def build(api: TestClient, step_id: int) -> None:
+    api.post(f"/api/steps/{step_id}/advance", json={"action": "ready"})
+    wait_for(lambda: api.get(f"/api/steps/{step_id}").json()["state"] == "reviewed")
+
+
 def at_gate(api: TestClient, fake_llm: FakeLLM) -> dict[str, Any]:
     """Approve, pass step 1 quickly, and open the gate on step 2 (four rubric items)."""
     project = approved_project(api, fake_llm)
     first, second = project["steps"][0]["id"], project["steps"][1]["id"]
     fake_llm.reply("interviewer", "Why is the matrix sparse?")
-    api.post(f"/api/steps/{first}/advance", json={"action": "ready"})
+    build(api, first)
     api.post(f"/api/steps/{first}/advance", json={"action": "ready_for_interview"})
     fake_llm.reply("grader", grade("covered", "covered", "covered"))
     api.post(f"/api/steps/{first}/gate/answer", json={"answer": ANSWER})
     fake_llm.reply("interviewer", "Why mean-centre?")
-    api.post(f"/api/steps/{second}/advance", json={"action": "ready"})
+    build(api, second)
     return api.post(f"/api/steps/{second}/advance", json={"action": "ready_for_interview"}).json()
 
 
@@ -135,10 +142,10 @@ def test_side_chat_keeps_the_conversation(api: TestClient, fake_llm: FakeLLM) ->
     ]
 
 
-def test_ready_stubs_build_then_interview_opens(api: TestClient, fake_llm: FakeLLM) -> None:
+def test_build_then_interview_opens(api: TestClient, fake_llm: FakeLLM) -> None:
     step = at_gate(api, fake_llm)
     assert step["state"] == "interviewing"
-    assert step["build_note"].startswith("Building, review")
+    assert step["build_note"]["files"] == [{"path": f"step_{step['id']}.py", "summary": "adds x"}]
     assert step["gate"] == [
         {
             "id": step["gate"][0]["id"],

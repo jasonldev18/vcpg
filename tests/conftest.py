@@ -1,5 +1,8 @@
+import asyncio
+import threading
+import time
 from collections import defaultdict, deque
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Any
 
@@ -10,9 +13,10 @@ from keyring.errors import PasswordDeleteError
 
 from backend import redact
 from backend.events import bus
-from backend.llm import client
-from backend.llm.client import Message, OnText, Reply
+from backend.llm import client, sdk
+from backend.llm.client import LLMError, Message, OnText, Reply
 from backend.llm.config import AgentConfig
+from backend.schemas import BuildNote, FileChange
 
 FIXTURES = Path(__file__).parent / "fixtures" / "llm"
 
@@ -101,3 +105,43 @@ def fake_llm(monkeypatch: pytest.MonkeyPatch) -> FakeLLM:
 def fresh_bus() -> None:
     """Project IDs restart in every test database, so stale events must not replay."""
     bus.__init__()  # type: ignore[misc]
+
+
+class FakeBuilder:
+    """Stands in for an Agent SDK build: writes a real file, then returns a note."""
+
+    def __init__(self) -> None:
+        self.calls: list[dict[str, Any]] = []
+        self.release = threading.Event()
+        self.release.set()
+        self.fail: str | None = None
+
+    async def __call__(
+        self, agent: str, task: str, cwd: Path, schema: type[Any], **kw: Any
+    ) -> BuildNote:
+        self.calls.append({"agent": agent, "task": task, "cwd": cwd, **kw})
+        (cwd / f"step_{kw['step_id']}.py").write_text("x = 1\n", encoding="utf-8")
+        while not self.release.is_set():  # the test thread releases it
+            await asyncio.sleep(0.01)
+        if self.fail:
+            raise LLMError(self.fail)
+        return BuildNote(
+            files=[FileChange(path=f"step_{kw['step_id']}.py", summary="adds x")],
+            decisions=["kept it small"],
+            not_done=[],
+        )
+
+
+@pytest.fixture
+def fake_builder(monkeypatch: pytest.MonkeyPatch) -> FakeBuilder:
+    fake = FakeBuilder()
+    monkeypatch.setattr(sdk, "run_agent", fake)
+    return fake
+
+
+def wait_for(check: Callable[[], bool], timeout: float = 5) -> None:
+    deadline = time.monotonic() + timeout
+    while not check():
+        if time.monotonic() > deadline:
+            raise AssertionError("timed out waiting")
+        time.sleep(0.02)

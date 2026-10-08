@@ -1,7 +1,7 @@
 """Drives one step: teach → build → review → tour → gate (SPEC section 5).
 
-Phase 1 stubs build, review and tour: Ready moves the step straight to `reviewed` with a
-placeholder note, and a passed gate marks the slide done without writing one.
+Building lives in build.py. Until slides exist (phase 4), a passed gate marks the slide done
+without writing one.
 """
 
 import json
@@ -19,7 +19,6 @@ from backend.orchestrator.machine import State, transition
 from backend.schemas import GateGrade
 
 S = State
-PLACEHOLDER_NOTE = "Building, review and the code tour arrive in phases 2 and 3."
 
 
 # ---- reading state
@@ -191,17 +190,6 @@ async def ask(step_id: int, question: str) -> None:
         _say(conn, step, "tutor", "assistant", reply)
 
 
-def ready(step_id: int) -> None:
-    """Ready, build it. Phase 1: build and review are stubbed with a placeholder note."""
-    with db.session() as conn:
-        _current(conn, step_id, S.PLANNED)
-        conn.execute(
-            "UPDATE steps SET build_note = ?, review_note = ? WHERE id = ?",
-            (PLACEHOLDER_NOTE, PLACEHOLDER_NOTE, step_id),
-        )
-    _advance(step_id, S.TAUGHT, S.BUILT, S.REVIEWED)
-
-
 # ---- gate
 
 
@@ -370,7 +358,8 @@ def step_view(step_id: int) -> dict[str, Any]:
             "state": step["state"],
             "current": current_step_id(conn, step["project_id"]) == step_id,
             "lesson": _lesson(conn, step_id),
-            "build_note": step["build_note"],
+            "build_note": json.loads(step["build_note"]) if step["build_note"] else None,
+            "review_note": step["review_note"],
             "chat": [dict(m) for m in _messages(conn, step_id, CHAT)],
             "gate": [dict(m) for m in _messages(conn, step_id, GATE)],
             "progress": rubric.progress(items),

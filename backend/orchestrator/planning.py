@@ -9,6 +9,7 @@ from backend.errors import Conflict, NotFound
 from backend.llm import client
 from backend.orchestrator.context import history, tag, user_message
 from backend.schemas import Plan
+from backend.workspace import git
 
 
 def project_row(conn: sqlite3.Connection, project_id: int) -> sqlite3.Row:
@@ -137,7 +138,11 @@ def approve(project_id: int) -> None:
                 "INSERT INTO rubric_items (step_id, text) VALUES (?, ?)",
                 [(step_id, item) for item in step.rubric],
             )
-        conn.execute("UPDATE projects SET status = 'active' WHERE id = ?", (project_id,))
+        workspace = git.init(project_id, plan.project_name)  # a failure rolls the approval back
+        conn.execute(
+            "UPDATE projects SET status = 'active', workspace_path = ? WHERE id = ?",
+            (str(workspace), project_id),
+        )
 
 
 def public_plan(plan: Plan) -> dict[str, Any]:
