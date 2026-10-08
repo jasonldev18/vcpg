@@ -476,3 +476,78 @@ input:focus {
 .sv-table th {
   color: var(--acc3);
 }
+
+.readme {
+  display: grid;
+  grid-template-columns: 1fr 1fr 320px;
+  gap: 20px;
+  align-items: start;
+}
+
+.readme-editor {
+  min-height: 60vh;
+  font: 400 13px/1.6 var(--font-mono);
+}
+
+.coach-notes {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.coach-notes li {
+  border-left: 2px solid var(--acc3);
+  padding-left: 10px;
+}
+
+.coach-notes li.does_not_match {
+  border-color: var(--acc2);
+}
+
+.coach-notes .tag {
+  font: 500 12px var(--font-mono);
+  text-transform: uppercase;
+  color: var(--acc3);
+}
+
+.coach-notes li.does_not_match .tag {
+  color: var(--acc2);
+}
+
+.archive {
+  display: grid;
+  grid-template-columns: 240px 1fr 260px;
+  gap: 20px;
+  align-items: start;
+}
+
+select {
+  font: 400 14px var(--font-body);
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid rgba(255, 155, 61, 0.26);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+button.current {
+  border-color: var(--acc);
+  color: var(--acc);
+}
+
+.scorecard {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.scorecard blockquote {
+  margin: 4px 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--you);
+  color: var(--you);
+}

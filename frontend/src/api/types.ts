@@ -159,3 +159,47 @@ export interface Finish {
     messages: Message[]
   } | null
 }
+
+export interface Readme {
+  template: string
+  content: string
+  review: {
+    notes: {
+      line: number
+      kind: 'does_not_match' | 'gap' | 'unclear'
+      note: string
+      project_shows: string
+    }[]
+  } | null
+  ready: boolean
+}
+
+export interface ArchivedProject {
+  id: number
+  name: string
+  stack: string[]
+  finished_at: string | null
+  dossier: string | null
+  readme: string | null
+  exports: DeckExport[]
+  mocks: { id: number; length_min: number; focus: string; started_at: string }[]
+}
+
+export interface MockInterview {
+  id: number
+  project_id: number
+  length_min: number
+  focus: 'deep_dive' | 'system_design' | 'behavioral'
+  seconds_left: number
+  ended: boolean
+  transcript: { role: 'interviewer' | 'learner'; text: string }[]
+  scorecard: {
+    dimensions: {
+      name: 'system_design' | 'failure_modes' | 'motivation_and_impact' | 'communication'
+      score: number
+      evidence: string | null
+      reason: string
+    }[]
+    practise: string[]
+  } | null
+}

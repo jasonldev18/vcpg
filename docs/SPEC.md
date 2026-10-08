@@ -165,9 +165,9 @@ A lesson path is 4 to 8 lessons ordered from zero to the concept the project nee
 
 Prototype: `Archive.dc.html`.
 
-- When a project finishes (README ready), the dossier writer compresses it into a markdown dossier of about 1,500 words: mission, architecture, each component's decisions and trade-offs, results with numbers, failure modes and scaling notes, the user's strongest answers (quoted), and the items that needed hints.
+- When a project finishes (README ready), the dossier writer compresses it into a markdown dossier of about 1,500 words (code rejects one that is much longer or has a number its inputs do not contain, retrying once): mission, architecture, each component's decisions and trade-offs, results with numbers, failure modes and scaling notes, the user's strongest answers (quoted), and the items that needed hints.
 - The archive lists finished projects with stack, date, deck and README links, and the dossier.
-- **Mock interview:** unlocks when a project is finished and its README passes review. The user picks a length (10, 20 or 30 minutes) and a focus (project deep dive, system design, behavioral). The interviewer runs a timed interview from the dossier only, with follow-up questions that dig into answers. The grader keeps a live scorecard on four dimensions: system design, failure modes, motivation and impact, communication. *End and score* shows the scorecard with evidence quotes and two or three things to practise. Mock interview transcripts and scores are stored with the project.
+- **Mock interview:** unlocks when a project is finished and its README passes review. The user picks a length (10, 20 or 30 minutes) and a focus (project deep dive, system design, behavioral). The interviewer runs a timed interview from the dossier only, with follow-up questions that dig into answers. The server keeps the clock: once the chosen length is up, the next answer is scored and the interview ends without another question. The grader keeps a live scorecard on four dimensions: system design, failure modes, motivation and impact, communication. *End and score* shows the scorecard with evidence quotes and two or three things to practise. Mock interview transcripts and scores are stored with the project.
 
 ## 11. Squad screen
 

@@ -141,11 +141,20 @@ export function FinishPanel(props: Props) {
         {error && <p className="error">{error}</p>}
       </section>
     )
+  if (finish.stage === 'readme')
+    return (
+      <section className="panel stack">
+        <p className="kicker">End of project · README</p>
+        <h1>Write your README</h1>
+        <p>The coach prepares a template and checks every claim you make against the project.</p>
+        <Link to="/readme">Open the README coach</Link>
+      </section>
+    )
   return (
     <section className="panel stack">
-      <p className="kicker">End of project · README</p>
-      <h1>README coach</h1>
-      <p className="mute">The README coach arrives in phase 5.</p>
+      <p className="kicker">Project finished</p>
+      <h1>{project.name} is archived</h1>
+      <Link to="/archive">Open the archive for the dossier and mock interviews</Link>
     </section>
   )
 }

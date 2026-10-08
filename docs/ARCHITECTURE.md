@@ -35,6 +35,8 @@ vcpg/
       context.py         tagged data blocks for agent prompts
       project_end.py     final review, re-test, deck, README, dossier
       slides.py          slide writing, deck order, edits, regenerate, versioned exports
+      wrapup.py          README template, coach review, finish; dossier with code checks
+      mock.py            timed mock interviews from the dossier, live scorecard
     llm/
       client.py          Messages API calls: call(agent, messages, schema=None)
       sdk.py             Agent SDK sessions: run_agent(agent, task, cwd, ...)
@@ -129,7 +131,7 @@ stateDiagram-v2
 | `sources` | id, kind (trusted/community), title, url_or_path, added_by |
 | `passages` | id, source_id, text, embedding (blob), position |
 | `dossiers` | id, project_id, markdown |
-| `mock_interviews` | id, project_id, length_min, focus, transcript, scorecard_json |
+| `mock_interviews` | id, project_id, length_min, focus, transcript, scorecard_json, started_at, ended_at |
 | `agent_calls` | id, agent, model, effort, runtime, project_id, step_id, input_ref, output_ref, ok, error, duration_ms, created_at |
 | `agent_overrides` | agent, model, effort |
 | `audit_runs` | id, kind (project/deep), status, started_at, finished_at, report_json |
@@ -254,9 +256,9 @@ async def run_agent(agent: str, task: str, cwd: Path, allowed: list[str], denied
 | `GET /api/projects/{id}/deck` · `POST /deck/order` · `/deck/export` | deck, reorder, export (pptx or pdf) |
 | `PUT /api/slides/{id}` · `POST /api/slides/{id}/regenerate` · `GET /api/exports/{id}/download` | inline edit, regenerate one slide, download a version |
 | `POST /api/projects/{id}/final-review` · `/retest/start` · `/retest/answer` · `/deck/prepare` · `/deck/done` | end-of-project stages |
-| `GET/PUT /api/projects/{id}/readme` · `/readme/review` | README editor and coach |
+| `GET/PUT /api/projects/{id}/readme` · `POST /readme/template` · `/readme/review` · `/readme/finish` | README editor and coach; finish commits it, writes the dossier, archives the project |
 | `POST /api/ideas` · `POST /api/lessons` | discovery |
-| `GET /api/archive` · `POST /api/archive/{id}/mock` | archive and mock interviews |
+| `GET /api/archive` · `POST /api/archive/{id}/mock` · `GET /api/mock/{id}` · `POST /api/mock/{id}/answer` · `/end` | archive and mock interviews |
 | `GET/PUT /api/squad` | agent overrides |
 | `GET/PUT/DELETE /api/core/{anthropic,github}` | key status, save, test, remove (keys are never returned) |
 | `GET /api/audit` · `POST /api/audit/run` | audit state and manual deep scan |

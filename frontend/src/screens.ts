@@ -13,6 +13,6 @@ export const SCREENS: Screen[] = [
   { path: '/squad', title: 'Squad loadout', phase: 8 },
   { path: '/audit', title: 'Audit bay', phase: 7 },
   { path: '/deck', title: 'Deck viewer' },
-  { path: '/readme', title: 'README coach', phase: 5 },
-  { path: '/archive', title: 'Archive', phase: 5 },
+  { path: '/readme', title: 'README coach' },
+  { path: '/archive', title: 'Archive' },
 ]
