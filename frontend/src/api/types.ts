@@ -30,7 +30,8 @@ export interface Step {
   current: boolean
   lesson: string | null
   build_note: BuildNote | null
-  review_note: string | null
+  review_note: ReviewNote | null
+  tour: { stops: TourStop[] } | null
   build?: BuildStatus
   chat: Message[]
   gate: Message[]
@@ -42,6 +43,21 @@ export interface BuildNote {
   files: { path: string; summary: string }[]
   decisions: string[]
   not_done: string[]
+}
+
+export interface ReviewNote {
+  commands: { cmd: string; result: 'pass' | 'fail'; summary: string }[]
+  cut: { path: string; what: string; why: string }[]
+  fixed: { path: string; what: string }[]
+  status: 'pass' | 'fail'
+  failure: string | null
+}
+
+export interface TourStop {
+  file: string
+  line_start: number
+  line_end: number
+  explanation: string
 }
 
 export interface BuildStatus {
@@ -68,6 +84,11 @@ export interface Project {
   plan: PlanView | null
   steps: Step[]
   current_step_id: number | null
+  replan: {
+    old: { title: string; goal: string }[]
+    new: { title: string; goal: string; concepts: string[]; component: string }[]
+    changes: { step: string; change: string; reason: string }[]
+  } | null
 }
 
 export interface KeyStatus {

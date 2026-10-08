@@ -3,12 +3,13 @@ import { Link } from 'react-router'
 import { api } from '../api/client'
 import type { Project, Step } from '../api/types'
 import { type Events, useEvents } from '../api/useEvents'
-import { BuildNoteView, BuildPanel } from '../components/BuildPanel'
+import { BlockedPanel, ReplanReview } from '../components/Blocked'
+import { BuildPanel } from '../components/BuildPanel'
+import { TourPanel } from '../components/TourPanel'
 import { Console } from '../components/Console'
 import { GatePanel } from '../components/GatePanel'
 import { PlanReview } from '../components/PlanReview'
 import { TeachPanel } from '../components/TeachPanel'
-import { useAction } from '../components/useAction'
 
 const STATE_LABEL: Record<string, string> = {
   planned: 'teach',
@@ -45,35 +46,16 @@ function StepList({ steps, currentId }: { steps: Step[]; currentId: number | nul
   )
 }
 
-// Stand-in for the code tour until phase 3: shows the build note.
-function TourPlaceholder({ step, onChange }: { step: Step; onChange: (s: Step) => void }) {
-  const { busy, error, run } = useAction()
-  const go = () =>
-    run(() =>
-      api.post<Step>(`/api/steps/${step.id}/advance`, { action: 'ready_for_interview' }),
-    ).then((s) => s && onChange(s))
-  return (
-    <section className="panel stack">
-      <p className="kicker">Step {step.position + 1} · code tour</p>
-      <h1>{step.title}</h1>
-      {step.build_note && <BuildNoteView note={step.build_note} />}
-      <p className="mute">{step.review_note}</p>
-      <button className="primary" disabled={busy} onClick={go}>
-        {busy ? 'Opening the interview…' : "I'm ready for the interview"}
-      </button>
-      {error && <p className="error">{error}</p>}
-    </section>
-  )
-}
-
 function CurrentPanel({
   step,
   events,
   onChange,
+  onProject,
 }: {
   step: Step
   events: Events
   onChange: (s: Step) => void
+  onProject: (p: Project) => void
 }) {
   const { live } = events
   if (step.state === 'planned')
@@ -81,7 +63,9 @@ function CurrentPanel({
   if (step.state === 'taught' || step.state === 'built')
     return <BuildPanel step={step} lines={events.lines} onChange={onChange} />
   if (step.state === 'reviewed' || step.state === 'toured')
-    return <TourPlaceholder step={step} onChange={onChange} />
+    return <TourPanel step={step} live={live.tutor} onChange={onChange} />
+  if (step.state === 'blocked')
+    return <BlockedPanel step={step} onStep={onChange} onProject={onProject} />
   return <GatePanel step={step} live={live} onChange={onChange} />
 }
 
@@ -140,9 +124,16 @@ export function MissionControl() {
   return (
     <div className="mission">
       <StepList steps={project.steps} currentId={currentId} />
-      <div className="current">
+      <div className="current stack">
+        <ReplanReview project={project} onProject={setProject} />
         {shown ? (
-          <CurrentPanel key={shown.id} step={shown} events={events} onChange={onStep} />
+          <CurrentPanel
+            key={shown.id}
+            step={shown}
+            events={events}
+            onChange={onStep}
+            onProject={setProject}
+          />
         ) : (
           <section className="panel">
             <h1>{currentId === null ? 'Every step has passed its gate' : 'Loading…'}</h1>

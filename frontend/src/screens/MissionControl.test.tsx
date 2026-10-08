@@ -34,13 +34,11 @@ describe('MissionControl', () => {
     expect(calls.filter((c) => c.path === '/api/steps/1/teach')).toHaveLength(1)
   })
 
-  it('moves from the tour placeholder into the interview', async () => {
+  it('tours the committed code, highlights lines, then opens the interview', async () => {
     const reviewed = makeStep({
       state: 'reviewed',
-      build_note: {
-        files: [{ path: 'app.py', summary: 'adds main' }],
-        decisions: [],
-        not_done: [],
+      tour: {
+        stops: [{ file: 'app.py', line_start: 2, line_end: 3, explanation: '**Loads** data.' }],
       },
     })
     const interviewing = makeStep({
@@ -50,9 +48,20 @@ describe('MissionControl', () => {
     fakeApi({
       'GET /api/projects/current': makeProject(),
       'GET /api/steps/1': reviewed,
+      'GET /api/steps/1/file?path=app.py': {
+        path: 'app.py',
+        lines: ['import x', 'a = 1', 'b = 2'],
+      },
       'POST /api/steps/1/advance': interviewing,
     })
     renderIt()
+    expect(await screen.findByText('a = 1')).toBeInTheDocument()
+    expect(screen.getByText('a = 1').closest('div')).toHaveClass('hl')
+    expect(screen.getByText('import x').closest('div')).not.toHaveClass('hl')
+    await userEvent.click(screen.getByRole('button', { name: 'Ask about line 2' }))
+    expect(screen.getByRole('textbox', { name: 'Your question' })).toHaveValue(
+      'About app.py line 2: ',
+    )
     await userEvent.click(
       await screen.findByRole('button', { name: "I'm ready for the interview" }),
     )
@@ -99,5 +108,33 @@ describe('MissionControl builds', () => {
     renderIt()
     expect(await screen.findByRole('button', { name: 'Retry build' })).toBeInTheDocument()
     expect(screen.getByText('max turns')).toBeInTheDocument()
+  })
+})
+
+describe('MissionControl blocked steps', () => {
+  it('asks the planner for a revision and shows it side by side', async () => {
+    const blocked = makeStep({
+      state: 'blocked',
+      review_note: { commands: [], cut: [], fixed: [], status: 'fail', failure: 'tests fail' },
+    })
+    const revised = makeProject({
+      replan: {
+        old: [{ title: 'KNN recommender core', goal: 'g' }],
+        new: [{ title: 'Simpler recommender', goal: 'g2', concepts: [], component: 'backend' }],
+        changes: [],
+      },
+    })
+    const calls = fakeApi({
+      'GET /api/projects/current': makeProject(),
+      'GET /api/steps/1': blocked,
+      'POST /api/projects/1/replan': revised,
+    })
+    renderIt()
+    expect(await screen.findByText('tests fail')).toBeInTheDocument()
+    await userEvent.type(screen.getByRole('textbox'), 'drop numpy')
+    await userEvent.click(screen.getByRole('button', { name: 'Edit plan' }))
+    expect(calls.at(-1)?.body).toEqual({ request: 'drop numpy' })
+    expect(await screen.findByText('Simpler recommender')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Approve change' })).toBeInTheDocument()
   })
 })

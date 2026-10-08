@@ -46,6 +46,7 @@ export function makeStep(overrides: Partial<Step> = {}): Step {
     lesson: null,
     build_note: null,
     review_note: null,
+    tour: null,
     build: { running: false, paused: false, error: null, isolation: 'venv' },
     chat: [],
     gate: [],
@@ -64,6 +65,7 @@ export function makeProject(overrides: Partial<Project> = {}): Project {
     plan: null,
     steps: [makeStep()],
     current_step_id: 1,
+    replan: null,
     ...overrides,
   }
 }

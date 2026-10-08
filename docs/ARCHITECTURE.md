@@ -108,7 +108,7 @@ stateDiagram-v2
 ```
 
 - Transitions are defined in one table in `machine.py`; anything else raises. Agents never set state.
-- Review failures: `built → built` (builder retry once), then the step is marked `blocked` with both notes until the user picks *Retry build* or *Edit plan*.
+- Review failures: `built → built` (builder retry once, with both notes), then the step is marked `blocked` with both notes until the user picks *Retry build* (`blocked → taught`) or *Edit plan* (the planner revises every unpassed step; on approval those steps are replaced).
 - A project is `planning → active → finishing → done`. `finishing` covers final review, re-test, deck and README.
 - On restart, any step that was mid-run (`taught` with a running build, `built` with a running review) is resumed from its last committed state; partial agent runs are discarded.
 
@@ -116,8 +116,8 @@ stateDiagram-v2
 
 | Table | Key columns |
 |---|---|
-| `projects` | id, name, brief, start_path (plan/idea/lesson), status, workspace_path, created_at, finished_at, plan_json (planner's latest draft, rubrics included, until approval) |
-| `steps` | id, project_id, position, title, component, goal, concepts (json), files (json), acceptance (json), state, build_note, review_note, commit_sha |
+| `projects` | id, name, brief, start_path (plan/idea/lesson), status, workspace_path, created_at, finished_at, plan_json (planner's latest draft, rubrics included, until approval), replan_json (a revision of the unpassed steps awaiting approval) |
+| `steps` | id, project_id, position, title, component, goal, concepts (json), files (json), acceptance (json), state, build_note (json), review_note (json), commit_sha, tour_json |
 | `rubric_items` | id, step_id, text, status (missing/partial/covered), evidence |
 | `attempts` | id, step_id, kind (answer/hint/reteach), content, grader_json, created_at |
 | `messages` | id, project_id, step_id, agent, role, content, created_at (tutor chat, tour Q&A, interviewer turns) |
@@ -243,10 +243,12 @@ async def run_agent(agent: str, task: str, cwd: Path, allowed: list[str], denied
 | `GET /api/projects/current` · `GET /api/projects/{id}` | project with public plan draft and steps |
 | `POST /api/projects/{id}/plan/answers` · `/plan/revise` · `PUT /api/projects/{id}/plan` | answer planner questions, ask for changes, reorder/rename/drop steps |
 | `POST /api/projects/{id}/plan/approve` | lock plan, init workspace |
-| `POST /api/steps/{id}/advance` | user actions: ready, stop, retry, ready-for-interview |
+| `POST /api/steps/{id}/advance` | user actions: ready, build, retry (from blocked), stop, pause, resume, ready_for_interview |
 | `POST /api/steps/{id}/gate/answer` · `/hint` · `/reteach` | gate actions |
 | `POST /api/steps/{id}/ask` | tutor side chat |
 | `GET /api/steps/{id}` · `POST /api/steps/{id}/teach` | step view (progress as counts only) and the tutor's lesson |
+| `POST /api/steps/{id}/tour` · `GET /api/steps/{id}/file?path=` | code tour, and a toured file as it is in the step's commit |
+| `POST /api/projects/{id}/replan` · `/replan/approve` · `DELETE /replan` | Edit plan: propose, approve or discard a revision of the unpassed steps |
 | `GET/POST /api/projects/{id}/deck` · `/deck/export` | deck and exports |
 | `GET/PUT /api/projects/{id}/readme` · `/readme/review` | README editor and coach |
 | `POST /api/ideas` · `POST /api/lessons` | discovery |

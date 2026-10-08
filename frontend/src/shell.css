@@ -289,3 +289,59 @@ input:focus {
 .build-note code {
   color: var(--acc3);
 }
+
+.code-view {
+  font: 400 13px/1.5 var(--font-mono);
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 6px;
+  padding: 8px 0;
+  overflow-x: auto;
+}
+
+.code-view div {
+  display: flex;
+  gap: 12px;
+  padding: 0 12px;
+}
+
+.code-view div.hl {
+  background: rgba(255, 155, 61, 0.14);
+  border-left: 2px solid var(--acc);
+}
+
+.code-view .line-no {
+  all: unset;
+  min-width: 3ch;
+  text-align: right;
+  color: var(--dim);
+  cursor: pointer;
+}
+
+.code-view .line-no:hover,
+.code-view .line-no:focus-visible {
+  color: var(--you);
+}
+
+.stops {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+}
+
+.stops button {
+  font: 400 12px var(--font-mono);
+  text-transform: none;
+}
+
+.stops button.current {
+  border-color: var(--acc);
+  color: var(--acc);
+}
+
+.replan {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
