@@ -73,7 +73,12 @@ async def create(brief: str) -> int:
             (brief,),
         ).lastrowid
     assert project_id is not None
-    await _draft(project_id)
+    try:
+        await _draft(project_id)
+    except Exception:
+        with db.session() as conn:  # no draft means no project; the user retries from Start
+            conn.execute("DELETE FROM projects WHERE id = ?", (project_id,))
+        raise
     return project_id
 
 

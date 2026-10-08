@@ -234,3 +234,12 @@ def test_missing_key_is_a_409_with_a_clear_message(api: TestClient, fake_llm: Fa
         client.transport = fake_llm
     assert response.status_code == 409
     assert "Core access" in response.json()["detail"]
+
+
+def test_a_failed_first_draft_leaves_no_half_made_project(
+    api: TestClient, fake_llm: FakeLLM
+) -> None:
+    fake_llm.reply("planner", "not json")
+    fake_llm.reply("planner", "still not json")
+    assert api.post("/api/projects", json={"brief": "x"}).status_code == 502
+    assert api.get("/api/projects/current").json() is None
