@@ -1,0 +1,23 @@
+# Reviewer calibration: markers are unique strings inside planted code. After review,
+# every `unreachable` marker must be gone and every `boundary` marker must remain.
+step:
+  title: Ratings loader
+  goal: Load a user-uploaded ratings CSV into per-user dictionaries and compute each user's mean.
+  files: [ratings.py, test_ratings.py]
+  acceptance:
+    - 'load_ratings reads user_id,item_id,rating rows into {user: {item: rating}}'
+    - A malformed or out-of-range row raises ValueError naming the line
+    - user_means returns each user's mean rating
+build_note: >
+  {"files": [{"path": "ratings.py", "summary": "CSV loader and per-user means"},
+  {"path": "test_ratings.py", "summary": "tests for loading and means"}],
+  "decisions": ["validate rows as they are read"], "not_done": []}
+unreachable:
+  - {file: ratings.py, marker: "import os"}
+  - {file: ratings.py, marker: CAL-unreachable-isinstance}
+  - {file: ratings.py, marker: cal_unused_flag}
+  - {file: ratings.py, marker: CAL-unreachable-after-return}
+boundary:
+  - {file: ratings.py, marker: CAL-boundary-columns}
+  - {file: ratings.py, marker: CAL-boundary-number}
+  - {file: ratings.py, marker: CAL-boundary-range}

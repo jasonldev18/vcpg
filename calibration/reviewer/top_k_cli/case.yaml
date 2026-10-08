@@ -1,0 +1,19 @@
+# Reviewer calibration: markers are unique strings inside planted code. After review,
+# every `unreachable` marker must be gone and every `boundary` marker must remain.
+step:
+  title: Top-k command line
+  goal: Print the k highest-scoring items for a k the user passes on the command line.
+  files: [topk.py, test_topk.py]
+  acceptance:
+    - python topk.py --k 2 prints the two highest-scoring items, best first
+    - A k that is not a positive whole number is rejected with a clear message
+build_note: >
+  {"files": [{"path": "topk.py", "summary": "argparse CLI printing the top k items"},
+  {"path": "test_topk.py", "summary": "tests for the CLI"}],
+  "decisions": ["validate k where it is parsed"], "not_done": []}
+unreachable:
+  - {file: topk.py, marker: CAL-unreachable-k}
+  - {file: topk.py, marker: CAL-unreachable-none}
+boundary:
+  - {file: topk.py, marker: CAL-boundary-positive}
+  - {file: topk.py, marker: CAL-boundary-integer}
