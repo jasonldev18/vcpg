@@ -20,8 +20,8 @@ frontend/dist/
 # app data (lives in ~/.vcpg, but guard against VCPG_HOME pointing here)
 .vcpg/
 *.db
-exports/
-workspaces/
-logs/
+/exports/
+/workspaces/
+/logs/
 
 .DS_Store
