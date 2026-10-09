@@ -120,7 +120,7 @@ export function DeckViewer() {
       </nav>
       <div className="stack">
         <section className="panel">
-          <SlideView entry={current} />
+          <SlideView entry={current} position={[index + 1, deck.slides.length]} />
         </section>
         <section className="panel stack">
           <div className="row">

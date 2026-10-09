@@ -2,10 +2,28 @@ import type { SlideData, Visual } from '../api/types'
 
 const COLORS = ['var(--acc)', 'var(--acc3)', 'var(--acc2)', 'var(--you)', 'var(--pass)']
 
-function Box({ x, y, w, label }: { x: number; y: number; w: number; label: string }) {
+function Box({
+  x,
+  y,
+  w,
+  label,
+  hot,
+}: {
+  x: number
+  y: number
+  w: number
+  label: string
+  hot?: boolean
+}) {
   return (
     <g>
-      <rect x={x - w / 2} y={y - 18} width={w} height={36} rx={6} className="sv-box" />
+      <rect
+        x={x - w / 2}
+        y={y - 18}
+        width={w}
+        height={36}
+        className={hot ? 'sv-box hot' : 'sv-box'}
+      />
       <text x={x} y={y + 4} textAnchor="middle" className="sv-label">
         {label.length > 22 ? `${label.slice(0, 21)}…` : label}
       </text>
@@ -29,6 +47,7 @@ function Arrow({
   return (
     <g>
       <line x1={x1} y1={y1} x2={x2} y2={y2} className="sv-edge" markerEnd="url(#sv-arrow)" />
+      <line x1={x1} y1={y1} x2={x2} y2={y2} className="sv-packet" />
       {label && (
         <text x={(x1 + x2) / 2} y={(y1 + y2) / 2 - 6} textAnchor="middle" className="sv-small">
           {label}
@@ -40,6 +59,9 @@ function Arrow({
 
 function Architecture({ spec }: { spec: Extract<Visual, { kind: 'architecture' }>['spec'] }) {
   const groups = [...new Set(spec.nodes.map((n) => n.group))]
+  // the busiest node glows, like the hot box in SlideArchitecture.dc.html
+  const degree = (id: string) => spec.edges.filter((e) => e.from === id || e.to === id).length
+  const hot = spec.nodes.reduce((a, b) => (degree(b.id) > degree(a.id) ? b : a), spec.nodes[0])
   const w = Math.min(560 / groups.length, 150)
   const pos = new Map<string, [number, number]>()
   groups.forEach((g, gi) => {
@@ -80,7 +102,7 @@ function Architecture({ spec }: { spec: Extract<Visual, { kind: 'architecture' }
       })}
       {spec.nodes.map((n) => {
         const [x, y] = pos.get(n.id) ?? [0, 0]
-        return <Box key={n.id} x={x} y={y} w={w} label={n.label} />
+        return <Box key={n.id} x={x} y={y} w={w} label={n.label} hot={n === hot} />
       })}
     </>
   )
@@ -122,7 +144,9 @@ function Chart({ spec }: { spec: Extract<Visual, { kind: 'chart' }>['spec'] }) {
                   y={300 - height(v)}
                   width={bw}
                   height={height(v)}
-                  fill={COLORS[si % COLORS.length]}
+                  className="sv-bar"
+                  style={{ animationDelay: `${i * 0.12}s` }}
+                  fill={si === 0 ? 'url(#sv-bar-fill)' : COLORS[si % COLORS.length]}
                 />
               )
             })
@@ -201,6 +225,15 @@ export function VisualView({ visual, code }: { visual: Visual; code: string[] | 
         >
           <path d="M0,0 L10,5 L0,10 z" className="sv-arrowhead" />
         </marker>
+        <linearGradient id="sv-box-fill" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="rgba(255,155,61,0.16)" />
+          <stop offset="1" stopColor="rgba(255,77,94,0.06)" />
+        </linearGradient>
+        <linearGradient id="sv-bar-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#ffd27a" />
+          <stop offset="0.45" stopColor="#ff9b3d" />
+          <stop offset="1" stopColor="#ff4d5e" />
+        </linearGradient>
       </defs>
       {visual.kind === 'architecture' && <Architecture spec={visual.spec} />}
       {visual.kind === 'flow' && <Flow steps={visual.spec.steps} />}
@@ -209,28 +242,40 @@ export function VisualView({ visual, code }: { visual: Visual; code: string[] | 
   )
 }
 
-export function SlideView({ entry }: { entry: { slide: SlideData; code: string[] | null } }) {
+const two = (n: number) => String(n).padStart(2, '0')
+
+export function SlideView({
+  entry,
+  position,
+}: {
+  entry: { slide: SlideData; code: string[] | null }
+  position?: [number, number]
+}) {
   const { slide } = entry
   return (
     <article className="slide" aria-label={`Slide: ${slide.title}`}>
-      <p className="kicker">{slide.kicker}</p>
-      <h2 className="slide-title">{slide.title}</h2>
-      <p className="mute">{slide.what}</p>
+      <span className="corner tl" aria-hidden="true" />
+      <span className="corner br" aria-hidden="true" />
+      <header>
+        <p className="kicker">{slide.kicker}</p>
+        <h2 className="slide-title">{slide.title}</h2>
+      </header>
       <div className="slide-body">
-        <div className="slide-visual">
-          <VisualView visual={slide.visual} code={entry.code} />
-        </div>
         <div className="slide-side">
+          <p className="slide-what">{slide.what}</p>
           {slide.decisions.length > 0 && (
             <>
-              <h3>Decisions</h3>
-              <ul>
-                {slide.decisions.map((d) => (
+              <h3>Decisions I can defend</h3>
+              <ol className="numbered">
+                {slide.decisions.map((d, i) => (
                   <li key={d.choice}>
-                    <strong>{d.choice}</strong>: {d.tradeoff}
+                    <span className="n">{two(i + 1)}</span>
+                    <span>
+                      <strong>{d.choice}</strong>: {d.tradeoff}
+                    </span>
                   </li>
                 ))}
-              </ul>
+              </ol>
             </>
           )}
           {slide.failure_and_scale.length > 0 && (
@@ -244,13 +289,21 @@ export function SlideView({ entry }: { entry: { slide: SlideData; code: string[]
             </>
           )}
         </div>
+        <div className="slide-visual">
+          <VisualView visual={slide.visual} code={entry.code} />
+        </div>
       </div>
-      {slide.struggled.length > 0 && (
-        <footer className="slide-footer">
-          Questions I struggled with:{' '}
-          {slide.struggled.map((s) => `${s.question} (${s.hints} hints)`).join(' · ')}
-        </footer>
-      )}
+      <footer className="slide-footer">
+        <span>
+          {slide.struggled.length > 0 &&
+            `Questions I struggled with: ${slide.struggled.map((s) => `${s.question} (${s.hints} hints)`).join(' · ')}`}
+        </span>
+        {position && (
+          <span>
+            {two(position[0])} of {two(position[1])}
+          </span>
+        )}
+      </footer>
     </article>
   )
 }
