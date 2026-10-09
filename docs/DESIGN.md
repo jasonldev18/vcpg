@@ -60,7 +60,7 @@ Panels tilt toward the cursor using `--rx` / `--ry` (−1..1 from cursor positio
 
 ### 3.4 Transitions
 
-Motion (`motion/react`) for panel enter and exit (fade + 8px rise, 220ms), list reorders, and the step hand-off (the finished step's chip flies to the deck counter). Keep durations between 150 and 450ms.
+Motion (`motion/react`) for panel enter and exit (fade + 8px rise, 220ms), list reorders, and the step hand-off (the finished step's chip flies to the deck counter at the top of the step list, via a shared `layoutId`). `MotionConfig reducedMotion="user"` wraps the app, so Motion keeps only fades under reduced motion. Keep durations between 150 and 450ms.
 
 ## 4. Pixel agents
 
@@ -117,15 +117,16 @@ A full-screen, front-facing pixel room in a spaceship mission control, drawn on 
 - **Repair bay** (side) where fixes are worked on, and a **glass test chamber** where they are tested (green flash on pass).
 - **PR board** (right wall): cleared pull requests pinned and stamped *READY TO REVIEW* or *MERGED*.
 - Central holo table labelled *AUDIT CORE*; a radar sweep during deep scans.
-- Modes: *offline* (crew asleep at stations, dim lights), *project scan* (two or three agents active), *deep scan* (everyone moving, alarms, louder effects).
-- Hovering an agent shows a dossier card (code name, role, current task); hovering a pinned card shows the issue or pull request. Clicking opens the detail in a side panel.
+- Modes: *offline* (crew asleep at stations, dim lights), *project scan* (one auditor, Rook, walks the stations; matches the quiet project-scan popup), *deep scan* (everyone moving, alarms, louder effects). The mode follows the live run (`current.kind` from `GET /api/audit`).
+- The crew's walking, pinning, repairing and testing is ambient choreography for the mode, looping while the run lasts. The boards are real: the intel board shows the three newest issues and the PR board the three newest pull requests; the siren is on while a high-severity issue is open, and each `audit_siren` event adds the flash and shake.
+- Hovering an agent shows a dossier card (code name, role, current task); hovering a pinned card shows the issue or pull request. Clicking a card shows its detail under the room (with the GitHub link for a pull request); clicking an agent wakes it or gets a heart. The issue and PR lists below the room are the text equivalent of the boards.
 - Status text in Silkscreen: *COLLECTING REPORTS*, *CHECKING CODE*, *TRACING CAUSES*, *RUNNING TESTS*, *SCAN COMPLETE*.
 
 ## 6. Slides
 
 16:9, Solar palette on a near-black background, Oxanium titles, IBM Plex Sans body. Prototypes: `SlideArchitecture.dc.html`, `SlideCoreLogic.dc.html`, `SlideEvaluation.dc.html`.
 
-Layout: kicker (component label) and title at top; visual on the left two-thirds; decisions, failure and scale on the right; a footer strip with *questions I struggled with* and hint counts.
+Layout, as in the prototypes: corner brackets, kicker (component label) and title at top; the explanation, numbered decisions, and failure and scale in a left column; the visual on the right two-thirds in a framed card; a footer strip with *questions I struggled with*, hint counts and the slide number. Architecture boxes glow on the busiest node and white packets flow along the wires; chart bars grow in.
 
 Visual kinds and their `spec`:
 

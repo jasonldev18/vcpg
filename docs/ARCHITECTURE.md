@@ -77,9 +77,9 @@ vcpg/
     events.py            in-memory pub/sub for SSE
   frontend/
     src/
-      screens/           MissionControl, Start, Lesson, Squad, Audit, Deck, Readme, Archive
+      screens/           MissionControl, Start, Lesson, Squad, AuditBay, Deck, Readme, Archive
       routes.tsx         one route per screen (screens.ts lists them)
-      scenes/            canvas scenes: Background, CoreNetwork, AuditBay, sprites
+      scenes/            canvas scenes: Background, CoreNetwork, auditRoom; pixel figures in sprites and suits
       components/        Panel, Console, Chip, CodeTour, GatePanel, SlideView, ...
       api/               typed client and SSE hook
       theme/tokens.css
