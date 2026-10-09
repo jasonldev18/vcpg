@@ -92,3 +92,22 @@ describe('Audit bay', () => {
     expect(await screen.findByText(/1 to review/)).toBeInTheDocument()
   })
 })
+
+describe('Audit pill', () => {
+  it('counts the issues and fixes of the running deep scan', async () => {
+    fakeApi({
+      'GET /api/audit': {
+        ...IDLE,
+        current: { run_id: 1, kind: 'deep', stage: 'TRACING CAUSES' },
+      },
+    })
+    render(
+      <MemoryRouter>
+        <AuditPill />
+      </MemoryRouter>,
+    )
+    expect(await screen.findByRole('link', { name: 'Audit: Deep scan' })).toBeInTheDocument()
+    expect(screen.getByText('TRACING CAUSES')).toBeInTheDocument()
+    expect(screen.getByText('1 issue / 2 fixes so far')).toBeInTheDocument()
+  })
+})

@@ -194,6 +194,8 @@ export function AuditBay() {
   )
 }
 
+// The corner popup in mission control (AuditPopups.dc.html): asleep, a quiet project scan,
+// or a loud deep scan with live counts. The red dot shows only when this run pinned something.
 export function AuditPill() {
   const [state, setState] = useState<AuditState | null>(null)
   const events = useEvents(AUDIT_CHANNEL)
@@ -204,17 +206,33 @@ export function AuditPill() {
       .catch(() => setState(null)) // the pill is a hint; mission control works without it
   }, [events.version])
   const current = state?.current
-  const label = current ? (current.kind === 'deep' ? 'Deep scan' : 'Project scan') : 'Offline'
-  const open = state?.prs.filter((p) => p.state === 'open').length ?? 0
+  const kind = current?.kind ?? 'offline'
+  const label = current ? (kind === 'deep' ? 'Deep scan' : 'Project scan') : 'Offline'
+  const toReview = state?.prs.filter((p) => p.state === 'open').length ?? 0
+  const issues = state?.issues.filter((i) => i.run_id === current?.run_id).length ?? 0
+  const fixes = state?.prs.filter((p) => p.run_id === current?.run_id).length ?? 0
   return (
-    <Link
-      to="/audit"
-      className={`audit-pill ${current?.kind ?? 'offline'}`}
-      aria-label={`Audit: ${label}`}
-    >
-      <span className="light-dot" aria-hidden="true" /> Audit · {label}
-      {current && <span className="mute"> · {current.stage}</span>}
-      {!current && open > 0 && <span className="mute"> · {open} to review</span>}
+    <Link to="/audit" className={`audit-pill ${kind}`} aria-label={`Audit: ${label}`}>
+      {kind === 'offline' && <span className="sd" aria-hidden="true" />}
+      {kind === 'project' && <span className="ring" aria-hidden="true" />}
+      {kind === 'deep' && <span className="radar" aria-hidden="true" />}
+      <span className="pill-text">
+        <span className="pill-title">{current ? label : 'Audit bay / offline'}</span>
+        {current && <span className="pill-sub">{current.stage}</span>}
+        {kind === 'deep' && (
+          <span className="pill-sub">
+            {issues} {issues === 1 ? 'issue' : 'issues'} / {fixes} {fixes === 1 ? 'fix' : 'fixes'}{' '}
+            so far
+          </span>
+        )}
+        {!current && toReview > 0 && <span className="pill-sub">{toReview} to review</span>}
+      </span>
+      {!current && (
+        <span className="zz" aria-hidden="true">
+          z z
+        </span>
+      )}
+      {current && issues > 0 && <span className="dot" aria-hidden="true" />}
     </Link>
   )
 }
