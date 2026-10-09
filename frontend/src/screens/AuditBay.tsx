@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { api } from '../api/client'
 import type { AuditState } from '../api/types'
 import { useEvents } from '../api/useEvents'
 import { useAction } from '../components/useAction'
+import { AuditRoom, type IssueCard, type Mode, type Picked, type PrCard } from '../scenes/auditRoom'
+import { useFrame, useReducedMotion } from '../scenes/canvas'
 
 export const AUDIT_CHANNEL = -1
 
@@ -13,12 +15,89 @@ function stateWord(pr: AuditState['prs'][number]) {
   return pr.state.toUpperCase()
 }
 
-// Plain audit bay (phase 7): the pixel room arrives in phase 8.
+function issueCards(state: AuditState): IssueCard[] {
+  return state.issues.map((i) => ({
+    key: `i${i.id}`,
+    id: `I-${i.id}`,
+    tag: i.agent.toUpperCase(),
+    title: i.title,
+    state: i.status === 'open' ? 'open' : i.status === 'fixed' ? 'fixed' : 'repair',
+  }))
+}
+
+function prCards(state: AuditState): PrCard[] {
+  return state.prs.map((p) => ({
+    key: `p${p.id}`,
+    id: `#${p.id}`,
+    tag: p.branch.split('/').at(-1)?.toUpperCase() ?? '',
+    title: p.branch,
+    state: p.state === 'merged' ? 'merged' : p.state === 'open' ? 'ready' : 'tests',
+    url: p.pr_url,
+  }))
+}
+
+function Room({
+  state,
+  siren,
+  onPick,
+}: {
+  state: AuditState
+  siren: number
+  onPick: (p: Picked) => void
+}) {
+  const ref = useRef<HTMLCanvasElement>(null)
+  const room = useRef<AuditRoom | null>(null)
+  const still = useReducedMotion()
+  const mode: Mode = state.current ? (state.current.kind === 'deep' ? 'deep' : 'quick') : 'offline'
+
+  useEffect(() => {
+    if (ref.current && !room.current) room.current = new AuditRoom(ref.current)
+    const r = room.current
+    if (!r) return
+    r.setMode(mode)
+    r.setBoards(issueCards(state), prCards(state))
+    r.alarm = state.issues.some((i) => i.severity === 'high' && i.status === 'open')
+  }, [state, mode])
+
+  useEffect(() => {
+    if (siren) room.current?.siren()
+  }, [siren])
+
+  const last = useRef(0)
+  const draw = useCallback(
+    (now: number) => {
+      const dt = last.current ? Math.min(0.05, (now - last.current) / 1000) : 0
+      last.current = now
+      room.current?.frame(now, still, dt)
+    },
+    [still],
+  )
+  useFrame(draw, still)
+
+  const open = state.issues.filter((i) => i.status === 'open').length
+  return (
+    <canvas
+      ref={ref}
+      className="audit-room"
+      role="img"
+      aria-label={`Audit bay, ${mode === 'offline' ? 'offline, agents resting' : `${mode === 'deep' ? 'deep' : 'project'} scan: ${state.current?.stage ?? ''}`}. ${open} open issues, ${state.prs.length} pull requests.`}
+      onPointerMove={(e) => room.current?.move(e.clientX, e.clientY)}
+      onPointerLeave={() => room.current?.leave()}
+      onClick={(e) => {
+        const p = room.current?.click(e.clientX, e.clientY)
+        if (p && p.kind !== 'agent') onPick(p)
+      }}
+    />
+  )
+}
+
 export function AuditBay() {
   const [state, setState] = useState<AuditState | null>(null)
   const events = useEvents(AUDIT_CHANNEL)
   const { busy, error, run } = useAction()
+  const [picked, setPicked] = useState<Picked | null>(null)
   const load = useCallback(() => api.get<AuditState>('/api/audit').then(setState), [])
+  const sirens = events.lines.filter((l) => l.text.startsWith('high-severity issue')).length
 
   useEffect(() => void load(), [load, events.version])
 
@@ -26,6 +105,18 @@ export function AuditBay() {
   const current = state.current
   return (
     <div className="audit">
+      <Room state={state} siren={sirens} onPick={setPicked} />
+      {picked && picked.kind !== 'agent' && (
+        <p className="panel picked" aria-live="polite">
+          <strong>{picked.card.id}</strong> {picked.card.title}
+          {picked.kind === 'pr' && picked.card.url && (
+            <>
+              {' '}
+              <a href={picked.card.url}>Open on GitHub</a>
+            </>
+          )}
+        </p>
+      )}
       <section className="panel stack">
         <header className="row spread">
           <h1>Audit bay</h1>

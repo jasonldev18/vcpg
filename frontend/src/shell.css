@@ -777,6 +777,20 @@ button.wrong {
   align-items: start;
 }
 
+.audit-room {
+  grid-column: 1 / -1;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  image-rendering: pixelated;
+  cursor: pointer;
+}
+
+.audit .picked {
+  grid-column: 1 / -1;
+}
+
 .pixel-status {
   font: 400 14px var(--font-pixel);
   color: var(--acc3);

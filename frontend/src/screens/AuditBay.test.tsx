@@ -55,6 +55,9 @@ describe('Audit bay', () => {
       </MemoryRouter>,
     )
     expect(await screen.findByText('Hint gave the answer')).toBeInTheDocument()
+    expect(
+      screen.getByRole('img', { name: /offline, agents resting\. 1 open issues, 2 pull requests/ }),
+    ).toBeInTheDocument()
     expect(screen.getByText('MERGED')).toBeInTheDocument()
     expect(screen.getByText('READY TO REVIEW')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'audit/1/grader-wording' })).toHaveAttribute(
@@ -64,6 +67,7 @@ describe('Audit bay', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Run a deep scan now' }))
     expect(calls.at(-1)?.path).toBe('/api/audit/run')
     expect(await screen.findByText('COLLECTING REPORTS')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /deep scan: COLLECTING REPORTS/ })).toBeInTheDocument()
   })
 
   it('warns when no GitHub token is saved', async () => {
