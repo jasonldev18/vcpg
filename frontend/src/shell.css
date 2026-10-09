@@ -170,6 +170,26 @@ input:focus {
   font: 400 12px var(--font-mono);
 }
 
+.step-list .deck-counter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 8px;
+  font: 400 12px var(--font-mono);
+  color: var(--acc3);
+}
+
+.step-list .deck-chips {
+  display: flex;
+  gap: 3px;
+}
+
+.step-list .chip-dot {
+  width: 8px;
+  height: 12px;
+  background: linear-gradient(180deg, var(--acc3), var(--acc));
+}
+
 .teach {
   display: grid;
   grid-template-columns: 1fr 300px;

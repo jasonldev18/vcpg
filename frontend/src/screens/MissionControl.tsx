@@ -29,24 +29,44 @@ const STATE_LABEL: Record<string, string> = {
   blocked: 'blocked',
 }
 
+// The step hand-off (DESIGN 3.4): a step's chip shares a layoutId between its row and the
+// deck counter, so when the step finishes Motion flies the chip into the deck.
+const HANDOFF = { duration: 0.45, ease: [0.2, 0.8, 0.2, 1] } as const
+
 function StepList({ steps, currentId }: { steps: Step[]; currentId: number | null }) {
+  const done = steps.filter((s) => s.state === 'slide_done')
   return (
     <nav className="panel step-list" aria-label="Steps">
       <h2>Steps</h2>
+      <p className="deck-counter" aria-label={`Deck: ${done.length} of ${steps.length} slides`}>
+        <span className="deck-chips" aria-hidden="true">
+          {done.map((s) => (
+            <motion.span
+              key={s.id}
+              layoutId={`chip-${s.id}`}
+              transition={HANDOFF}
+              className="chip-dot"
+            />
+          ))}
+        </span>
+        Deck {done.length}/{steps.length}
+      </p>
       <ol>
-        {steps.map((s) => (
-          <li
-            key={s.id}
-            className={
-              s.id === currentId ? 'current' : s.state === 'slide_done' ? 'done' : 'locked'
-            }
-          >
-            <span>{s.title}</span>
-            <span className="state">
-              {s.id === currentId || s.state === 'slide_done' ? STATE_LABEL[s.state] : 'locked'}
-            </span>
-          </li>
-        ))}
+        {steps.map((s) => {
+          const isDone = s.state === 'slide_done'
+          return (
+            <li key={s.id} className={s.id === currentId ? 'current' : isDone ? 'done' : 'locked'}>
+              <span>{s.title}</span>
+              {isDone ? (
+                <span className="state">done</span>
+              ) : (
+                <motion.span layoutId={`chip-${s.id}`} transition={HANDOFF} className="state">
+                  {s.id === currentId ? STATE_LABEL[s.state] : 'locked'}
+                </motion.span>
+              )}
+            </li>
+          )
+        })}
       </ol>
     </nav>
   )

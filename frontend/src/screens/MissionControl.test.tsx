@@ -31,6 +31,7 @@ describe('MissionControl', () => {
     expect(screen.getByRole('navigation', { name: 'Steps' })).toHaveTextContent(
       'Offline evaluationlocked',
     )
+    expect(screen.getByLabelText('Deck: 0 of 2 slides')).toHaveTextContent('Deck 0/2')
     expect(calls.filter((c) => c.path === '/api/steps/1/teach')).toHaveLength(1)
   })
 
