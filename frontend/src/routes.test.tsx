@@ -4,7 +4,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it } from 'vitest'
 import { routes } from './routes'
 import { SCREENS } from './screens'
-import { fakeApi } from './testing'
+import { fakeApi, SQUAD } from './testing'
 
 const renderAt = (path: string) =>
   render(<RouterProvider router={createMemoryRouter(routes, { initialEntries: [path] })} />)
@@ -16,6 +16,7 @@ describe('app shell', () => {
       'GET /api/archive': [],
       'GET /api/lessons': [],
       'GET /api/sources': [],
+      'GET /api/squad': SQUAD,
       'GET /api/audit': {
         current: null,
         runs: [],

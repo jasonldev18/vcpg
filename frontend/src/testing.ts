@@ -1,6 +1,6 @@
 import { vi } from 'vitest'
 import { API_BASE } from './api/client'
-import type { Project, Step } from './api/types'
+import type { Project, SquadMember, Step } from './api/types'
 
 export interface Call {
   method: string
@@ -70,3 +70,26 @@ export function makeProject(overrides: Partial<Project> = {}): Project {
     ...overrides,
   }
 }
+
+const member = (
+  agent: string,
+  group: SquadMember['group'],
+  model: SquadMember['model'],
+  effort: SquadMember['effort'],
+): SquadMember => ({
+  agent,
+  group,
+  runtime: agent === 'builder' || group === 'audit_crew' ? 'agent_sdk' : 'api',
+  model,
+  effort,
+  recommended: { model, effort },
+  custom: false,
+})
+
+export const SQUAD: SquadMember[] = [
+  member('planner', 'build_crew', 'claude-opus-5-5', 'high'),
+  member('tutor', 'build_crew', 'claude-sonnet-5-5', 'high'),
+  member('builder', 'build_crew', 'claude-opus-5-5', 'high'),
+  member('rook', 'audit_crew', 'claude-opus-5-5', 'high'),
+  member('lesson_builder', 'helpers', 'claude-sonnet-5-5', 'high'),
+]

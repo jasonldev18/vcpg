@@ -5,6 +5,7 @@ import { DeckViewer } from './screens/DeckViewer'
 import { LessonScreen } from './screens/LessonScreen'
 import { MissionControl } from './screens/MissionControl'
 import { ReadmeCoach } from './screens/ReadmeCoach'
+import { Squad } from './screens/Squad'
 import { Start } from './screens/Start'
 import { SCREENS } from './screens'
 import { Shell } from './Shell'
@@ -17,6 +18,7 @@ const BUILT: Record<string, React.ReactNode> = {
   '/archive': <Archive />,
   '/lesson': <LessonScreen />,
   '/audit': <AuditBay />,
+  '/squad': <Squad />,
 }
 
 export const routes: RouteObject[] = [

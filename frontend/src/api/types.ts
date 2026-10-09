@@ -309,3 +309,16 @@ export interface AuditState {
   next_deep_scan: string | null
   github: boolean
 }
+
+export interface SquadMember {
+  agent: string
+  group: 'build_crew' | 'audit_crew' | 'helpers'
+  runtime: 'api' | 'agent_sdk'
+  model: 'claude-opus-5-5' | 'claude-sonnet-5-5' | 'claude-haiku-5-5'
+  effort: 'medium' | 'high' | 'xhigh' | 'max'
+  recommended: {
+    model: 'claude-opus-5-5' | 'claude-sonnet-5-5' | 'claude-haiku-5-5'
+    effort: 'medium' | 'high' | 'xhigh' | 'max'
+  }
+  custom: boolean
+}

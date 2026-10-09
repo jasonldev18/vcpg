@@ -10,7 +10,7 @@ export const SCREENS: Screen[] = [
   { path: '/', title: 'Mission control' },
   { path: '/start', title: 'Start a project' },
   { path: '/lesson', title: 'Concept lesson' },
-  { path: '/squad', title: 'Squad loadout', phase: 8 },
+  { path: '/squad', title: 'Squad loadout' },
   { path: '/audit', title: 'Audit bay' },
   { path: '/deck', title: 'Deck viewer' },
   { path: '/readme', title: 'README coach' },
