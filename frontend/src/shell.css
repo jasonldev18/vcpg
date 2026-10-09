@@ -159,7 +159,7 @@ input:focus {
 }
 
 .step-list li.locked {
-  color: var(--dim);
+  color: var(--mute);
 }
 
 .step-list li.current {
@@ -284,7 +284,7 @@ input:focus {
 }
 
 .nav-soon {
-  color: var(--dim);
+  color: var(--mute);
   cursor: default;
 }
 
@@ -333,7 +333,7 @@ input:focus {
   all: unset;
   min-width: 3ch;
   text-align: right;
-  color: var(--dim);
+  color: var(--mute);
   cursor: pointer;
 }
 
